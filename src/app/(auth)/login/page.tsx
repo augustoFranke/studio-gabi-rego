@@ -35,8 +35,8 @@ export default function LoginPage() {
         toast.error("Email ou senha incorretos")
       } else {
         toast.success("Login realizado com sucesso!")
-        router.push("/")
-        router.refresh()
+        // Use window.location for reliable post-auth redirect
+        window.location.href = "/"
       }
     } catch (error) {
       toast.error("Ocorreu um erro ao tentar entrar")
