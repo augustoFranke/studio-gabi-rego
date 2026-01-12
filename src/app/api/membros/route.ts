@@ -9,22 +9,13 @@ const membroSchema = z.object({
   nome: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   senha: z.string().optional(),
-  cpf: z.string({ required_error: 'CPF é obrigatório' }).min(1, 'CPF é obrigatório'),
+  cpf: z.string({ required_error: "CPF é obrigatório" }).min(1, "CPF é obrigatório"),
   rg: z.string().optional(),
-  telefone: z.string({ required_error: 'Telefone é obrigatório' }).min(1, 'Telefone é obrigatório'),
-  dataNascimento: z
-    .string({ required_error: 'Data de nascimento é obrigatória' })
-    .min(1, 'Data de nascimento é obrigatória'),
+  telefone: z.string().optional(),
+  dataNascimento: z.string().optional(),
   endereco: z.string().optional(),
   planoId: z.string().optional(),
-  precoCustomizado: z
-    .union([z.number(), z.string(), z.null()])
-    .optional()
-    .transform((val) => {
-      if (val === '' || val === null) return null
-      const parsed = Number(val)
-      return Number.isNaN(parsed) ? null : parsed
-    }),
+  precoCustomizado: z.number().optional(),
 })
 
 // GET /api/membros - Listar todos os membros
@@ -63,22 +54,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const {
-      nome,
-      email,
-      senha,
-      cpf,
-      rg,
-      telefone,
-      dataNascimento,
-      endereco,
-      planoId,
-      precoCustomizado,
-    } = validation.data
-
-    const cpfLimpo = cpf.replace(/\D/g, '')
-    const telefoneLimpo = telefone.replace(/\D/g, '')
-    const dataNascimentoDate = new Date(dataNascimento)
+    const { nome, email, senha, cpf, rg, telefone, dataNascimento, endereco, planoId, precoCustomizado } = validation.data
 
     // Validate email if provided
     if (email && !validarEmail(email)) {
@@ -90,16 +66,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 })
     }
 
-    // Validate telefone
-    if (!telefoneLimpo || telefoneLimpo.length < 10) {
-      return NextResponse.json({ error: 'Telefone inválido' }, { status: 400 })
-    }
-
-    // Validate data de nascimento
-    if (Number.isNaN(dataNascimentoDate.getTime())) {
-      return NextResponse.json({ error: 'Data de nascimento inválida' }, { status: 400 })
-    }
-
     // Check if email already exists (only if provided)
     if (email) {
       const emailExiste = await prisma.usuario.findUnique({ where: { email } })
@@ -109,6 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if CPF already exists
+    const cpfLimpo = cpf.replace(/\D/g, '')
     const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
     if (cpfExiste) {
       return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
@@ -132,8 +99,8 @@ export async function POST(request: NextRequest) {
           usuarioId: usuario.id,
           cpf: cpfLimpo,
           rg,
-          telefone: telefoneLimpo,
-          dataNascimento: dataNascimentoDate,
+          telefone: telefone ? telefone.replace(/\D/g, '') : null,
+          dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
           endereco,
           planoId,
           precoCustomizado,
