@@ -1,0 +1,80 @@
+{
+  "totalEntries": 334,
+  "processedEntries": 334,
+  "skippedEntries": 0,
+  "membersFound": 116,
+  "membersCreated": 13,
+  "membersFailed": 0,
+  "horariosCreated": 0,
+  "appointmentsCreated": 1361,
+  "appointmentsSkipped": 104,
+  "appointmentsFailed": 0,
+  "byDay": {
+    "SEGUNDA": 82,
+    "TERCA": 48,
+    "QUARTA": 75,
+    "QUINTA": 52,
+    "SEXTA": 74,
+    "SABADO": 3
+  },
+  "byInstructor": {
+    "GABI": 177,
+    "ESTAGIÁRIO": 157
+  },
+  "errors": [],
+  "warnings": [],
+  "createdMembers": [
+    {
+      "name": "André S.",
+      "email": "andr.s.@placeholder.local"
+    },
+    {
+      "name": "André B.",
+      "email": "andr.b.@placeholder.local"
+    },
+    {
+      "name": "Eliane N.",
+      "email": "eliane.n.@placeholder.local"
+    },
+    {
+      "name": "Paulo N.",
+      "email": "paulo.n.@placeholder.local"
+    },
+    {
+      "name": "Zila",
+      "email": "zila@placeholder.local"
+    },
+    {
+      "name": "Vitoria",
+      "email": "vitoria@placeholder.local"
+    },
+    {
+      "name": "Sandra G.",
+      "email": "sandra.g.@placeholder.local"
+    },
+    {
+      "name": "Diego Doming.",
+      "email": "diego.doming.@placeholder.local"
+    },
+    {
+      "name": "Dora",
+      "email": "dora@placeholder.local"
+    },
+    {
+      "name": "Mariana B.",
+      "email": "mariana.b.@placeholder.local"
+    },
+    {
+      "name": "Miguel",
+      "email": "miguel@placeholder.local"
+    },
+    {
+      "name": "Patricia R.",
+      "email": "patricia.r.@placeholder.local"
+    },
+    {
+      "name": "Cristian G.",
+      "email": "cristian.g.@placeholder.local"
+    }
+  ]
+}
