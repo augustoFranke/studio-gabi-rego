@@ -2,11 +2,27 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 
+// Determine if we're in production
+const isProduction = process.env.NODE_ENV === "production"
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Required for Vercel deployment - trust the proxy headers
   trustHost: true,
   // Explicitly use NEXTAUTH_SECRET for backward compatibility
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  // Use secure cookies in production (HTTPS)
+  useSecureCookies: isProduction,
+  cookies: {
+    sessionToken: {
+      name: isProduction ? "__Secure-authjs.session-token" : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProduction,
+      },
+    },
+  },
   providers: [
     Credentials({
       name: "credentials",
