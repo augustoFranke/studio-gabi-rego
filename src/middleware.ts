@@ -3,9 +3,10 @@ import { getToken } from "next-auth/jwt"
 
 export async function middleware(request: NextRequest) {
     // Use getToken which is Edge-compatible (doesn't need Prisma)
+    // Support both NEXTAUTH_SECRET and AUTH_SECRET for NextAuth v5 compatibility
     const token = await getToken({ 
         req: request,
-        secret: process.env.NEXTAUTH_SECRET 
+        secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
     })
 
     // If no token, redirect to login
