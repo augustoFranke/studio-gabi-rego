@@ -4,10 +4,22 @@ import { getToken } from "next-auth/jwt"
 export async function middleware(request: NextRequest) {
     // Use getToken which is Edge-compatible (doesn't need Prisma)
     // Support both NEXTAUTH_SECRET and AUTH_SECRET for NextAuth v5 compatibility
-    const token = await getToken({ 
+    const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+    
+    let token = await getToken({ 
         req: request,
-        secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+        secret
     })
+
+    // Fallback: try v5 cookie name explicitly if default lookup failed
+    // NextAuth v5 uses 'authjs.session-token' instead of 'next-auth.session-token'
+    if (!token) {
+        token = await getToken({ 
+            req: request,
+            secret,
+            cookieName: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token"
+        })
+    }
 
     // If no token, redirect to login
     if (!token) {

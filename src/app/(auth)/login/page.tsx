@@ -36,10 +36,9 @@ export default function LoginPage() {
         setIsLoading(false)
       } else {
         toast.success("Login realizado com sucesso!")
-        // Use router.refresh() to update server-side session state
-        // then router.push() for client-side navigation
-        router.refresh()
-        router.push("/")
+        // Use window.location.href for a hard navigation to ensure 
+        // fresh session state and cookie transmission
+        window.location.href = "/"
       }
     } catch (error) {
       toast.error("Ocorreu um erro ao tentar entrar")
