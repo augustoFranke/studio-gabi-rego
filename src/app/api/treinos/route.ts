@@ -80,16 +80,18 @@ export async function POST(request: NextRequest) {
 
     const { membroId, nome, data, objetivo, observacoes, exercicios } = validation.data
 
-    // Desativar fichas anteriores do membro
-    await prisma.fichaTreino.updateMany({
-      where: { membroId, ativo: true },
-      data: { ativo: false },
-    })
+    // Desativar fichas anteriores do membro (only if membroId provided)
+    if (membroId) {
+      await prisma.fichaTreino.updateMany({
+        where: { membroId, ativo: true },
+        data: { ativo: false },
+      })
+    }
 
     const ficha = await prisma.fichaTreino.create({
       data: {
-        membroId,
-        nome,
+        membroId: membroId || '',
+        nome: nome || 'Treino',
         data,
         objetivo,
         observacoes,
@@ -98,10 +100,10 @@ export async function POST(request: NextRequest) {
             create: exercicios.map(
               (ex, index: number) => ({
                 sessao: ex.sessao,
-                nome: ex.nome,
+                nome: ex.nome || 'Exercício',
                 grupoMuscular: ex.grupoMuscular,
-                series: ex.series,
-                repeticoes: ex.repeticoes,
+                series: ex.series || 3,
+                repeticoes: ex.repeticoes || '10',
                 carga: ex.carga,
                 descanso: ex.descanso,
                 observacoes: ex.observacoes,

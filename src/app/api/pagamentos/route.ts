@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
 
     const pagamento = await prisma.pagamento.create({
       data: {
-        membroId,
-        planoId,
-        valor,
-        dataVencimento: parseLocalDate(dataVencimento),
+        membroId: membroId || '',
+        planoId: planoId || '',
+        valor: valor || 0,
+        dataVencimento: dataVencimento ? parseLocalDate(dataVencimento) : new Date(),
         formaPagamento,
         observacao,
       },
