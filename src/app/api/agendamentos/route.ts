@@ -77,6 +77,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Membro ID não identificado' }, { status: 400 })
     }
 
+    if (!horarioId) {
+      return NextResponse.json({ error: 'Horário não informado' }, { status: 400 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: 'Data não informada' }, { status: 400 })
+    }
+
     // Verificar se o horário existe e está ativo
     const horario = await prisma.horarioDisponivel.findUnique({
       where: { id: horarioId },

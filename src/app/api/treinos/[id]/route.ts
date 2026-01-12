@@ -111,10 +111,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         data: exercicios.map((ex, index) => ({
           fichaId: id,
           sessao: ex.sessao,
-          nome: ex.nome,
+          nome: ex.nome || 'Exercício',
           grupoMuscular: ex.grupoMuscular,
-          series: ex.series,
-          repeticoes: ex.repeticoes,
+          series: ex.series || 3,
+          repeticoes: ex.repeticoes || '10',
           carga: ex.carga,
           descanso: ex.descanso,
           observacoes: ex.observacoes,
