@@ -1,0 +1,235 @@
+// Schema do Sistema de Gestão - Gabi Studio
+// Documentação: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Used for migrations (bypasses connection pooler)
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  ADMIN
+  MEMBRO
+}
+
+enum StatusMembro {
+  ATIVO
+  INATIVO
+  PENDENTE
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+enum DiaSemana {
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+  DOMINGO
+}
+
+enum TipoNotificacao {
+  LEMBRETE_AULA
+  COBRANCA
+  ANIVERSARIO
+  AVISO_GERAL
+}
+
+// ==================== MODELS ====================
+
+model Usuario {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  senha         String
+  nome          String
+  role          Role      @default(MEMBRO)
+  criadoEm      DateTime  @default(now()) @map("criado_em")
+  atualizadoEm  DateTime  @updatedAt @map("atualizado_em")
+
+  // Relação com Membro (se for membro)
+  membro        Membro?
+
+  @@map("usuarios")
+}
+
+model Membro {
+  id              String        @id @default(cuid())
+  usuarioId       String        @unique @map("usuario_id")
+  cpf             String        @unique
+  rg              String?
+  telefone        String
+  dataNascimento  DateTime      @map("data_nascimento")
+  endereco        String?
+  observacoes     String?
+  status          StatusMembro  @default(PENDENTE)
+  fotoUrl         String?       @map("foto_url")
+  criadoEm        DateTime      @default(now()) @map("criado_em")
+  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+
+  // Relações
+  usuario         Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  planoId         String?       @map("plano_id")
+  plano           Plano?        @relation(fields: [planoId], references: [id])
+  precoCustomizado Decimal?     @db.Decimal(10, 2) @map("preco_customizado")
+  agendamentos    Agendamento[]
+  pagamentos      Pagamento[]
+  fichasTreino    FichaTreino[]
+  notificacoes    Notificacao[]
+
+  @@map("membros")
+}
+
+model Plano {
+  id              String      @id @default(cuid())
+  nome            String
+  descricao       String?
+  valor           Decimal     @db.Decimal(10, 2)
+  duracaoDias     Int         @map("duracao_dias")
+  aulasSemanais   Int         @map("aulas_semanais")
+  ativo           Boolean     @default(true)
+  criadoEm        DateTime    @default(now()) @map("criado_em")
+  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+
+  // Relações
+  membros         Membro[]
+  pagamentos      Pagamento[]
+
+  @@map("planos")
+}
+
+model HorarioDisponivel {
+  id              String      @id @default(cuid())
+  diaSemana       DiaSemana   @map("dia_semana")
+  horaInicio      String      @map("hora_inicio") // "08:00"
+  horaFim         String      @map("hora_fim")    // "09:00"
+  vagasTotal      Int         @map("vagas_total")
+  ativo           Boolean     @default(true)
+  criadoEm        DateTime    @default(now()) @map("criado_em")
+  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+
+  // Relações
+  agendamentos    Agendamento[]
+
+  @@map("horarios_disponiveis")
+}
+
+model Agendamento {
+  id              String      @id @default(cuid())
+  membroId        String      @map("membro_id")
+  horarioId       String      @map("horario_id")
+  data            DateTime    @db.Date
+  presente        Boolean?    // null = não marcado, true = presente, false = falta
+  observacao      String?
+  criadoEm        DateTime    @default(now()) @map("criado_em")
+  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+
+  // Relações
+  membro          Membro              @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  horario         HorarioDisponivel   @relation(fields: [horarioId], references: [id])
+
+  @@unique([membroId, horarioId, data])
+  @@map("agendamentos")
+}
+
+model Pagamento {
+  id              String          @id @default(cuid())
+  membroId        String          @map("membro_id")
+  planoId         String          @map("plano_id")
+  valor           Decimal         @db.Decimal(10, 2)
+  dataVencimento  DateTime        @map("data_vencimento") @db.Date
+  dataPagamento   DateTime?       @map("data_pagamento")
+  status          StatusPagamento @default(PENDENTE)
+  formaPagamento  String?         @map("forma_pagamento") // PIX, Cartão, Dinheiro
+  comprovante     String?         // URL do comprovante
+  observacao      String?
+  criadoEm        DateTime        @default(now()) @map("criado_em")
+  atualizadoEm    DateTime        @updatedAt @map("atualizado_em")
+
+  // Relações
+  membro          Membro          @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  plano           Plano           @relation(fields: [planoId], references: [id])
+
+  @@map("pagamentos")
+}
+
+model FichaTreino {
+  id              String        @id @default(cuid())
+  membroId        String        @map("membro_id")
+  nome            String        // Ex: "Treino Janeiro 2026"
+  data            String?       // Ex: "01/2026"
+  objetivo        String?       // Ex: "Hipertrofia", "Emagrecimento"
+  observacoes     String?
+  ativo           Boolean       @default(true)
+  criadoEm        DateTime      @default(now()) @map("criado_em")
+  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+
+  // Relações
+  membro          Membro        @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  exercicios      Exercicio[]
+
+  @@map("fichas_treino")
+}
+
+model Exercicio {
+  id              String        @id @default(cuid())
+  fichaId         String        @map("ficha_id")
+  sessao          String        @default("A") // Ex: "A", "B", "C"
+  nome            String        // Ex: "Supino Reto"
+  grupoMuscular   String?       @map("grupo_muscular") // Ex: "Peito"
+  series          Int
+  repeticoes      String        // Ex: "12", "8-12", "Até falha"
+  carga           String?       // Ex: "20kg", "Peso corporal"
+  descanso        String?       // Ex: "60s", "90s"
+  observacoes     String?
+  ordem           Int           @default(0)
+  criadoEm        DateTime      @default(now()) @map("criado_em")
+  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+
+  // Relações
+  ficha           FichaTreino   @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+
+  @@map("exercicios")
+}
+
+model Notificacao {
+  id              String          @id @default(cuid())
+  membroId        String?         @map("membro_id")
+  tipo            TipoNotificacao
+  titulo          String
+  mensagem        String
+  enviada         Boolean         @default(false)
+  enviadaEm       DateTime?       @map("enviada_em")
+  agendadaPara    DateTime?       @map("agendada_para")
+  canalWhatsapp   Boolean         @default(false) @map("canal_whatsapp")
+  canalEmail      Boolean         @default(false) @map("canal_email")
+  criadoEm        DateTime        @default(now()) @map("criado_em")
+
+  // Relações
+  membro          Membro?         @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("notificacoes")
+}
+
+// Configurações gerais do sistema
+model Configuracao {
+  id              String    @id @default(cuid())
+  chave           String    @unique
+  valor           String
+  descricao       String?
+  atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+
+  @@map("configuracoes")
+}

@@ -1,0 +1,174 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ThemeToggleSimple } from "@/components/theme-toggle"
+import { Flame } from "lucide-react"
+import Image from "next/image"
+
+export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsLoading(true)
+    
+    const formData = new FormData(event.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast.error("Email ou senha incorretos")
+      } else {
+        toast.success("Login realizado com sucesso!")
+        router.push("/")
+        router.refresh()
+      }
+    } catch (error) {
+      toast.error("Ocorreu um erro ao tentar entrar")
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      {/* Animated background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Large orange glow - top right */}
+        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        {/* Deep orange glow - bottom left */}
+        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        {/* Center accent */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
+        
+        {/* Decorative lines */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
+      </div>
+      
+      {/* Theme toggle in corner */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggleSimple />
+      </div>
+
+      {/* Floating decorative elements */}
+      <div className="absolute top-20 left-10 w-2 h-2 rounded-full bg-orange-500/60 animate-pulse" />
+      <div className="absolute top-40 right-20 w-3 h-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
+      <div className="absolute bottom-32 left-20 w-2 h-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
+      <div className="absolute bottom-20 right-32 w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
+
+      <Card className="w-full max-w-md relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
+        {/* Orange accent line at top of card */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 rounded-t-xl" />
+        
+        <CardHeader className="text-center pb-4 pt-6">
+          <div className="flex justify-center mb-3">
+            <div className="relative group">
+              {/* Glow effect behind logo */}
+              <div className="absolute inset-0 bg-orange-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-3 shadow-lg shadow-orange-600/50 transition-all hover:scale-105 hover:shadow-orange-500/60 overflow-hidden">
+                <Image 
+                  src="/logo.svg" 
+                  alt="Gabi Studio" 
+                  width={80} 
+                  height={80} 
+                  className="brightness-0 invert object-contain"
+                />
+              </div>
+              {/* Small flame icon */}
+              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                <Flame className="h-3 w-3 text-white" />
+              </div>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 bg-clip-text text-transparent">
+            Gabi Studio
+          </CardTitle>
+          <CardDescription className="text-muted-foreground mt-1">
+            Entre com seu email e senha para acessar
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0 pb-6">
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="seu@email.com"
+                required
+                disabled={isLoading}
+                className="h-10 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                Senha
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                disabled={isLoading}
+                className="h-10 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full h-10 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-all border-0 mt-2" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Entrando...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Entrar
+                  <Flame className="h-4 w-4" />
+                </span>
+              )}
+            </Button>
+          </form>
+          
+          {/* Decorative divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+            <Flame className="h-3 w-3 text-orange-500/50" />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+          </div>
+          
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

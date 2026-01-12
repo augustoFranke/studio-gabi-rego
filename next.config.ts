@@ -1,7 +1,25 @@
 import type { NextConfig } from "next";
 
+const isDocker = process.env.DEPLOYMENT_TARGET === "docker";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Use standalone output only for Docker deployment
+  // Vercel handles this automatically
+  ...(isDocker && { output: "standalone" }),
+
+  // Image optimization
+  // - Vercel: enabled (handled by Vercel)
+  // - Docker: disabled (no image optimization service)
+  images: {
+    unoptimized: isDocker,
+  },
+
+  // Enable experimental features
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
 };
 
 export default nextConfig;
