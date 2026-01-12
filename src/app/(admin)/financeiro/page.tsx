@@ -223,22 +223,9 @@ export default function FinanceiroPage() {
   const validatePlanoForm = (): boolean => {
     const errors: Record<string, string> = {}
     
-    if (!planoForm.nome.trim()) {
-      errors.nome = "Nome do plano é obrigatório"
-    }
-    
-    if (!planoForm.valor) {
-      errors.valor = "Valor é obrigatório"
-    } else if (parseFloat(planoForm.valor) <= 0) {
-      errors.valor = "Valor deve ser maior que zero"
-    }
-    
-    if (!planoForm.duracaoDias) {
-      errors.duracaoDias = "Duração é obrigatória"
-    }
-    
-    if (!planoForm.aulasSemanais) {
-      errors.aulasSemanais = "Aulas por semana é obrigatório"
+    // Only validate that valor is positive if provided
+    if (planoForm.valor && parseFloat(planoForm.valor) < 0) {
+      errors.valor = "Valor não pode ser negativo"
     }
     
     setPlanoErrors(errors)
@@ -247,7 +234,7 @@ export default function FinanceiroPage() {
 
   const handleSavePlano = async () => {
     if (!validatePlanoForm()) {
-      toast.error("Preencha todos os campos obrigatórios corretamente")
+      toast.error("Verifique os campos do formulário")
       return
     }
 
@@ -353,22 +340,9 @@ export default function FinanceiroPage() {
   const validatePagamentoForm = (): boolean => {
     const errors: Record<string, string> = {}
     
-    if (!pagamentoForm.membroId) {
-      errors.membroId = "Selecione um membro"
-    }
-    
-    if (!pagamentoForm.planoId) {
-      errors.planoId = "Selecione um plano"
-    }
-    
-    if (!pagamentoForm.valor) {
-      errors.valor = "Valor é obrigatório"
-    } else if (parseFloat(pagamentoForm.valor) <= 0) {
-      errors.valor = "Valor deve ser maior que zero"
-    }
-    
-    if (!pagamentoForm.dataVencimento) {
-      errors.dataVencimento = "Data de vencimento é obrigatória"
+    // Only validate that valor is positive if provided
+    if (pagamentoForm.valor && parseFloat(pagamentoForm.valor) < 0) {
+      errors.valor = "Valor não pode ser negativo"
     }
     
     setPagamentoErrors(errors)
@@ -376,8 +350,8 @@ export default function FinanceiroPage() {
   }
 
   const handleSavePagamento = async () => {
-    if (!editingPagamento && !validatePagamentoForm()) {
-      toast.error("Preencha todos os campos obrigatórios corretamente")
+    if (!validatePagamentoForm()) {
+      toast.error("Verifique os campos do formulário")
       return
     }
 
@@ -595,7 +569,7 @@ export default function FinanceiroPage() {
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label htmlFor="membro" className={pagamentoErrors.membroId ? "text-destructive" : ""}>
-                          Membro *
+                          Membro
                         </Label>
                         <Select
                           value={pagamentoForm.membroId}
@@ -624,7 +598,7 @@ export default function FinanceiroPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="plano" className={pagamentoErrors.planoId ? "text-destructive" : ""}>
-                          Plano *
+                          Plano
                         </Label>
                         {(() => {
                           const activePlanos = planos.filter((p) => p.ativo)
@@ -711,7 +685,7 @@ export default function FinanceiroPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="valor" className={pagamentoErrors.valor ? "text-destructive" : ""}>
-                            Valor *
+                            Valor
                           </Label>
                           <Input
                             id="valor"
@@ -734,7 +708,7 @@ export default function FinanceiroPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="dataVencimento" className={pagamentoErrors.dataVencimento ? "text-destructive" : ""}>
-                            Vencimento *
+                            Vencimento
                           </Label>
                           <Input
                             id="dataVencimento"
@@ -932,7 +906,7 @@ export default function FinanceiroPage() {
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label htmlFor="nome" className={planoErrors.nome ? "text-destructive" : ""}>
-                          Nome do Plano *
+                          Nome do Plano
                         </Label>
                         <Input
                           id="nome"
@@ -963,7 +937,7 @@ export default function FinanceiroPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="valor" className={planoErrors.valor ? "text-destructive" : ""}>
-                            Valor (R$) *
+                            Valor (R$)
                           </Label>
                           <Input
                             id="valor"
@@ -985,7 +959,7 @@ export default function FinanceiroPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="duracaoDias" className={planoErrors.duracaoDias ? "text-destructive" : ""}>
-                            Duração (dias) *
+                            Duração (dias)
                           </Label>
                           <Select
                             value={planoForm.duracaoDias}
@@ -1013,7 +987,7 @@ export default function FinanceiroPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="aulasSemanais" className={planoErrors.aulasSemanais ? "text-destructive" : ""}>
-                          Aulas por Semana *
+                          Aulas por Semana
                         </Label>
                         <Select
                           value={planoForm.aulasSemanais}

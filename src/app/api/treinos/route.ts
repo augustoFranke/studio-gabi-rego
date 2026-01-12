@@ -6,18 +6,18 @@ import { Prisma } from '@prisma/client'
 
 const exercicioSchema = z.object({
   sessao: z.string().default('A'),
-  nome: z.string().min(1, 'Nome do exercício é obrigatório'),
+  nome: z.string().optional(),
   grupoMuscular: z.string().optional(),
-  series: z.number().min(1),
-  repeticoes: z.string().min(1),
+  series: z.number().optional(),
+  repeticoes: z.string().optional(),
   carga: z.string().optional(),
   descanso: z.string().optional(),
   observacoes: z.string().optional(),
 })
 
 const fichaSchema = z.object({
-  membroId: z.string().min(1, 'Membro é obrigatório'),
-  nome: z.string().min(1, 'Nome do treino é obrigatório'),
+  membroId: z.string().optional(),
+  nome: z.string().optional(),
   data: z.string().optional(),
   objetivo: z.string().optional(),
   observacoes: z.string().optional(),

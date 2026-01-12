@@ -6,13 +6,13 @@ import { validarCPF, validarEmail } from '@/lib/validators'
 import { z } from 'zod'
 
 const membroSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('Email inválido'),
-  senha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-  cpf: z.string().min(11, 'CPF deve ter pelo menos 11 dígitos'),
+  nome: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  senha: z.string().optional(),
+  cpf: z.string().optional(),
   rg: z.string().optional(),
-  telefone: z.string().min(1, 'Telefone é obrigatório'),
-  dataNascimento: z.string().min(1, 'Data de nascimento é obrigatória'),
+  telefone: z.string().optional(),
+  dataNascimento: z.string().optional(),
   endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.number().optional(),
@@ -56,35 +56,41 @@ export async function POST(request: NextRequest) {
 
     const { nome, email, senha, cpf, rg, telefone, dataNascimento, endereco, planoId, precoCustomizado } = validation.data
 
-    if (!validarEmail(email)) {
+    // Validate email if provided
+    if (email && !validarEmail(email)) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
     }
 
-    if (!validarCPF(cpf)) {
+    // Validate CPF if provided
+    if (cpf && !validarCPF(cpf)) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 })
     }
 
-    // Verificar se email já existe
-    const emailExiste = await prisma.usuario.findUnique({ where: { email } })
-    if (emailExiste) {
-      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
+    // Check if email already exists (only if provided)
+    if (email) {
+      const emailExiste = await prisma.usuario.findUnique({ where: { email } })
+      if (emailExiste) {
+        return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
+      }
     }
 
-    // Verificar se CPF já existe
-    const cpfLimpo = cpf.replace(/\D/g, '')
-    const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
-    if (cpfExiste) {
-      return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
+    // Check if CPF already exists (only if provided)
+    const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null
+    if (cpfLimpo) {
+      const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+      if (cpfExiste) {
+        return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
+      }
     }
 
-    // Criar usuário e membro em uma transação
-    const senhaHash = await hash(senha, 12)
+    // Create password hash if provided, otherwise generate a random one
+    const senhaHash = senha ? await hash(senha, 12) : await hash(Math.random().toString(36), 12)
 
     const membro = await prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.create({
         data: {
-          nome,
-          email,
+          nome: nome || 'Sem nome',
+          email: email || `temp_${Date.now()}@placeholder.local`,
           senha: senhaHash,
           role: 'MEMBRO',
         },
@@ -95,8 +101,8 @@ export async function POST(request: NextRequest) {
           usuarioId: usuario.id,
           cpf: cpfLimpo,
           rg,
-          telefone: telefone.replace(/\D/g, ''),
-          dataNascimento: new Date(dataNascimento),
+          telefone: telefone ? telefone.replace(/\D/g, '') : null,
+          dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
           endereco,
           planoId,
           precoCustomizado,

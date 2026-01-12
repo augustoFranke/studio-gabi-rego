@@ -12,17 +12,17 @@ interface RouteParams {
 const exercicioSchema = z.object({
   id: z.string().optional(),
   sessao: z.string().default('A'),
-  nome: z.string().min(1, 'Nome do exercício é obrigatório'),
+  nome: z.string().optional(),
   grupoMuscular: z.string().optional(),
-  series: z.number().min(1),
-  repeticoes: z.string().min(1),
+  series: z.number().optional(),
+  repeticoes: z.string().optional(),
   carga: z.string().optional(),
   descanso: z.string().optional(),
   observacoes: z.string().optional(),
 })
 
 const updateFichaSchema = z.object({
-  nome: z.string().min(1).optional(),
+  nome: z.string().optional(),
   data: z.string().optional(),
   objetivo: z.string().optional(),
   observacoes: z.string().optional(),

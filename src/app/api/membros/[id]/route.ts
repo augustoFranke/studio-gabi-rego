@@ -5,12 +5,12 @@ import { z } from 'zod'
 import { validarCPF, validarEmail } from '@/lib/validators'
 
 const updateMembroSchema = z.object({
-    nome: z.string().min(1, 'Nome é obrigatório').optional(),
-    email: z.string().email('Email inválido').optional(),
-    cpf: z.string().min(11, 'CPF deve ter pelo menos 11 dígitos').optional(),
+    nome: z.string().optional(),
+    email: z.string().email('Email inválido').optional().or(z.literal('')),
+    cpf: z.string().optional(),
     rg: z.string().optional(),
-    telefone: z.string().min(1, 'Telefone é obrigatório').optional(),
-    dataNascimento: z.string().min(1, 'Data de nascimento é obrigatória').optional(),
+    telefone: z.string().optional(),
+    dataNascimento: z.string().optional(),
     endereco: z.string().optional(),
     planoId: z.string().optional(),
     precoCustomizado: z.union([z.number(), z.string(), z.null()]).optional().transform(val => {

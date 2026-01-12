@@ -3,10 +3,16 @@
  * Lista Payments Import Script
  *
  * Imports payment records from lista.md (markdown table format)
- * and creates payment records for January 2026
+ * and creates payment records for January 2026 with due date in February 2026.
  * 
  * Format expected (grid table):
  * | NAME | HR | DIAS | CADST | PAGO | HR |
+ * 
+ * Due date logic:
+ * - Payment made in January 2026 → Due date in February 2026
+ * - If member name contains a number in parentheses like "(20)" or at the end like "ALINE 20",
+ *   that number is used as the day of the month (e.g., February 20, 2026)
+ * - Otherwise, default due day is the 10th (e.g., February 10, 2026)
  * 
  * Usage:
  *   npx tsx utility/import-payments-lista.ts         # Live run
@@ -26,6 +32,7 @@ interface PaymentEntry {
   rawValue: string
   value: number | null
   observacao: string
+  dueDay: number // Day of month for due date (extracted from name or default 10)
 }
 
 interface ImportReport {
@@ -63,6 +70,37 @@ const TARGET_YEAR = 2026
 const DRY_RUN = process.argv.includes('--dry-run')
 
 // ==================== UTILITY FUNCTIONS ====================
+
+/**
+ * Extracts the due day from the member name.
+ * Looks for patterns like "(20)", "(15)", or standalone numbers at the end like "ALINE 20"
+ * Returns the extracted day or default 10
+ */
+function extractDueDay(raw: string): number {
+  const DEFAULT_DUE_DAY = 10
+  
+  // Look for number in parentheses like "(20)", "(15)", etc.
+  // But exclude patterns like "(CASAL)", "(FAMÍLIA)", "(ANA)" which are not numbers
+  const parenMatch = raw.match(/\((\d{1,2})\)/)
+  if (parenMatch) {
+    const day = parseInt(parenMatch[1])
+    if (day >= 1 && day <= 31) {
+      return day
+    }
+  }
+  
+  // Look for standalone number at the end of the name like "ALINE AVILA 20"
+  // But be careful not to match the row number prefix like "58."
+  const endMatch = raw.match(/\s(\d{1,2})\s*$/)
+  if (endMatch) {
+    const day = parseInt(endMatch[1])
+    if (day >= 1 && day <= 31) {
+      return day
+    }
+  }
+  
+  return DEFAULT_DUE_DAY
+}
 
 function cleanMemberName(raw: string): string {
   let name = raw.trim()
@@ -184,6 +222,7 @@ function parseListaMd(content: string): PaymentEntry[] {
     }
     
     const { value, observacao } = parsePaymentValue(rawPago)
+    const dueDay = extractDueDay(rawName)
     
     entries.push({
       lineNumber,
@@ -192,6 +231,7 @@ function parseListaMd(content: string): PaymentEntry[] {
       rawValue: rawPago,
       value,
       observacao,
+      dueDay,
     })
   }
   
@@ -282,18 +322,21 @@ async function createPaymentForMember(
   observacao: string,
   report: ImportReport,
   planoNome: string,
-  memberName: string
+  memberName: string,
+  dueDay: number
 ): Promise<boolean> {
-  // Due date: January 10, 2026 (common payment date)
-  const dataVencimento = new Date(TARGET_YEAR, TARGET_MONTH - 1, 10)
+  // Due date: NEXT month (February if payment is for January)
+  // Use the extracted day from the name, or default to 10
+  const dueMonth = TARGET_MONTH // Next month (February = 2, but JS months are 0-indexed, so TARGET_MONTH=1 means Feb)
+  const dataVencimento = new Date(TARGET_YEAR, dueMonth, dueDay)
   
-  // Check if payment already exists for this member in January 2026
+  // Check if payment already exists for this member in NEXT month (February 2026)
   const existingPayment = await prisma.pagamento.findFirst({
     where: {
       membroId,
       dataVencimento: {
-        gte: new Date(TARGET_YEAR, TARGET_MONTH - 1, 1),
-        lte: new Date(TARGET_YEAR, TARGET_MONTH, 0),
+        gte: new Date(TARGET_YEAR, dueMonth, 1),
+        lte: new Date(TARGET_YEAR, dueMonth + 1, 0),
       },
     },
   })
@@ -304,7 +347,8 @@ async function createPaymentForMember(
   }
   
   if (DRY_RUN) {
-    console.log(`  [DRY RUN] Would create payment: ${memberName} - R$ ${valor.toFixed(2)}`)
+    const dueDateStr = `${dueDay.toString().padStart(2, '0')}/${(dueMonth + 1).toString().padStart(2, '0')}/${TARGET_YEAR}`
+    console.log(`  [DRY RUN] Would create payment: ${memberName} - R$ ${valor.toFixed(2)} (venc: ${dueDateStr})`)
     report.paymentsCreated++
     report.totalAmount += valor
     report.successfulPayments.push({ name: memberName, value: valor, plano: planoNome })
@@ -369,7 +413,8 @@ async function main() {
   if (paymentEntries.length > 0) {
     console.log('📋 Sample payment entries (first 10):')
     paymentEntries.slice(0, 10).forEach(e => {
-      console.log(`   ${e.cleanName} - R$ ${e.value?.toFixed(2)} ${e.observacao ? `(${e.observacao})` : ''}`)
+      const dueDateStr = `${e.dueDay.toString().padStart(2, '0')}/02/${TARGET_YEAR}`
+      console.log(`   ${e.cleanName} - R$ ${e.value?.toFixed(2)} (venc: ${dueDateStr}) ${e.observacao ? `[${e.observacao}]` : ''}`)
     })
     console.log()
   }
@@ -426,7 +471,8 @@ async function main() {
       entry.observacao,
       report,
       planoNome,
-      member.usuarioNome
+      member.usuarioNome,
+      entry.dueDay
     )
   }
   
