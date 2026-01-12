@@ -1,0 +1,2120 @@
+{
+  "timestamp": "2026-01-12T12:41:33.466Z",
+  "mode": "LIVE",
+  "clearAppointments": true,
+  "totalParsed": 124,
+  "successfulMatches": 118,
+  "failedMatches": 6,
+  "appointmentsCleared": 794,
+  "appointmentsCreated": 1667,
+  "appointmentsSkipped": 0,
+  "paymentsCreated": 70,
+  "paymentsSkipped": 2,
+  "members": [
+    {
+      "name": "Geni Stray",
+      "matched": true,
+      "matchedTo": "Geni Stray",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Leandro Diemer",
+      "matched": true,
+      "matchedTo": "Leandro Diemer",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Alcimara Cardoso",
+      "matched": true,
+      "matchedTo": "Alcimara Ferreira Cardoso",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Davi Silva Família",
+      "matched": true,
+      "matchedTo": "Davi da Silva Muniz",
+      "hours": [
+        15,
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 44,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Mariana",
+      "matched": true,
+      "matchedTo": "MARIANA VIANA VIEIRA",
+      "hours": [
+        9
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 465,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Loide Lopes",
+      "matched": true,
+      "matchedTo": "LOIDE LOPES",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Danielli Tambosi",
+      "matched": true,
+      "matchedTo": "Danielli Neves Tambosi",
+      "hours": [
+        15
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Evone",
+      "matched": true,
+      "matchedTo": "Evone Bezerra Alves",
+      "hours": [],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Marili Julho",
+      "matched": true,
+      "matchedTo": "Marili Julho",
+      "hours": [
+        9
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Karen Castro Casal",
+      "matched": true,
+      "matchedTo": "Karen Ingrid Matias de Castro",
+      "hours": [
+        13
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 22,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Júlio",
+      "matched": true,
+      "matchedTo": "Júlio",
+      "hours": [
+        17
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 585,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Rita de Cassia",
+      "matched": true,
+      "matchedTo": "Rita De Cassia",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 405,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Sandra",
+      "matched": true,
+      "matchedTo": "Sandra",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 8,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Guilherme Alves Família",
+      "matched": true,
+      "matchedTo": "Guilherme Alves Lopes",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 22,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Patrícia Belone",
+      "matched": true,
+      "matchedTo": "Patrícia Cristiane Chagas Alves Belone",
+      "hours": [
+        9
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Alexandre Antonio",
+      "matched": true,
+      "matchedTo": "ALEXANDRE ANTONIO SANTOS DE SOUZA",
+      "hours": [
+        17
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Karine Blume",
+      "matched": true,
+      "matchedTo": "KARINE BLUME DE SOUZA",
+      "hours": [
+        11
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Giovana Blume",
+      "matched": true,
+      "matchedTo": "GIOVANA BLUME DE SOUZA",
+      "hours": [
+        17,
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 18,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Isabella Fernandes",
+      "matched": true,
+      "matchedTo": "Isabella Carneiro Fernandes",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Victória",
+      "matched": true,
+      "matchedTo": "Victória",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 200,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Victor",
+      "matched": true,
+      "matchedTo": "Victor",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 200,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Rozimeire",
+      "matched": true,
+      "matchedTo": "Rozimeire",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 200,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Paulo Curti",
+      "matched": true,
+      "matchedTo": "Paulo Curti",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 750,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Jessica Pedó",
+      "matched": true,
+      "matchedTo": "Jessica Pedó",
+      "hours": [
+        10
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Diego",
+      "matched": true,
+      "matchedTo": "Diego",
+      "hours": [
+        6
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Lorenzo",
+      "matched": true,
+      "matchedTo": "Lorenzo",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Marina",
+      "matched": true,
+      "matchedTo": "Marina",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 405,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Rosineide Muniz",
+      "matched": true,
+      "matchedTo": "Rosineide Silvano dos Santos Muniz",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Vitória Meazza",
+      "matched": true,
+      "matchedTo": "Vitória Meazza",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Lorraine Vidal",
+      "matched": true,
+      "matchedTo": "Lorraine Vidal",
+      "hours": [
+        8
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Luzia",
+      "matched": true,
+      "matchedTo": "Luzia",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 237.5,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Manoel",
+      "matched": true,
+      "matchedTo": "Manoel",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 237.5,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Maria Isabel",
+      "matched": true,
+      "matchedTo": "MARIA ISABEL DE ALVARENGA MADUREIRA",
+      "hours": [
+        6
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 300,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Jarbas Barbosa",
+      "matched": true,
+      "matchedTo": "JARBAS BARBOSA",
+      "hours": [
+        6
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 300,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "João",
+      "matched": true,
+      "matchedTo": "João",
+      "hours": [
+        6
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 300,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Ana Flávia Meazza",
+      "matched": true,
+      "matchedTo": "Ana Flávia Meazza",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 550,
+      "appointmentsCreated": 18,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Sheila",
+      "matched": true,
+      "matchedTo": "Sheila",
+      "hours": [
+        11
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Danielle Schwengber",
+      "matched": true,
+      "matchedTo": "DANIELLE SCHWENGBER",
+      "hours": [
+        17,
+        10
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA",
+        "SABADO"
+      ],
+      "paymentValue": 600,
+      "appointmentsCreated": 36,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Luana Vidal",
+      "matched": true,
+      "matchedTo": "Luana Vidal",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 17,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Luana Neves",
+      "matched": true,
+      "matchedTo": "LUANA DA SILVA NEVES",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": 550,
+      "appointmentsCreated": 17,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Carla Dilene Lima",
+      "matched": true,
+      "matchedTo": "Carla Dilene Fernandes Almeida Lima",
+      "hours": [
+        10
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 550,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Silvana Pael",
+      "matched": true,
+      "matchedTo": "SILVANA PAEL MARECO",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 8,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Bianca Dalcin",
+      "matched": true,
+      "matchedTo": "BIANCA DALCIN STIEVEN LOURENÇO",
+      "hours": [
+        18,
+        19
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 28,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Marciano",
+      "matched": true,
+      "matchedTo": "Marciano",
+      "hours": [
+        18,
+        19
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 28,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Marlene Meazza",
+      "matched": true,
+      "matchedTo": "Marlene de Araujo Oliveira Meazza",
+      "hours": [
+        17
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Yasmin Cabelo",
+      "matched": true,
+      "matchedTo": "YASMIN CABELO BORGES",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": 405,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Cristian Gelain",
+      "matched": true,
+      "matchedTo": "Cristian Gelain do Nascimento",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": 405,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Patrícia Raggagnin",
+      "matched": true,
+      "matchedTo": "Patrícia Raggagnin",
+      "hours": [
+        9
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Alice",
+      "matched": true,
+      "matchedTo": "Alice",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Walquiria",
+      "matched": true,
+      "matchedTo": "Walquiria",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 22,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Anderson",
+      "matched": true,
+      "matchedTo": "Anderson",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 22,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Flávia",
+      "matched": true,
+      "matchedTo": "Flávia",
+      "hours": [
+        13
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Rosangela Novais",
+      "matched": true,
+      "matchedTo": "ROSANGELA NOVAIS",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Feliciana",
+      "matched": true,
+      "matchedTo": "Feliciana",
+      "hours": [
+        12
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Miguél Pedo",
+      "matched": true,
+      "matchedTo": "Miguél Pedo",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Onice Pedó",
+      "matched": true,
+      "matchedTo": "Onice Pedó",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Isabela Carvalho",
+      "matched": true,
+      "matchedTo": "Isabela Carvalho",
+      "hours": [
+        17
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA"
+      ],
+      "paymentValue": 250,
+      "appointmentsCreated": 8,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Aline Avila",
+      "matched": true,
+      "matchedTo": "Aline Avila",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Adriana Dra",
+      "matched": true,
+      "matchedTo": "Adriana Dra",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Paulo Marina",
+      "matched": true,
+      "matchedTo": "PAULO CESAR MACIEL YULE",
+      "hours": [
+        5
+      ],
+      "days": [],
+      "paymentValue": 315,
+      "appointmentsCreated": 0,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "André Barbosa",
+      "matched": true,
+      "matchedTo": "André Barbosa",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Chirlei Beck",
+      "matched": true,
+      "matchedTo": "Chirlei Beck",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Eliane Neves",
+      "matched": true,
+      "matchedTo": "Eliane Marques da Silva Neves",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Paulo",
+      "matched": true,
+      "matchedTo": "Paulo",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Glaucia",
+      "matched": true,
+      "matchedTo": "Glaucia",
+      "hours": [
+        18,
+        19,
+        20
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 66,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Carlos Eduardo",
+      "matched": true,
+      "matchedTo": "Carlos Eduardo Araujo Soares",
+      "hours": [
+        18,
+        19,
+        20
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 39,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Sandra Katia",
+      "matched": true,
+      "matchedTo": "Sandra Katia",
+      "hours": [
+        10
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Luciana",
+      "matched": true,
+      "matchedTo": "Luciana",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA"
+      ],
+      "paymentValue": 250,
+      "appointmentsCreated": 8,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Simone Garcia",
+      "matched": true,
+      "matchedTo": "Simone Garcia",
+      "hours": [
+        9
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 18,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Marcela",
+      "matched": true,
+      "matchedTo": "Marcela",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 14,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Leandro",
+      "matched": true,
+      "matchedTo": "Leandro",
+      "hours": [
+        19
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 14,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "André s",
+      "matched": true,
+      "matchedTo": "André S",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA"
+      ],
+      "paymentValue": 250,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Renato Facco -- 10%",
+      "matched": true,
+      "matchedTo": "Renato Ceruti Facco",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Nivaldo Paiva -10%",
+      "matched": true,
+      "matchedTo": "Nivaldo José de Paiva Filho",
+      "hours": [
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Diego",
+      "matched": true,
+      "matchedTo": "Diego",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 14,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Bia Gabbi",
+      "matched": true,
+      "matchedTo": "Bia Gabbi",
+      "hours": [
+        15,
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 36,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Luciano Man.",
+      "matched": true,
+      "matchedTo": "Luciano Man.",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 14,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Khety",
+      "matched": true,
+      "matchedTo": "Khety",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Camila Ceolin",
+      "matched": true,
+      "matchedTo": "Camila Garcia Ceolin",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Leandro Mull.",
+      "matched": true,
+      "matchedTo": "Leandro Mull.",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Renata -10%",
+      "matched": true,
+      "matchedTo": "Renata -10%",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Viviane Cabelo",
+      "matched": true,
+      "matchedTo": "Viviane Cabelo",
+      "hours": [
+        16
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Suzane Leme",
+      "matched": true,
+      "matchedTo": "Suzane Leme de Lima",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Paulo",
+      "matched": true,
+      "matchedTo": "Paulo",
+      "hours": [
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Natalia Biazoto",
+      "matched": true,
+      "matchedTo": "Natalia Biazoto",
+      "hours": [
+        15
+      ],
+      "days": [
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 5,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Tânia Biazoto",
+      "matched": true,
+      "matchedTo": "Tânia Biazoto",
+      "hours": [
+        15
+      ],
+      "days": [
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 5,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "João Miguel",
+      "matched": true,
+      "matchedTo": "João Miguel",
+      "hours": [
+        15
+      ],
+      "days": [
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 5,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Adalgisa",
+      "matched": true,
+      "matchedTo": "Adalgisa",
+      "hours": [
+        16
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Bruna Agostini 27 10%",
+      "matched": true,
+      "matchedTo": "Bruna Agostini de Paiva",
+      "hours": [
+        15,
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 315,
+      "appointmentsCreated": 26,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Dr. Julio",
+      "matched": true,
+      "matchedTo": "Dr. Julio",
+      "hours": [
+        5,
+        8
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SABADO"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 28,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Vitória Gomes",
+      "matched": true,
+      "matchedTo": "Vitória da Silva Gomes",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 550,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Ana Paula s.",
+      "matched": true,
+      "matchedTo": "Ana Paula S.",
+      "hours": [
+        17,
+        5
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 26,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Dona Zila",
+      "matched": true,
+      "matchedTo": "Dona Zila",
+      "hours": [
+        10
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Elisangela",
+      "matched": true,
+      "matchedTo": "Elisangela",
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Cristiane",
+      "matched": true,
+      "matchedTo": "Cristiane",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Fabiola",
+      "matched": true,
+      "matchedTo": "Fabiola",
+      "hours": [
+        17
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 13,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Lillyan",
+      "matched": true,
+      "matchedTo": "Lillyan",
+      "hours": [
+        7
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": 550,
+      "appointmentsCreated": 22,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Daniela Ruch",
+      "matched": true,
+      "matchedTo": "Daniela Ruch",
+      "hours": [
+        17
+      ],
+      "days": [
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 250,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Iliê Vidal",
+      "matched": true,
+      "matchedTo": "Iliê Vidal Basso",
+      "hours": [
+        15
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Kathelyn",
+      "matched": true,
+      "matchedTo": "Kathelyn",
+      "hours": [
+        6
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Nádia Rocha",
+      "matched": true,
+      "matchedTo": "Nádia A Z Rocha",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 8,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Eliezer Rocha",
+      "matched": true,
+      "matchedTo": "Eliezer Bianchi Rocha",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Tatiana",
+      "matched": true,
+      "matchedTo": "Tatiana",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Bruno Aguiar",
+      "matched": true,
+      "matchedTo": "Bruno Almeida Carvalho de Aguiar",
+      "hours": [
+        5
+      ],
+      "days": [
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 250,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Bacaninha",
+      "matched": false,
+      "hours": [
+        5
+      ],
+      "days": [],
+      "paymentValue": 350,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    },
+    {
+      "name": "Marisa",
+      "matched": true,
+      "matchedTo": "Marisa",
+      "hours": [
+        9
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Mariana Bisognin",
+      "matched": true,
+      "matchedTo": "MARIANA VIANA VIEIRA",
+      "hours": [
+        17
+      ],
+      "days": [
+        "TERCA",
+        "QUARTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 8,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Rafael Possik",
+      "matched": true,
+      "matchedTo": "Rafaela Rêgo",
+      "hours": [
+        19
+      ],
+      "days": [
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 1000,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Julia Cuel",
+      "matched": true,
+      "matchedTo": "Julia Lopes Vidal Carlesso",
+      "hours": [
+        9,
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 450,
+      "appointmentsCreated": 26,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Camila Gabbi",
+      "matched": true,
+      "matchedTo": "Camila Garcia Ceolin",
+      "hours": [
+        17
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 8,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Luciene Braga",
+      "matched": false,
+      "hours": [
+        9,
+        18
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    },
+    {
+      "name": "Tony Xandu",
+      "matched": false,
+      "hours": [
+        19
+      ],
+      "days": [
+        "SEGUNDA",
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    },
+    {
+      "name": "Tatiane Rocha",
+      "matched": true,
+      "matchedTo": "Tatiane Regina dos Santos Rocha",
+      "hours": [
+        5
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": 350,
+      "appointmentsCreated": 9,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Regis Canova",
+      "matched": true,
+      "matchedTo": "REGIS AUGUSTO KOSTER CANOVA",
+      "hours": [
+        18
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Liandra Canova",
+      "matched": true,
+      "matchedTo": "Liandra Vitoria Canova",
+      "hours": [
+        17
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Edileuza",
+      "matched": false,
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "SEXTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    },
+    {
+      "name": "Devair",
+      "matched": false,
+      "hours": [
+        16
+      ],
+      "days": [
+        "SEGUNDA",
+        "SEXTA"
+      ],
+      "paymentValue": 225,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    },
+    {
+      "name": "Leandro Batistoti",
+      "matched": true,
+      "matchedTo": "Leandro Luiz Batistella",
+      "hours": [
+        6,
+        18
+      ],
+      "days": [
+        "TERCA",
+        "QUINTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 28,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Lucas Ferreira",
+      "matched": true,
+      "matchedTo": "Lucas Ferreira de oliveira",
+      "hours": [
+        11
+      ],
+      "days": [
+        "SEGUNDA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Telma Yule",
+      "matched": true,
+      "matchedTo": "Telma Márcia Maciel yule",
+      "hours": [
+        8
+      ],
+      "days": [
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 9,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Fernanda Oliveira",
+      "matched": true,
+      "matchedTo": "Fernanda Caroline Gelain",
+      "hours": [
+        8
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": 365,
+      "appointmentsCreated": 13,
+      "paymentCreated": true,
+      "errors": []
+    },
+    {
+      "name": "Gabriela Cadoná16",
+      "matched": true,
+      "matchedTo": "Gabriela Ragagnin",
+      "hours": [],
+      "days": [],
+      "paymentValue": null,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Thamara Fagundes",
+      "matched": true,
+      "matchedTo": "Thamara Fagundes Marques",
+      "hours": [
+        9
+      ],
+      "days": [],
+      "paymentValue": null,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": []
+    },
+    {
+      "name": "Andressa Lima",
+      "matched": false,
+      "hours": [
+        8
+      ],
+      "days": [
+        "SEGUNDA",
+        "QUARTA",
+        "SEXTA"
+      ],
+      "paymentValue": null,
+      "appointmentsCreated": 0,
+      "paymentCreated": false,
+      "errors": [
+        "Member not found in database"
+      ]
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "Evone: No valid schedule (hours: 0, days: 3)",
+    "Paulo Marina: No valid schedule (hours: 1, days: 0)",
+    "Member not found: Bacaninha",
+    "Member not found: Luciene Braga",
+    "Member not found: Tony Xandu",
+    "Member not found: Edileuza",
+    "Member not found: Devair",
+    "Gabriela Cadoná16: No valid schedule (hours: 0, days: 0)",
+    "Thamara Fagundes: No valid schedule (hours: 1, days: 0)",
+    "Member not found: Andressa Lima"
+  ]
+}

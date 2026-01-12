@@ -83,12 +83,12 @@ export default function LoginPage() {
             <div className="relative group">
               {/* Glow effect behind logo */}
               <div className="absolute inset-0 bg-orange-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity" />
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-3 shadow-lg shadow-orange-600/50 transition-all hover:scale-105 hover:shadow-orange-500/60 overflow-hidden">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-3 shadow-lg shadow-orange-600/50 transition-all hover:scale-105 hover:shadow-orange-500/60 overflow-hidden">
                 <Image 
                   src="/logo.svg" 
                   alt="Gabi Studio" 
-                  width={80} 
-                  height={80} 
+                  width={96} 
+                  height={96} 
                   className="brightness-0 invert object-contain"
                 />
               </div>
