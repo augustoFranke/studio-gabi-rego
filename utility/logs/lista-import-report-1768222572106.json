@@ -1,0 +1,184 @@
+{
+  "totalEntries": 311,
+  "processedEntries": 311,
+  "skippedEntries": 0,
+  "membersFound": 89,
+  "membersCreated": 39,
+  "membersFailed": 0,
+  "horariosCreated": 0,
+  "appointmentsCreated": 1305,
+  "appointmentsSkipped": 64,
+  "appointmentsFailed": 0,
+  "byDay": {
+    "SEGUNDA": 76,
+    "TERCA": 47,
+    "QUARTA": 63,
+    "QUINTA": 49,
+    "SEXTA": 73,
+    "SABADO": 3
+  },
+  "byInstructor": {
+    "GABI": 178,
+    "ESTAGIÁRIO": 133
+  },
+  "errors": [],
+  "warnings": [],
+  "createdMembers": [
+    {
+      "name": "Ana Paula",
+      "email": "ana.paula@placeholder.local"
+    },
+    {
+      "name": "Patricia",
+      "email": "patricia@placeholder.local"
+    },
+    {
+      "name": "Dra. Adriana",
+      "email": "dra..adriana@placeholder.local"
+    },
+    {
+      "name": "Be",
+      "email": "be@placeholder.local"
+    },
+    {
+      "name": "Kethy",
+      "email": "kethy@placeholder.local"
+    },
+    {
+      "name": "Walquíria",
+      "email": "walquria@placeholder.local"
+    },
+    {
+      "name": "Cynthia",
+      "email": "cynthia@placeholder.local"
+    },
+    {
+      "name": "Dani Tambosi",
+      "email": "dani.tambosi@placeholder.local"
+    },
+    {
+      "name": "Isa. Carvalho",
+      "email": "isa..carvalho@placeholder.local"
+    },
+    {
+      "name": "Bruna Agost.",
+      "email": "bruna.agost.@placeholder.local"
+    },
+    {
+      "name": "Devair",
+      "email": "devair@placeholder.local"
+    },
+    {
+      "name": "Edileuza",
+      "email": "edileuza@placeholder.local"
+    },
+    {
+      "name": "Dani Schwen.",
+      "email": "dani.schwen.@placeholder.local"
+    },
+    {
+      "name": "Julio (rita)",
+      "email": "julio.rita@placeholder.local"
+    },
+    {
+      "name": "Giovanna",
+      "email": "giovanna@placeholder.local"
+    },
+    {
+      "name": "Camila Gabbi",
+      "email": "camila.gabbi@placeholder.local"
+    },
+    {
+      "name": "Aline Ávila",
+      "email": "aline.vila@placeholder.local"
+    },
+    {
+      "name": "Dra. Glaucia",
+      "email": "dra..glaucia@placeholder.local"
+    },
+    {
+      "name": "Leandro Mul.",
+      "email": "leandro.mul.@placeholder.local"
+    },
+    {
+      "name": "Suzy",
+      "email": "suzy@placeholder.local"
+    },
+    {
+      "name": "Paulo Suzy",
+      "email": "paulo.suzy@placeholder.local"
+    },
+    {
+      "name": "Ana Flávia",
+      "email": "ana.flvia@placeholder.local"
+    },
+    {
+      "name": "Bacaninha",
+      "email": "bacaninha@placeholder.local"
+    },
+    {
+      "name": "Belinha",
+      "email": "belinha@placeholder.local"
+    },
+    {
+      "name": "Lilyan",
+      "email": "lilyan@placeholder.local"
+    },
+    {
+      "name": "Charlene",
+      "email": "charlene@placeholder.local"
+    },
+    {
+      "name": "Leandro Gas.",
+      "email": "leandro.gas.@placeholder.local"
+    },
+    {
+      "name": "Leandro Die.",
+      "email": "leandro.die.@placeholder.local"
+    },
+    {
+      "name": "Nilvado",
+      "email": "nilvado@placeholder.local"
+    },
+    {
+      "name": "Dr. Adriana",
+      "email": "dr..adriana@placeholder.local"
+    },
+    {
+      "name": "Yasmn",
+      "email": "yasmn@placeholder.local"
+    },
+    {
+      "name": "Vitória Bast.",
+      "email": "vitria.bast.@placeholder.local"
+    },
+    {
+      "name": "Bruna Agos.",
+      "email": "bruna.agos.@placeholder.local"
+    },
+    {
+      "name": "Carlos Edu.",
+      "email": "carlos.edu.@placeholder.local"
+    },
+    {
+      "name": "Lu Braga",
+      "email": "lu.braga@placeholder.local"
+    },
+    {
+      "name": "Dra Adriana",
+      "email": "dra.adriana@placeholder.local"
+    },
+    {
+      "name": "Tania Biazz.",
+      "email": "tania.biazz.@placeholder.local"
+    },
+    {
+      "name": "Bê",
+      "email": "b@placeholder.local"
+    },
+    {
+      "name": "Victoria Meaz.",
+      "email": "victoria.meaz.@placeholder.local"
+    }
+  ]
+}
