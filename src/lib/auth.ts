@@ -3,6 +3,10 @@ import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // Required for Vercel deployment - trust the proxy headers
+  trustHost: true,
+  // Explicitly use NEXTAUTH_SECRET for backward compatibility
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   providers: [
     Credentials({
       name: "credentials",
