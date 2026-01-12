@@ -33,12 +33,12 @@ const formSchema = z.object({
   nome: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal('')),
   senha: z.string().optional(),
-  cpf: z.string().optional().refine((val) => !val || validarCPF(val), {
+  cpf: z.string().min(1, "CPF é obrigatório").refine((val) => validarCPF(val), {
     message: "CPF inválido",
   }),
   rg: z.string().optional(),
-  telefone: z.string().optional(),
-  dataNascimento: z.string().optional(),
+  telefone: z.string().min(1, "Telefone é obrigatório"),
+  dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
   endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional(),
