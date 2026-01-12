@@ -1,0 +1,250 @@
+{
+  "totalRows": 135,
+  "processedRows": 104,
+  "skippedRows": 31,
+  "membersFound": 36,
+  "membersCreated": 68,
+  "membersFailed": 0,
+  "horariosCreated": 0,
+  "horariosReused": 0,
+  "appointmentsCreated": 784,
+  "appointmentsSkipped": 13,
+  "appointmentsFailed": 0,
+  "errors": [
+    {
+      "row": 116,
+      "memberName": "João Miguel",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-01 at 15:00 (10/10)"
+    },
+    {
+      "row": 116,
+      "memberName": "João Miguel",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-08 at 15:00 (10/10)"
+    },
+    {
+      "row": 116,
+      "memberName": "João Miguel",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-15 at 15:00 (10/10)"
+    },
+    {
+      "row": 116,
+      "memberName": "João Miguel",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-22 at 15:00 (10/10)"
+    },
+    {
+      "row": 116,
+      "memberName": "João Miguel",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-29 at 15:00 (10/10)"
+    },
+    {
+      "row": 119,
+      "memberName": "Bruna Agostini",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-07 at 15:00 (10/10)"
+    },
+    {
+      "row": 119,
+      "memberName": "Bruna Agostini",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-14 at 15:00 (10/10)"
+    },
+    {
+      "row": 119,
+      "memberName": "Bruna Agostini",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-21 at 15:00 (10/10)"
+    },
+    {
+      "row": 119,
+      "memberName": "Bruna Agostini",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-28 at 15:00 (10/10)"
+    },
+    {
+      "row": 133,
+      "memberName": "Iliê Vidal",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-07 at 15:00 (10/10)"
+    },
+    {
+      "row": 133,
+      "memberName": "Iliê Vidal",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-14 at 15:00 (10/10)"
+    },
+    {
+      "row": 133,
+      "memberName": "Iliê Vidal",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-21 at 15:00 (10/10)"
+    },
+    {
+      "row": 133,
+      "memberName": "Iliê Vidal",
+      "type": "appointment",
+      "message": "Slot full: 2026-01-28 at 15:00 (10/10)"
+    }
+  ],
+  "warnings": [
+    {
+      "row": 8,
+      "memberName": "(CASAL)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 11,
+      "memberName": "Família",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 13,
+      "memberName": "Cheio)",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 16,
+      "memberName": "Evone",
+      "message": "Missing data - Time slots: 0, Days: 1"
+    },
+    {
+      "row": 19,
+      "memberName": "Casal",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 22,
+      "memberName": "(CASAL)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 25,
+      "memberName": "Família",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 35,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 36,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 47,
+      "memberName": "(BELINHA)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 57,
+      "memberName": "(CASAL) 25",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 59,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 61,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 64,
+      "memberName": "(CASAL)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 66,
+      "memberName": "(CASAL)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 70,
+      "memberName": "13",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 74,
+      "memberName": "(7)",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 81,
+      "memberName": "Paulo Marina",
+      "message": "Missing data - Time slots: 1, Days: 0"
+    },
+    {
+      "row": 84,
+      "memberName": "Eliane Neves",
+      "message": "Missing data - Time slots: 1, Days: 0"
+    },
+    {
+      "row": 85,
+      "memberName": "(CASAL) 21",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 86,
+      "memberName": "Paulo",
+      "message": "Missing data - Time slots: 1, Days: 0"
+    },
+    {
+      "row": 88,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 90,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 98,
+      "memberName": "10%",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 100,
+      "memberName": "-10%",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 102,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 103,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 118,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 120,
+      "memberName": "27 10%",
+      "message": "Missing data - Time slots: 0, Days: 0"
+    },
+    {
+      "row": 121,
+      "memberName": "Unknown",
+      "message": "Invalid or missing name"
+    },
+    {
+      "row": 139,
+      "memberName": "Bacaninha",
+      "message": "Missing data - Time slots: 1, Days: 0"
+    }
+  ]
+}

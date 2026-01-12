@@ -1,0 +1,54 @@
+import { MemberForm } from "@/components/forms/MemberForm"
+import { ChevronLeft } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { prisma } from "@/lib/prisma"
+import { notFound } from "next/navigation"
+
+interface EditarMembroPageProps {
+    params: Promise<{
+        id: string
+    }>
+}
+
+export default async function EditarMembroPage({ params }: EditarMembroPageProps) {
+    const { id } = await params
+
+    const membro = await prisma.membro.findUnique({
+        where: { id },
+        include: {
+            usuario: {
+                select: {
+                    nome: true,
+                    email: true,
+                },
+            },
+        },
+    })
+
+    if (!membro) {
+        notFound()
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/membros/${id}`}>
+                        <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                </Button>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Editar Membro</h1>
+                    <p className="text-muted-foreground">
+                        {membro.usuario.nome}
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-4xl">
+                <MemberForm initialData={membro} mode="edit" />
+            </div>
+        </div>
+    )
+}
