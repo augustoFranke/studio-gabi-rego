@@ -8,8 +8,9 @@
  * Format expected:
  * - Day sections: SEGUNDA MANHÃ/TARDE, TERÇA MANHÃ/TARDE, etc.
  * - Time slots: 5H, 6H, 7H... 19H
+ * - Each time slot has 5 lines (positions 1-5)
  * - Members listed as "1\. NAME", "2\. NAME", etc.
- * - Two instructor columns: GABI and ESTAGIÁRIO
+ * - Three columns: GABI, ESTAGIÁRIO, ESTAGIÁRIO 2
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
@@ -163,15 +164,6 @@ function cleanMemberName(raw: string): string {
   return name
 }
 
-function parseHour(hourStr: string): number | null {
-  // Extract hour from formats like "5H", "10H", "12H ALMOÇO"
-  const match = hourStr.match(/^(\d+)H/)
-  if (match) {
-    return parseInt(match[1])
-  }
-  return null
-}
-
 // ==================== PARSING FUNCTIONS ====================
 
 function parseListaMd(content: string): ScheduleEntry[] {
@@ -181,41 +173,35 @@ function parseListaMd(content: string): ScheduleEntry[] {
   let currentDay: DiaSemana | null = null
   let currentHour: number | null = null
   
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
     const trimmed = line.trim()
     
-    // Skip empty lines and separator lines
+    // Skip empty lines and separator lines (just dashes)
     if (!trimmed || trimmed.match(/^-+$/)) continue
     
     // Detect day section header
-    // Format: "SEGUNDA MANHÃ" or "TERÇA TARDE" etc.
-    const dayMatch = trimmed.match(/^(SEGUNDA|TERÇA|TERCA|QUARTA|QUINTA|SEXTA|SÁBADO|SABADO|SABÁDO)\s*(MANHÃ|TARDE)?/i)
+    // Format: "SEGUNDA MANHÃ      GABI              ESTÁGIÁRIO         ESTAGIÁRIO 2"
+    const dayMatch = trimmed.match(/^(SEGUNDA|TERÇA|TERCA|QUARTA|QUINTA|SEXTA|SÁBADO|SABADO|SABÁDO)\s+(MANHÃ|TARDE)/i)
     if (dayMatch) {
       const dayName = dayMatch[1].toUpperCase()
       currentDay = DAY_NAME_MAP[dayName] || null
       continue
     }
     
-    // Detect hour line
-    // Format: "5H                 1\. LUANA N       1\. ROSANGELA"
-    const hourMatch = trimmed.match(/^(\d+H(?:\s+ALMOÇO)?)\s+/)
+    // Check if this line starts with an hour (e.g., "5H", "10H", "12H ALMOÇO")
+    const hourMatch = line.match(/^\s*(\d+)H\b/)
     if (hourMatch) {
-      currentHour = parseHour(hourMatch[1])
-      
-      if (currentDay && currentHour !== null) {
-        // Parse the rest of the line for member names
-        const restOfLine = trimmed.slice(hourMatch[0].length)
-        const parsed = parseScheduleLine(restOfLine, currentDay, currentHour)
-        entries.push(...parsed)
-      }
-      continue
+      currentHour = parseInt(hourMatch[1])
     }
     
-    // Check if this is a continuation line with member entries
-    // These lines start with spaces and contain "1\." or "2\." etc patterns
-    if (currentDay && currentHour !== null && trimmed.match(/^\d+\\?\.\s/)) {
-      const parsed = parseScheduleLine(trimmed, currentDay, currentHour)
-      entries.push(...parsed)
+    // If we have a valid day and hour, parse the member entries from this line
+    if (currentDay && currentHour !== null) {
+      // Check if this line has numbered entries (1., 2., etc.)
+      if (line.match(/\d+\\?\.\s*\S/) || line.match(/\d+\.\S/)) {
+        const lineEntries = parseScheduleLine(line, currentDay, currentHour)
+        entries.push(...lineEntries)
+      }
     }
   }
   
@@ -225,40 +211,34 @@ function parseListaMd(content: string): ScheduleEntry[] {
 function parseScheduleLine(line: string, day: DiaSemana, hour: number): ScheduleEntry[] {
   const entries: ScheduleEntry[] = []
   
-  // Split by multiple spaces to separate GABI and ESTAGIÁRIO columns
-  // The format is typically: "GABI_ENTRIES         ESTAGIÁRIO_ENTRIES"
-  const parts = line.split(/\s{3,}/)
+  // Remove the hour prefix if present (e.g., "5H", "10H ALMOÇO")
+  let cleanLine = line.replace(/^\s*\d+H(\s+ALMOÇO)?\s*/, '')
   
-  for (let partIndex = 0; partIndex < parts.length; partIndex++) {
-    const part = parts[partIndex].trim()
-    if (!part) continue
+  // The format has columns separated by multiple spaces
+  // Column 1: GABI entries
+  // Column 2+: ESTAGIÁRIO entries
+  
+  // Split by 2+ spaces to get columns
+  const columns = cleanLine.split(/\s{2,}/).filter(col => col.trim())
+  
+  for (let colIndex = 0; colIndex < columns.length; colIndex++) {
+    const column = columns[colIndex].trim()
+    if (!column) continue
     
-    // Determine instructor based on column position
-    // First column (or any GABI column) = GABI, second column = ESTAGIÁRIO
-    const instructor: 'GABI' | 'ESTAGIÁRIO' = partIndex === 0 ? 'GABI' : 'ESTAGIÁRIO'
+    // Determine instructor - first column is GABI, rest are ESTAGIÁRIO
+    const instructor: 'GABI' | 'ESTAGIÁRIO' = colIndex === 0 ? 'GABI' : 'ESTAGIÁRIO'
     
-    // Extract all numbered entries from this part
-    // Format: "1\. NAME" or "2.NAME" etc
-    const entryPattern = /\d+\\?\.\s*([^0-9]+?)(?=\s*\d+\\?\.|$)/g
-    let match
+    // Handle case where multiple entries might be in the same column (e.g., "3\. ISA. CARVALHO 3\. BRUNA")
+    // Split by number prefix patterns and process each
+    const entryParts = column.split(/(?=\d+\\?\.\s*)/).filter(p => p.trim())
     
-    while ((match = entryPattern.exec(part)) !== null) {
-      const name = cleanMemberName(match[1])
-      if (name && name.length >= 2) {
-        entries.push({
-          day,
-          hour,
-          memberName: name,
-          instructor
-        })
-      }
-    }
-    
-    // Also try simple pattern for single entries
-    if (entries.length === 0) {
-      const simpleMatch = part.match(/\d+\\?\.\s*(.+)/)
-      if (simpleMatch) {
-        const name = cleanMemberName(simpleMatch[1])
+    for (const part of entryParts) {
+      // Extract member name from format like "1\. LUANA N" or "2.DR JULIO"
+      const nameMatch = part.match(/^\d+\\?\.\s*(.+)$/)
+      if (nameMatch) {
+        const rawName = nameMatch[1]
+        const name = cleanMemberName(rawName)
+        
         if (name && name.length >= 2) {
           entries.push({
             day,
@@ -277,6 +257,9 @@ function parseScheduleLine(line: string, day: DiaSemana, hour: number): Schedule
 // ==================== DATABASE FUNCTIONS ====================
 
 async function findOrCreateMember(name: string, report: ImportReport): Promise<string | null> {
+  // Normalize for matching
+  const searchName = name.toLowerCase().trim()
+  
   // Try exact match (case-insensitive)
   const exactMatch = await prisma.membro.findFirst({
     where: {
@@ -295,12 +278,12 @@ async function findOrCreateMember(name: string, report: ImportReport): Promise<s
     return exactMatch.id
   }
   
-  // Try fuzzy match on first + last name
-  const nameParts = name.split(' ').filter(p => p.length > 2)
+  // Try fuzzy match on first name
+  const nameParts = name.split(' ').filter(p => p.length > 1)
   if (nameParts.length >= 1) {
     const firstName = nameParts[0]
     
-    const fuzzyMatch = await prisma.membro.findFirst({
+    const fuzzyMatches = await prisma.membro.findMany({
       where: {
         usuario: {
           nome: {
@@ -312,22 +295,23 @@ async function findOrCreateMember(name: string, report: ImportReport): Promise<s
       include: { usuario: true },
     })
     
-    if (fuzzyMatch) {
-      // Check if it's a reasonable match
-      const matchName = fuzzyMatch.usuario.nome.toUpperCase()
-      const searchName = name.toUpperCase()
+    // Try to find best match
+    for (const match of fuzzyMatches) {
+      const matchName = match.usuario.nome.toLowerCase()
       
-      // If last name exists, verify it
+      // If names have multiple parts, check if last name also matches
       if (nameParts.length >= 2) {
-        const lastName = nameParts[nameParts.length - 1]
-        if (matchName.includes(lastName.toUpperCase())) {
+        const lastName = nameParts[nameParts.length - 1].toLowerCase()
+        if (matchName.includes(lastName)) {
           report.membersFound++
-          return fuzzyMatch.id
+          return match.id
         }
       } else {
-        // Single name match
-        report.membersFound++
-        return fuzzyMatch.id
+        // Single name - check for close match
+        if (matchName.startsWith(searchName) || searchName.startsWith(matchName.split(' ')[0])) {
+          report.membersFound++
+          return match.id
+        }
       }
     }
   }
@@ -497,7 +481,17 @@ async function main() {
   // Parse the markdown table
   console.log('🔍 Parsing schedule...')
   const entries = parseListaMd(fileContent)
+  
+  // Show sample of parsed entries for verification
   console.log(`   Found ${entries.length} schedule entries\n`)
+  
+  if (entries.length > 0) {
+    console.log('📋 Sample entries (first 10):')
+    entries.slice(0, 10).forEach(e => {
+      console.log(`   ${e.day} ${e.hour}H - ${e.memberName} (${e.instructor})`)
+    })
+    console.log()
+  }
   
   // Initialize report
   const report: ImportReport = {
