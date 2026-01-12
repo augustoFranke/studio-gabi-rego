@@ -71,12 +71,12 @@ export function AdminSidebar() {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-1.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-2">
               <Image 
                 src="/logo.svg" 
                 alt="Gabi Studio" 
-                width={36} 
-                height={36} 
+                width={44} 
+                height={44} 
                 className="brightness-0 invert" 
               />
             </div>
