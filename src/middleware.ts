@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     // Use getToken which is Edge-compatible (doesn't need Prisma)
     const token = await getToken({ 
         req: request,
