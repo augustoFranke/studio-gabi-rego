@@ -1,0 +1,47 @@
+{
+  "totalEntries": 124,
+  "processedEntries": 76,
+  "skippedEntries": 2,
+  "membersFound": 74,
+  "membersNotFound": [
+    "Paulo Marina",
+    "Tony Xandu"
+  ],
+  "paymentsCreated": 6,
+  "paymentsSkipped": 68,
+  "paymentsFailed": 0,
+  "totalAmount": 1965,
+  "errors": [],
+  "successfulPayments": [
+    {
+      "name": "Mariana (cobrar",
+      "value": 465,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Bacaninha",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Mariana Borges Bisognin",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Camila Gabbi",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Edileuza",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Devair",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    }
+  ]
+}
