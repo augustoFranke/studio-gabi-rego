@@ -6,10 +6,10 @@ import { z } from 'zod'
 import { Prisma, StatusPagamento } from '@prisma/client'
 
 const pagamentoSchema = z.object({
-  membroId: z.string().min(1, 'Membro é obrigatório'),
-  planoId: z.string().min(1, 'Plano é obrigatório'),
-  valor: z.number().min(0, 'Valor deve ser positivo'),
-  dataVencimento: z.string().min(1, 'Data de vencimento é obrigatória'),
+  membroId: z.string().optional(),
+  planoId: z.string().optional(),
+  valor: z.number().optional(),
+  dataVencimento: z.string().optional(),
   formaPagamento: z.string().optional(),
   observacao: z.string().optional(),
 })

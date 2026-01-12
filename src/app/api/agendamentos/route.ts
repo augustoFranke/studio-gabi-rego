@@ -6,9 +6,9 @@ import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 
 const agendamentoSchema = z.object({
-  membroId: z.string().min(1, 'Membro é obrigatório'),
-  horarioId: z.string().min(1, 'Horário é obrigatório'),
-  data: z.string().min(1, 'Data é obrigatória'),
+  membroId: z.string().optional(),
+  horarioId: z.string().optional(),
+  data: z.string().optional(),
 })
 
 // GET /api/agendamentos - Listar agendamentos

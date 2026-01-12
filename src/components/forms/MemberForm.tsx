@@ -30,17 +30,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { validarCPF, formatarCPF, formatarTelefone } from "@/lib/validators"
 
 const formSchema = z.object({
-  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
-  senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  cpf: z.string().refine((val) => validarCPF(val), {
+  nome: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal('')),
+  senha: z.string().optional(),
+  cpf: z.string().optional().refine((val) => !val || validarCPF(val), {
     message: "CPF inválido",
   }),
   rg: z.string().optional(),
-  telefone: z.string().min(10, "Telefone inválido"),
-  dataNascimento: z.string().min(10, "Data de nascimento é obrigatória"),
+  telefone: z.string().optional(),
+  dataNascimento: z.string().optional(),
   endereco: z.string().optional(),
-  planoId: z.string().min(1, "Selecione um plano"),
+  planoId: z.string().optional(),
   precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional(),
 })
 

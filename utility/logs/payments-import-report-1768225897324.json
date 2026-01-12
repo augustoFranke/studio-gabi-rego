@@ -1,0 +1,387 @@
+{
+  "totalEntries": 124,
+  "processedEntries": 76,
+  "skippedEntries": 2,
+  "membersFound": 74,
+  "membersNotFound": [
+    "Paulo Marina",
+    "Tony Xandu"
+  ],
+  "paymentsCreated": 74,
+  "paymentsSkipped": 0,
+  "paymentsFailed": 0,
+  "totalAmount": 26690,
+  "errors": [],
+  "successfulPayments": [
+    {
+      "name": "Geni Stray",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Leandro Diemer",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Alcimara Ferreira Cardoso",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Davi da Silva Muniz",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Mariana (cobrar",
+      "value": 465,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "LOIDE LOPES",
+      "value": 450,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Marili Julho",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Júlio",
+      "value": 585,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Rita De Cassia",
+      "value": 405,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Sandra",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Patrícia Cristiane Chagas Alves Belone",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "ALEXANDRE ANTONIO SANTOS DE SOUZA",
+      "value": 225,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "KARINE BLUME DE SOUZA",
+      "value": 315,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "GIOVANA BLUME DE SOUZA",
+      "value": 225,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Victória",
+      "value": 200,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Victor",
+      "value": 200,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Rozimeire",
+      "value": 200,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Paulo Curti",
+      "value": 750,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Lorenzo",
+      "value": 315,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Marina",
+      "value": 405,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Rosineide Silvano dos Santos Muniz",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Vitória Meazza",
+      "value": 450,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Lorraine Vidal",
+      "value": 450,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Luzia",
+      "value": 237.5,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Manoel",
+      "value": 237.5,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "MARIA ISABEL DE ALVARENGA MADUREIRA",
+      "value": 300,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "JARBAS BARBOSA",
+      "value": 300,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "João",
+      "value": 300,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Ana Flávia Meazza",
+      "value": 550,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "DANIELLE SCHWENGBER",
+      "value": 600,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "LUANA DA SILVA NEVES",
+      "value": 550,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Carla Dilene Fernandes Almeida Lima",
+      "value": 550,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Marlene de Araujo Oliveira Meazza",
+      "value": 450,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "YASMIN CABELO BORGES",
+      "value": 405,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Cristian Gelain do Nascimento",
+      "value": 405,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Patrícia Raggagnin",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Flávia",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "ROSANGELA NOVAIS",
+      "value": 450,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Feliciana",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Miguél Pedo",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Onice Pedó",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Isabela Carvalho",
+      "value": 250,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Adriana Dra",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "André Barbosa",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Luciana",
+      "value": 250,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Marcela",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Leandro",
+      "value": 315,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "André S",
+      "value": 250,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Nivaldo José de Paiva Filho",
+      "value": 315,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Diego",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Suzane Leme de Lima",
+      "value": 315,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Paulo",
+      "value": 315,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Bruna Agostini de Paiva",
+      "value": 315,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Vitória da Silva Gomes",
+      "value": 550,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Ana Paula S.",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Dona Zila",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Lillyan",
+      "value": 550,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Daniela Ruch",
+      "value": 250,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Iliê Vidal Basso",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Kathelyn",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Nádia A Z Rocha",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Eliezer Bianchi Rocha",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Tatiana",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Bruno Almeida Carvalho de Aguiar",
+      "value": 250,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Bacaninha",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Marisa",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Mariana Borges Bisognin",
+      "value": 350,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Rafaela Rêgo",
+      "value": 1000,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Julia Lopes Vidal Carlesso",
+      "value": 450,
+      "plano": "(assigned plan)"
+    },
+    {
+      "name": "Camila Gabbi",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Tatiane Regina dos Santos Rocha",
+      "value": 350,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Edileuza",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Devair",
+      "value": 225,
+      "plano": "5x/semana - Exclusivo Estagiários"
+    },
+    {
+      "name": "Fernanda Caroline Gelain",
+      "value": 365,
+      "plano": "(assigned plan)"
+    }
+  ]
+}
