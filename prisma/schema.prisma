@@ -88,6 +88,7 @@ model Membro {
   pagamentos      Pagamento[]
   fichasTreino    FichaTreino[]
   notificacoes    Notificacao[]
+  anamnese        Anamnese?
 
   @@map("membros")
 }
@@ -221,6 +222,71 @@ model Notificacao {
   membro          Membro?         @relation(fields: [membroId], references: [id], onDelete: Cascade)
 
   @@map("notificacoes")
+}
+
+// Anamnese do membro
+model Anamnese {
+  id                        String    @id @default(cuid())
+  membroId                  String    @unique @map("membro_id")
+
+  // Basic info
+  altura                    String?
+  pesoAtual                 String?   @map("peso_atual")
+  objetivo                  String?
+
+  // Activity
+  praticaAtividade          String?   @map("pratica_atividade")
+  praticaAtividadeQual      String?   @map("pratica_atividade_qual")
+  tempoSedentario           String?   @map("tempo_sedentario")
+
+  // Medical history
+  condicaoMedica            String?   @map("condicao_medica")
+  condicaoMedicaQual        String?   @map("condicao_medica_qual")
+  lesao                     String?
+  lesaoQual                 String?   @map("lesao_qual")
+  restricaoMovimento        String?   @map("restricao_movimento")
+  restricaoMovimentoQual    String?   @map("restricao_movimento_qual")
+  desconfortoMovimento      String?   @map("desconforto_movimento")
+  desconfortoMovimentoQual  String?   @map("desconforto_movimento_qual")
+  problemasOrtopedicos      String?   @map("problemas_ortopedicos")
+  problemasOrtopedicosQual  String?   @map("problemas_ortopedicos_qual")
+  medicamentoControlado     String?   @map("medicamento_controlado")
+  medicamentoControladoQual String?   @map("medicamento_controlado_qual")
+  obesoSobrepeso            String?   @map("obeso_sobrepeso")
+  colesterolElevado         String?   @map("colesterol_elevado")
+  taquicardia               String?
+  doencasCardiacas          String?   @map("doencas_cardiacas")
+  diabetes                  String?
+  dificuldadeExercicio      String?   @map("dificuldade_exercicio")
+
+  // Women-specific
+  cicloMenstrual            String?   @map("ciclo_menstrual")
+
+  // Experience
+  experienciaMusculacao     String?   @map("experiencia_musculacao")
+  ondeConheceu              String?   @map("onde_conheceu")
+  expectativas              String?
+
+  // PAR-Q
+  parq1                     String?
+  parq2                     String?
+  parq3                     String?
+  parq4                     String?
+  parq5                     String?
+  parq6                     String?
+  parq7                     String?
+
+  // NextFit sync
+  nextfitAvaliacaoId        String?   @map("nextfit_avaliacao_id")
+  sincronizadoEm            DateTime? @map("sincronizado_em")
+
+  criadoEm                  DateTime  @default(now()) @map("criado_em")
+  atualizadoEm              DateTime  @updatedAt @map("atualizado_em")
+
+  // Relations
+  membro                    Membro    @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("anamneses")
 }
 
 // Configurações gerais do sistema

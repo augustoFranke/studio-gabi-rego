@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
@@ -52,6 +53,7 @@ export default function TrainingPlanGeneratorPage() {
     const [memberSelectOpen, setMemberSelectOpen] = useState(false);
 
     const [date, setDate] = useState('');
+    const [observacoes, setObservacoes] = useState('');
     const [sessions, setSessions] = useState<Session[]>([]);
     const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
     const [mounted, setMounted] = useState(false);
@@ -207,6 +209,7 @@ export default function TrainingPlanGeneratorPage() {
         return {
             aluno: selectedMember?.usuario.nome || '',
             date,
+            observacoes: observacoes.trim() || undefined,
             sessions: validSessions,
         };
     };
@@ -249,6 +252,7 @@ export default function TrainingPlanGeneratorPage() {
                     membroId: selectedMemberId,
                     nome: `Treino ${date}`,
                     data: date,
+                    observacoes: observacoes.trim() || undefined,
                     exercicios,
                 }),
             });
@@ -348,6 +352,7 @@ export default function TrainingPlanGeneratorPage() {
                     membroId: selectedMemberId,
                     nome: `Treino ${date}`,
                     data: date,
+                    observacoes: observacoes.trim() || undefined,
                     exercicios,
                 }),
             });
@@ -507,6 +512,19 @@ export default function TrainingPlanGeneratorPage() {
                                 className="bg-background"
                             />
                         </div>
+                    </div>
+                    <div className="mt-6 space-y-2">
+                        <Label htmlFor="observacoes" className="font-medium text-base flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Observações
+                        </Label>
+                        <Textarea
+                            id="observacoes"
+                            placeholder="Observações gerais sobre o treino..."
+                            value={observacoes}
+                            onChange={(e) => setObservacoes(e.target.value)}
+                            className="bg-background min-h-[80px]"
+                        />
                     </div>
                 </CardContent>
             </Card>

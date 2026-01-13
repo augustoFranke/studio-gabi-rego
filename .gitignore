@@ -54,3 +54,19 @@ next-env.d.ts
 
 # utility exports (sensitive data)
 /utility/csv/
+
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Plan/working files (not for repo)
+/plans/
+ACTION_PLAN.md
+DEPLOYMENT_MONITORING.md
+lista.md
+*.docx
+
+# Temporary/generated files
+/tmp/
+*.log

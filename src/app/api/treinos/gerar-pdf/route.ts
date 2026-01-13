@@ -19,6 +19,7 @@ interface Session {
 interface TrainingPDFData {
   aluno: string
   date: string
+  observacoes?: string
   sessions: Session[]
 }
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: TrainingPDFData = await request.json()
-    const { aluno, date, sessions } = body
+    const { aluno, date, observacoes, sessions } = body
 
     if (!aluno || !date || !sessions || sessions.length === 0) {
       return NextResponse.json(
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
     const pdfData = {
       aluno,
       date,
+      observacoes: observacoes || undefined,
       sessions: validSessions,
     }
 
