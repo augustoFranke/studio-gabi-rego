@@ -9,7 +9,7 @@ const membroSchema = z.object({
   nome: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   senha: z.string().optional(),
-  cpf: z.string({ required_error: "CPF é obrigatório" }).min(1, "CPF é obrigatório"),
+  cpf: z.string().min(1, "CPF é obrigatório"),
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),
