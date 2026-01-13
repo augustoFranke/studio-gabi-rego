@@ -2,12 +2,21 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, ArrowLeft, AlertTriangle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -58,10 +67,13 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const [loading, setLoading] = useState(true);
     const [treino, setTreino] = useState<Treino | null>(null);
     const [date, setDate] = useState('');
+    const [observacoes, setObservacoes] = useState('');
     const [sessions, setSessions] = useState<Session[]>([]);
     const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     // Load training data
     useEffect(() => {
@@ -72,6 +84,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     const data = await response.json();
                     setTreino(data);
                     setDate(data.data || '');
+                    setObservacoes(data.observacoes || '');
 
                     // Convert exercises to sessions format
                     const sessionsMap = new Map<string, Exercise[]>();
@@ -252,6 +265,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 body: JSON.stringify({
                     nome: treino?.nome,
                     data: date,
+                    observacoes: observacoes.trim() || undefined,
                     exercicios,
                 }),
             });
@@ -281,6 +295,29 @@ export default function EditarTreinoPage({ params }: PageProps) {
             toast.error('Erro ao gerar PDF');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`/api/treinos/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Erro ao excluir treino');
+            }
+
+            toast.success('Treino excluído com sucesso!');
+            router.push('/treinos');
+        } catch (error) {
+            console.error('Error deleting training:', error);
+            toast.error(error instanceof Error ? error.message : 'Erro ao excluir treino');
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
         }
     };
 
@@ -315,6 +352,16 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 </div>
 
                 <div className="flex gap-2">
+                    <Button
+                        variant="destructive"
+                        className="gap-2"
+                        disabled={isDeleting || isSaving}
+                        onClick={() => setShowDeleteDialog(true)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                    </Button>
+
                     <Button
                         variant="outline"
                         className="gap-2"
@@ -374,6 +421,19 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                 className="bg-background"
                             />
                         </div>
+                    </div>
+                    <div className="mt-6 space-y-2">
+                        <Label htmlFor="observacoes" className="font-medium text-base flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Observações
+                        </Label>
+                        <Textarea
+                            id="observacoes"
+                            placeholder="Observações gerais sobre o treino..."
+                            value={observacoes}
+                            onChange={(e) => setObservacoes(e.target.value)}
+                            className="bg-background min-h-[80px]"
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -498,6 +558,44 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     <option key={i} value={name} />
                 ))}
             </datalist>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            Excluir Treino
+                        </DialogTitle>
+                        <DialogDescription>
+                            Tem certeza que deseja excluir este treino de <strong>{treino.membro.usuario.nome}</strong>? Esta ação não pode ser desfeita.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleteDialog(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Excluindo...
+                                </>
+                            ) : (
+                                'Excluir'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -21,7 +21,8 @@ from reportlab.platypus import Table, TableStyle
 
 # Get script directory for logo path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOGO_FILENAME = os.path.join(SCRIPT_DIR, "Gabi Rego Nova Logo preto.png")
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+LOGO_FILENAME = os.path.join(PROJECT_ROOT, "public", "logo-black.png")
 
 # A4 Dimensions
 PAGE_WIDTH, PAGE_HEIGHT = A4
@@ -34,16 +35,17 @@ USEABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 EXTRA_ROWS = 3
 
 
-def generate_pdf(output_path: str, aluno: str, date: str, sessions: list):
+def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observacoes: str = None):
     """
     Generate a training plan PDF.
-    
+
     Args:
         output_path: Path to save the PDF
         aluno: Student name
         date: Date string (e.g., "01/2026")
         sessions: List of session dicts with 'name' and 'exercises' keys
                   Each exercise has 'name', 'sets', 'reps' keys
+        observacoes: Optional observations text
     """
     c = canvas.Canvas(output_path, pagesize=A4)
     c.setTitle(f"Ficha de Treino - {aluno}")
@@ -79,6 +81,23 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list):
 
     # Move cursor below the header section
     cursor_y -= (logo_h + 1 * cm)
+
+    # Draw observations if present
+    if observacoes and observacoes.strip():
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(MARGIN_LEFT, cursor_y, "OBSERVAÇÕES:")
+        c.setFont("Helvetica", 10)
+
+        # Split observations into lines that fit the page width
+        from reportlab.lib.utils import simpleSplit
+        obs_lines = simpleSplit(observacoes.strip(), "Helvetica", 10, USEABLE_WIDTH - 3 * cm)
+
+        line_y = cursor_y - 0.5 * cm
+        for line in obs_lines:
+            c.drawString(MARGIN_LEFT + 3 * cm, line_y, line)
+            line_y -= 0.4 * cm
+
+        cursor_y = line_y - 0.5 * cm
 
     def draw_workout_table(canvas_obj, title: str, start_y: float, exercises: list) -> float:
         """
@@ -248,9 +267,10 @@ def main():
     
     aluno = data.get('aluno', '')
     date = data.get('date', '')
+    observacoes = data.get('observacoes', '')
     sessions = data.get('sessions', [])
-    
-    generate_pdf(args.output, aluno, date, sessions)
+
+    generate_pdf(args.output, aluno, date, sessions, observacoes)
     print(f"Successfully created {args.output}")
 
 
