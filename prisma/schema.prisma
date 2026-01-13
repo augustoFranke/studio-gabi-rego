@@ -70,8 +70,8 @@ model Membro {
   usuarioId       String        @unique @map("usuario_id")
   cpf             String        @unique
   rg              String?
-  telefone        String
-  dataNascimento  DateTime      @map("data_nascimento")
+  telefone        String?
+  dataNascimento  DateTime?     @map("data_nascimento")
   endereco        String?
   observacoes     String?
   status          StatusMembro  @default(PENDENTE)

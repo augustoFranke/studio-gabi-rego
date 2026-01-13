@@ -122,12 +122,15 @@ export default async function MembroPage({ params }: MembroPageProps) {
   }
 
   // Calculate age outside of the render return for purity
-  const nascimento = new Date(membro.dataNascimento)
-  const hoje = new Date()
-  let idade = hoje.getFullYear() - nascimento.getFullYear()
-  const m = hoje.getMonth() - nascimento.getMonth()
-  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--
+  let idade: number | null = null
+  if (membro.dataNascimento) {
+    const nascimento = new Date(membro.dataNascimento)
+    const hoje = new Date()
+    idade = hoje.getFullYear() - nascimento.getFullYear()
+    const m = hoje.getMonth() - nascimento.getMonth()
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--
+    }
   }
 
   // Calculate payment stats
@@ -196,11 +199,17 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 Data de Nascimento
               </p>
               <p className="text-sm">
-                {format(new Date(membro.dataNascimento), "dd/MM/yyyy")}
-                {" "}
-                <span className="text-muted-foreground">
-                  ({idade} anos)
-                </span>
+                {membro.dataNascimento ? (
+                  <>
+                    {format(new Date(membro.dataNascimento), "dd/MM/yyyy")}
+                    {" "}
+                    <span className="text-muted-foreground">
+                      ({idade} anos)
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Não informado</span>
+                )}
               </p>
             </div>
 
@@ -209,7 +218,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 <Phone className="h-3 w-3" />
                 Telefone
               </p>
-              <p className="text-sm">{formatPhone(membro.telefone)}</p>
+              <p className="text-sm">{membro.telefone ? formatPhone(membro.telefone) : <span className="text-muted-foreground">Não informado</span>}</p>
             </div>
 
             <div>

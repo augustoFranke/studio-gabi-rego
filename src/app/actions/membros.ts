@@ -29,6 +29,7 @@ export async function enviarLembreteBoasVindas(id: string) {
     })
 
     if (!membro) return { error: 'Membro não encontrado' }
+    if (!membro.telefone) return { error: 'Membro não possui telefone cadastrado' }
 
     const result = await enviarMensagemWhatsApp({
       telefone: membro.telefone,
