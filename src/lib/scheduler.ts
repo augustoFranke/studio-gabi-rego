@@ -210,6 +210,7 @@ export async function processarAniversarios() {
   })
 
   const aniversariantes = membros.filter((membro) => {
+    if (!membro.dataNascimento) return false
     const dataNasc = new Date(membro.dataNascimento)
     return dataNasc.getMonth() + 1 === mes && dataNasc.getDate() === dia
   })
