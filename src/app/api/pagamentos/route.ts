@@ -20,8 +20,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const membroId = searchParams.get('membroId')
     const status = searchParams.get('status')
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const skip = (page - 1) * limit
 
     const where: Prisma.PagamentoWhereInput = {}
+
 
     // Se for membro, só pode ver seus próprios pagamentos
     if (session.user.role === 'MEMBRO' && session.user.membroId) {
@@ -34,24 +38,41 @@ export async function GET(request: NextRequest) {
       where.status = status as StatusPagamento
     }
 
-    const pagamentos = await prisma.pagamento.findMany({
-      where,
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
+    // Run count and findMany in parallel for efficiency
+    const [total, pagamentos] = await Promise.all([
+      prisma.pagamento.count({ where }),
+      prisma.pagamento.findMany({
+        where,
+        include: {
+          membro: {
+            include: {
+              usuario: {
+                select: { nome: true },
+              },
             },
           },
+          plano: true,
         },
-        plano: true,
-      },
-      orderBy: { dataVencimento: 'desc' },
-    })
+        orderBy: { dataVencimento: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ])
 
-    return NextResponse.json(pagamentos)
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json({
+      data: pagamentos,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    })
   })
 }
+
 
 // POST /api/pagamentos - Criar novo pagamento (admin only)
 export async function POST(request: NextRequest) {

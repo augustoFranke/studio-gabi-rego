@@ -17,6 +17,10 @@ const updateMembroSchema = z.object({
         if (val === '' || val === null) return null;
         return Number(val);
     }),
+    sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
+        if (val === '') return undefined;
+        return val;
+    }),
 })
 
 interface Params {
@@ -130,6 +134,7 @@ export async function PATCH(
             if (data.endereco !== undefined) memberUpdateData.endereco = data.endereco
             if (data.planoId) memberUpdateData.planoId = data.planoId
             if (data.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = data.precoCustomizado
+            if (data.sexo) memberUpdateData.sexo = data.sexo
 
             return tx.membro.update({
                 where: { id },

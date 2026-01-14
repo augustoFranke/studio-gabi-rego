@@ -48,6 +48,11 @@ enum TipoNotificacao {
   AVISO_GERAL
 }
 
+enum Sexo {
+  MASCULINO
+  FEMININO
+}
+
 // ==================== MODELS ====================
 
 model Usuario {
@@ -76,6 +81,7 @@ model Membro {
   observacoes     String?
   status          StatusMembro  @default(PENDENTE)
   fotoUrl         String?       @map("foto_url")
+  sexo            Sexo?
   criadoEm        DateTime      @default(now()) @map("criado_em")
   atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
 
@@ -190,9 +196,8 @@ model Exercicio {
   sessao          String        @default("A") // Ex: "A", "B", "C"
   nome            String        // Ex: "Supino Reto"
   grupoMuscular   String?       @map("grupo_muscular") // Ex: "Peito"
-  series          Int
+  series          String        // Ex: "3", "3-4", "2 a 3"
   repeticoes      String        // Ex: "12", "8-12", "Até falha"
-  carga           String?       // Ex: "20kg", "Peso corporal"
   descanso        String?       // Ex: "60s", "90s"
   observacoes     String?
   ordem           Int           @default(0)

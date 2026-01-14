@@ -12,7 +12,19 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
+// Helper function to check if a time string (HH:MM) is before the current time
+const isTimeInPast = (timeString: string, currentHour: number, currentMinute: number): boolean => {
+  const [hours, minutes] = timeString.split(':').map(Number)
+  if (hours < currentHour) return true
+  if (hours === currentHour && minutes < currentMinute) return true
+  return false
+}
+
 export default async function DashboardPage() {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -27,17 +39,17 @@ export default async function DashboardPage() {
     agendamentosHoje,
     receitaMes,
     totalVagasHoje,
-    proximosAgendamentos,
+    todosAgendamentos,
     pagamentosPendentes,
   ] = await Promise.all([
     prisma.membro.count({ where: { status: 'ATIVO' } }),
-    prisma.agendamento.count({ 
-      where: { 
+    prisma.agendamento.count({
+      where: {
         data: {
           gte: today,
           lt: tomorrow,
         }
-      } 
+      }
     }),
     prisma.pagamento.aggregate({
       where: {
@@ -59,6 +71,7 @@ export default async function DashboardPage() {
         vagasTotal: true
       }
     }),
+    // Fetch more than 5 to allow for filtering, then slice to 5
     prisma.agendamento.findMany({
       where: {
         data: {
@@ -77,7 +90,7 @@ export default async function DashboardPage() {
         { data: 'asc' },
         { horario: { horaInicio: 'asc' } }
       ],
-      take: 5
+      take: 20 // Fetch more to filter by time, then take 5
     }),
     prisma.pagamento.findMany({
       where: {
@@ -99,8 +112,27 @@ export default async function DashboardPage() {
     })
   ])
 
-  const ocupacaoHoje = totalVagasHoje._sum.vagasTotal 
-    ? Math.round((agendamentosHoje / totalVagasHoje._sum.vagasTotal) * 100) 
+  // Filter appointments to show only upcoming classes (not classes that already happened today)
+  const proximosAgendamentos = todosAgendamentos.filter((agendamento) => {
+    const agendamentoDate = new Date(agendamento.data)
+    agendamentoDate.setHours(0, 0, 0, 0)
+
+    // If the appointment is for a future day, include it
+    if (agendamentoDate.getTime() > today.getTime()) {
+      return true
+    }
+
+    // If the appointment is for today, check if the start time hasn't passed yet
+    if (agendamentoDate.getTime() === today.getTime()) {
+      return !isTimeInPast(agendamento.horario.horaInicio, currentHour, currentMinute)
+    }
+
+    // Shouldn't happen due to query filter, but exclude past days
+    return false
+  }).slice(0, 5) // Take only the first 5 after filtering
+
+  const ocupacaoHoje = totalVagasHoje._sum.vagasTotal
+    ? Math.round((agendamentosHoje / totalVagasHoje._sum.vagasTotal) * 100)
     : 0
 
   return (
@@ -179,8 +211,8 @@ export default async function DashboardPage() {
             <div className="text-2xl font-bold">{ocupacaoHoje}%</div>
             <div className="flex items-center pt-1">
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500" 
+                <div
+                  className="h-full bg-primary transition-all duration-500"
                   style={{ width: `${Math.min(ocupacaoHoje, 100)}%` }}
                 />
               </div>
@@ -215,7 +247,7 @@ export default async function DashboardPage() {
                         {agendamento.horario.horaInicio} - {agendamento.horario.horaFim}
                       </span>
                     </div>
-                    <Badge 
+                    <Badge
                       variant={agendamento.presente === true ? "default" : "outline"}
                       className={agendamento.presente === true ? "bg-primary" : "border-primary/30 text-primary"}
                     >
@@ -266,8 +298,8 @@ export default async function DashboardPage() {
                       <span className="font-bold text-sm">
                         {formatCurrency(Number(pagamento.valor))}
                       </span>
-                      <Badge 
-                        variant={pagamento.status === 'ATRASADO' ? "destructive" : "secondary"} 
+                      <Badge
+                        variant={pagamento.status === 'ATRASADO' ? "destructive" : "secondary"}
                         className="text-[10px] h-5"
                       >
                         {pagamento.status}

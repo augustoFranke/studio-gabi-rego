@@ -34,12 +34,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  DollarSign, 
-  Users, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  DollarSign,
+  Users,
   CreditCard,
   Calendar,
   Check,
@@ -48,7 +48,11 @@ import {
   XCircle,
   Loader2,
   Search,
-  Wallet
+  Wallet,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -132,6 +136,13 @@ export default function FinanceiroPage() {
   const [searchPagamento, setSearchPagamento] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalPagamentos, setTotalPagamentos] = useState(0)
+  const [loadingPagamentos, setLoadingPagamentos] = useState(false)
+  const ITEMS_PER_PAGE = 10
+
   // Dialog states
   const [planoDialogOpen, setPlanoDialogOpen] = useState(false)
   const [pagamentoDialogOpen, setPagamentoDialogOpen] = useState(false)
@@ -162,12 +173,31 @@ export default function FinanceiroPage() {
   const [planoErrors, setPlanoErrors] = useState<Record<string, string>>({})
   const [pagamentoErrors, setPagamentoErrors] = useState<Record<string, string>>({})
 
-  // Fetch data
+  // Fetch pagamentos with pagination
+  const fetchPagamentos = useCallback(async (page: number = 1) => {
+    setLoadingPagamentos(true)
+    try {
+      const res = await fetch(`/api/pagamentos?page=${page}&limit=${ITEMS_PER_PAGE}`)
+      if (res.ok) {
+        const response = await res.json()
+        setPagamentos(response.data)
+        setTotalPages(response.meta.totalPages)
+        setTotalPagamentos(response.meta.total)
+        setCurrentPage(response.meta.page)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar pagamentos:", error)
+      toast.error("Erro ao carregar pagamentos")
+    } finally {
+      setLoadingPagamentos(false)
+    }
+  }, [])
+
+  // Fetch initial data (planos, membros, and first page of pagamentos)
   const fetchData = useCallback(async () => {
     try {
-      const [planosRes, pagamentosRes, membrosRes] = await Promise.all([
+      const [planosRes, membrosRes] = await Promise.all([
         fetch("/api/planos?includeInactive=true"),
-        fetch("/api/pagamentos"),
         fetch("/api/membros"),
       ])
 
@@ -175,21 +205,20 @@ export default function FinanceiroPage() {
         const planosData = await planosRes.json()
         setPlanos(planosData)
       }
-      if (pagamentosRes.ok) {
-        const pagamentosData = await pagamentosRes.json()
-        setPagamentos(pagamentosData)
-      }
       if (membrosRes.ok) {
         const membrosData = await membrosRes.json()
         setMembros(membrosData)
       }
+
+      // Fetch first page of pagamentos
+      await fetchPagamentos(1)
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       toast.error("Erro ao carregar dados")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchPagamentos])
 
   useEffect(() => {
     fetchData()
@@ -222,12 +251,12 @@ export default function FinanceiroPage() {
 
   const validatePlanoForm = (): boolean => {
     const errors: Record<string, string> = {}
-    
+
     // Only validate that valor is positive if provided
     if (planoForm.valor && parseFloat(planoForm.valor) < 0) {
       errors.valor = "Valor não pode ser negativo"
     }
-    
+
     setPlanoErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -323,12 +352,28 @@ export default function FinanceiroPage() {
         observacao: pagamento.observacao || "",
       })
     } else {
+      // Calculate default due date: day 10 of current month (or next month if already past day 10)
+      const today = new Date()
+      const defaultDueDay = 10
+      let defaultDate: Date
+
+      if (today.getDate() > defaultDueDay) {
+        // If we're past day 10, default to day 10 of next month
+        defaultDate = new Date(today.getFullYear(), today.getMonth() + 1, defaultDueDay)
+      } else {
+        // Otherwise, day 10 of current month
+        defaultDate = new Date(today.getFullYear(), today.getMonth(), defaultDueDay)
+      }
+
+      // Format as YYYY-MM-DD for the date input
+      const defaultDateStr = defaultDate.toISOString().split("T")[0]
+
       setEditingPagamento(null)
       setPagamentoForm({
         membroId: "",
         planoId: "",
         valor: "",
-        dataVencimento: "",
+        dataVencimento: defaultDateStr,
         formaPagamento: "",
         observacao: "",
       })
@@ -339,12 +384,12 @@ export default function FinanceiroPage() {
 
   const validatePagamentoForm = (): boolean => {
     const errors: Record<string, string> = {}
-    
+
     // Only validate that valor is positive if provided
     if (pagamentoForm.valor && parseFloat(pagamentoForm.valor) < 0) {
       errors.valor = "Valor não pode ser negativo"
     }
-    
+
     setPagamentoErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -362,17 +407,17 @@ export default function FinanceiroPage() {
 
       const body = editingPagamento
         ? {
-            formaPagamento: pagamentoForm.formaPagamento || null,
-            observacao: pagamentoForm.observacao || null,
-          }
+          formaPagamento: pagamentoForm.formaPagamento || null,
+          observacao: pagamentoForm.observacao || null,
+        }
         : {
-            membroId: pagamentoForm.membroId,
-            planoId: pagamentoForm.planoId,
-            valor: parseFloat(pagamentoForm.valor),
-            dataVencimento: pagamentoForm.dataVencimento,
-            formaPagamento: pagamentoForm.formaPagamento || null,
-            observacao: pagamentoForm.observacao || null,
-          }
+          membroId: pagamentoForm.membroId,
+          planoId: pagamentoForm.planoId,
+          valor: parseFloat(pagamentoForm.valor),
+          dataVencimento: pagamentoForm.dataVencimento,
+          formaPagamento: pagamentoForm.formaPagamento || null,
+          observacao: pagamentoForm.observacao || null,
+        }
 
       const res = await fetch(url, {
         method,
@@ -383,7 +428,7 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success(editingPagamento ? "Pagamento atualizado!" : "Pagamento criado!")
         setPagamentoDialogOpen(false)
-        fetchData()
+        fetchPagamentos(currentPage)
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao salvar pagamento")
@@ -405,7 +450,7 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success("Status atualizado!")
-        fetchData()
+        fetchPagamentos(currentPage)
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao atualizar status")
@@ -426,7 +471,7 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success(data.message || "Pagamento removido!")
-        fetchData()
+        fetchPagamentos(currentPage)
       } else {
         toast.error(data.error || "Erro ao remover pagamento")
       }
@@ -605,27 +650,27 @@ export default function FinanceiroPage() {
                           const planosGabi = activePlanos.filter(p => p.nome.toLowerCase().includes('gabi'))
                           const planosEstagiarios = activePlanos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
                           const planosOutros = activePlanos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-                          
+
                           return (
-                        <Select
-                          value={pagamentoForm.planoId}
-                          onValueChange={(v) => {
-                            const plano = planos.find((p) => p.id === v)
-                            setPagamentoForm({
-                              ...pagamentoForm,
-                              planoId: v,
-                              valor: plano ? String(plano.valor) : pagamentoForm.valor,
-                            })
-                            if (pagamentoErrors.planoId) {
-                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
-                            }
-                          }}
-                          disabled={!!editingPagamento}
-                        >
-                          <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
-                            <SelectValue placeholder="Selecione o plano" />
-                          </SelectTrigger>
-                          <SelectContent>
+                            <Select
+                              value={pagamentoForm.planoId}
+                              onValueChange={(v) => {
+                                const plano = planos.find((p) => p.id === v)
+                                setPagamentoForm({
+                                  ...pagamentoForm,
+                                  planoId: v,
+                                  valor: plano ? String(plano.valor) : pagamentoForm.valor,
+                                })
+                                if (pagamentoErrors.planoId) {
+                                  setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
+                                }
+                              }}
+                              disabled={!!editingPagamento}
+                            >
+                              <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
+                                <SelectValue placeholder="Selecione o plano" />
+                              </SelectTrigger>
+                              <SelectContent>
                                 {planosGabi.length > 0 && (
                                   <SelectGroup>
                                     <SelectLabel className="flex items-center gap-2">
@@ -636,10 +681,10 @@ export default function FinanceiroPage() {
                                       <SelectItem key={p.id} value={p.id} className="pl-6">
                                         <span className="flex items-center gap-2">
                                           <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                {p.nome} - {formatCurrency(p.valor)}
+                                          {p.nome} - {formatCurrency(p.valor)}
                                         </span>
-                              </SelectItem>
-                            ))}
+                                      </SelectItem>
+                                    ))}
                                   </SelectGroup>
                                 )}
                                 {planosEstagiarios.length > 0 && (
@@ -674,8 +719,8 @@ export default function FinanceiroPage() {
                                     ))}
                                   </SelectGroup>
                                 )}
-                          </SelectContent>
-                        </Select>
+                              </SelectContent>
+                            </Select>
                           )
                         })()}
                         {pagamentoErrors.planoId && (
@@ -865,6 +910,53 @@ export default function FinanceiroPage() {
                   </Table>
                 </div>
               )}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t border-border/50 px-2">
+                  <div className="flex-1 text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0 lg:flex"
+                      onClick={() => fetchPagamentos(1)}
+                      disabled={currentPage === 1 || loadingPagamentos}
+                    >
+                      <span className="sr-only">Primeira página</span>
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => fetchPagamentos(currentPage - 1)}
+                      disabled={currentPage === 1 || loadingPagamentos}
+                    >
+                      <span className="sr-only">Página anterior</span>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => fetchPagamentos(currentPage + 1)}
+                      disabled={currentPage === totalPages || loadingPagamentos}
+                    >
+                      <span className="sr-only">Próxima página</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0 lg:flex"
+                      onClick={() => fetchPagamentos(totalPages)}
+                      disabled={currentPage === totalPages || loadingPagamentos}
+                    >
+                      <span className="sr-only">Última página</span>
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1046,7 +1138,7 @@ export default function FinanceiroPage() {
                     const planosGabi = planos.filter(p => p.nome.toLowerCase().includes('gabi'))
                     const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
                     const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-                    
+
                     return (
                       <>
                         {planosGabi.length > 0 && (
@@ -1063,75 +1155,75 @@ export default function FinanceiroPage() {
                                 {planosGabi.length} {planosGabi.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               {planosGabi.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-all`}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
+                                  <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                      <div>
                                         <CardTitle className="text-lg text-amber-900 dark:text-amber-100">{plano.nome}</CardTitle>
-                            {plano.descricao && (
-                              <CardDescription className="mt-1">
-                                {plano.descricao}
-                              </CardDescription>
-                            )}
-                          </div>
-                          {!plano.ativo && (
-                            <Badge variant="secondary">Inativo</Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
+                                        {plano.descricao && (
+                                          <CardDescription className="mt-1">
+                                            {plano.descricao}
+                                          </CardDescription>
+                                        )}
+                                      </div>
+                                      {!plano.ativo && (
+                                        <Badge variant="secondary">Inativo</Badge>
+                                      )}
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
                                         <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                              {formatCurrency(plano.valor)}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              /{plano.duracaoDias === 30 ? "mês" : plano.duracaoDias === 90 ? "trimestre" : plano.duracaoDias === 180 ? "semestre" : "ano"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
+                                          {formatCurrency(plano.valor)}
+                                        </span>
+                                        <span className="text-sm text-muted-foreground">
+                                          /{plano.duracaoDias === 30 ? "mês" : plano.duracaoDias === 90 ? "trimestre" : plano.duracaoDias === 180 ? "semestre" : "ano"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                        <div className="flex items-center gap-1">
                                           <Calendar className="h-4 w-4 text-amber-500" />
-                              {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
-                            </div>
-                            <div className="flex items-center gap-1">
+                                          {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
+                                        </div>
+                                        <div className="flex items-center gap-1">
                                           <Users className="h-4 w-4 text-amber-500" />
-                              {plano._count?.membros || 0} membros
-                            </div>
-                          </div>
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
+                                          {plano._count?.membros || 0} membros
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2 pt-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
                                           className="flex-1 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-950/50"
-                              onClick={() => handleOpenPlanoDialog(plano)}
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Editar
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTogglePlanoAtivo(plano)}
+                                          onClick={() => handleOpenPlanoDialog(plano)}
+                                        >
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Editar
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleTogglePlanoAtivo(plano)}
                                           className="hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-950/50"
-                            >
-                              {plano.ativo ? "Desativar" : "Ativar"}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeletePlano(plano)}
-                              className="hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                                        >
+                                          {plano.ativo ? "Desativar" : "Ativar"}
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleDeletePlano(plano)}
+                                          className="hover:bg-destructive/10"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
                             </div>
                           </div>
                         )}

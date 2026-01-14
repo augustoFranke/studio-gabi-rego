@@ -22,7 +22,8 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-  Pencil
+  Pencil,
+  ClipboardList
 } from "lucide-react"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
@@ -158,12 +159,20 @@ export default async function MembroPage({ params }: MembroPageProps) {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link href={`/membros/${id}/editar`}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/membros/${id}/anamnese`}>
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Anamnese
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/membros/${id}/editar`}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Main Content */}

@@ -5,8 +5,8 @@ export async function middleware(request: NextRequest) {
     // Use getToken which is Edge-compatible (doesn't need Prisma)
     // Support both NEXTAUTH_SECRET and AUTH_SECRET for NextAuth v5 compatibility
     const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
-    
-    let token = await getToken({ 
+
+    let token = await getToken({
         req: request,
         secret
     })
@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
     // Fallback: try v5 cookie name explicitly if default lookup failed
     // NextAuth v5 uses 'authjs.session-token' instead of 'next-auth.session-token'
     if (!token) {
-        token = await getToken({ 
+        token = await getToken({
             req: request,
             secret,
             cookieName: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token"
@@ -40,8 +40,8 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          * - login (login page)
-         * - (public pages if any)
+         * - public asset extensions (.png, .svg, .jpg, .jpeg, .gif, .ico, .webp)
          */
-        "/((?!api|_next/static|_next/image|favicon.ico|login).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|login|.*\\.(?:png|svg|jpg|jpeg|gif|ico|webp)$).*)",
     ],
 }

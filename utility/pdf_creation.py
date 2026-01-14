@@ -18,11 +18,24 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.platypus import Table, TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # Get script directory for logo path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 LOGO_FILENAME = os.path.join(PROJECT_ROOT, "public", "logo-black.png")
+
+# Register custom font
+FREESTYLE_FONT_PATH = "/Library/Fonts/FreeStyle Script.ttf"
+try:
+    pdfmetrics.registerFont(TTFont('FreeStyleScript', FREESTYLE_FONT_PATH))
+    FONT_REGULAR = 'FreeStyleScript'
+    FONT_BOLD = 'FreeStyleScript'  # Script fonts don't have bold variant
+except Exception as e:
+    print(f"Warning: Could not load FreeStyle Script font: {e}", file=sys.stderr)
+    FONT_REGULAR = 'Helvetica'
+    FONT_BOLD = 'Helvetica-Bold'
 
 # A4 Dimensions
 PAGE_WIDTH, PAGE_HEIGHT = A4
@@ -62,42 +75,24 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observ
         print(f"Warning: Could not load logo from {LOGO_FILENAME}: {e}", file=sys.stderr)
 
     # 2. DRAW HEADER TEXT (ALUNO / DATA)
-    c.setFont("Helvetica-Bold", 14)
-    
     text_x_start = MARGIN_LEFT + logo_w + 1 * cm
     
     # Aluno Line
+    c.setFont(FONT_BOLD, 20)
     c.drawString(text_x_start, cursor_y - 2 * cm, "ALUNO:")
-    c.setFont("Helvetica", 14)
-    c.drawString(text_x_start + 2.2 * cm, cursor_y - 2 * cm, aluno)
-    c.line(text_x_start + 2 * cm, cursor_y - 2.1 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 2.1 * cm)
+    c.setFont(FONT_REGULAR, 20)
+    c.drawString(text_x_start + 2.5 * cm, cursor_y - 2 * cm, aluno)
+    c.line(text_x_start + 2.3 * cm, cursor_y - 2.2 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 2.2 * cm)
     
     # Data Line
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 20)
     c.drawString(text_x_start, cursor_y - 3.5 * cm, "DATA:")
-    c.setFont("Helvetica", 14)
-    c.drawString(text_x_start + 2.2 * cm, cursor_y - 3.5 * cm, date)
-    c.line(text_x_start + 2 * cm, cursor_y - 3.6 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 3.6 * cm)
+    c.setFont(FONT_REGULAR, 20)
+    c.drawString(text_x_start + 2.5 * cm, cursor_y - 3.5 * cm, date)
+    c.line(text_x_start + 2.3 * cm, cursor_y - 3.7 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 3.7 * cm)
 
     # Move cursor below the header section
     cursor_y -= (logo_h + 1 * cm)
-
-    # Draw observations if present
-    if observacoes and observacoes.strip():
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(MARGIN_LEFT, cursor_y, "OBSERVAÇÕES:")
-        c.setFont("Helvetica", 10)
-
-        # Split observations into lines that fit the page width
-        from reportlab.lib.utils import simpleSplit
-        obs_lines = simpleSplit(observacoes.strip(), "Helvetica", 10, USEABLE_WIDTH - 3 * cm)
-
-        line_y = cursor_y - 0.5 * cm
-        for line in obs_lines:
-            c.drawString(MARGIN_LEFT + 3 * cm, line_y, line)
-            line_y -= 0.4 * cm
-
-        cursor_y = line_y - 0.5 * cm
 
     def draw_workout_table(canvas_obj, title: str, start_y: float, exercises: list) -> float:
         """
@@ -112,10 +107,10 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observ
         Returns:
             New Y position after drawing the table
         """
-        canvas_obj.setFont("Helvetica-Bold", 12)
+        canvas_obj.setFont(FONT_BOLD, 18)
         canvas_obj.drawString(MARGIN_LEFT, start_y, title)
         
-        table_top = start_y - 0.5 * cm
+        table_top = start_y - 0.6 * cm
         
         # Table Structure: Exercício, Séries, Repetições, (empty for notes)
         data = [['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', '']]
@@ -144,8 +139,8 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observ
         t = Table(data, colWidths=col_widths, rowHeights=0.7 * cm)
         t.setStyle(TableStyle([
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTNAME', (0, 0), (-1, -1), FONT_REGULAR),
+            ('FONTSIZE', (0, 0), (-1, -1), 16),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (1, 0), (2, -1), 'CENTER'),  # Center séries and repetições columns
         ]))
@@ -155,10 +150,10 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observ
         # Check if table fits on current page
         if table_top - h < MARGIN_TOP + 2 * cm:
             canvas_obj.showPage()
-            canvas_obj.setFont("Helvetica-Bold", 12)
+            canvas_obj.setFont(FONT_BOLD, 18)
             table_top = PAGE_HEIGHT - MARGIN_TOP
             canvas_obj.drawString(MARGIN_LEFT, table_top, title)
-            table_top -= 0.5 * cm
+            table_top -= 0.6 * cm
         
         t.drawOn(canvas_obj, MARGIN_LEFT, table_top - h)
         return table_top - h - 1 * cm
@@ -176,6 +171,40 @@ def generate_pdf(output_path: str, aluno: str, date: str, sessions: list, observ
                 cursor_y, 
                 exercises
             )
+
+    # Draw observations at the bottom if present
+    if observacoes and observacoes.strip():
+        from reportlab.lib.utils import simpleSplit
+        
+        # Check if we need a new page for observations
+        if cursor_y < MARGIN_TOP + 4 * cm:
+            c.showPage()
+            cursor_y = PAGE_HEIGHT - MARGIN_TOP
+        
+        # Draw "OBSERVAÇÕES:" label and text on the same line
+        c.setFont(FONT_REGULAR, 18)
+        label = "OBSERVAÇÕES: "
+        label_width = c.stringWidth(label, FONT_REGULAR, 18)
+        c.drawString(MARGIN_LEFT, cursor_y, label)
+        
+        # Calculate remaining width for text on first line
+        remaining_width = USEABLE_WIDTH - label_width
+        
+        # Split observations into lines
+        obs_lines = simpleSplit(observacoes.strip(), FONT_REGULAR, 18, remaining_width)
+        
+        # Draw first line next to the label
+        if obs_lines:
+            c.drawString(MARGIN_LEFT + label_width, cursor_y, obs_lines[0])
+        
+        # Draw remaining lines below, aligned with the text (not the label)
+        line_y = cursor_y - 0.7 * cm
+        for line in obs_lines[1:]:
+            # Re-split for full width lines
+            full_lines = simpleSplit(line, FONT_REGULAR, 18, USEABLE_WIDTH)
+            for full_line in full_lines:
+                c.drawString(MARGIN_LEFT, line_y, full_line)
+                line_y -= 0.7 * cm
 
     c.save()
     return output_path
@@ -198,22 +227,22 @@ def generate_blank_template(output_path: str = "ficha_treino_vazia.pdf"):
         print(f"Warning: {LOGO_FILENAME} not found. Skipping image.")
 
     # Header
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 20)
     text_x_start = MARGIN_LEFT + logo_w + 1 * cm
     
     c.drawString(text_x_start, cursor_y - 2 * cm, "ALUNO:")
-    c.line(text_x_start + 2 * cm, cursor_y - 2.1 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 2.1 * cm)
+    c.line(text_x_start + 2.3 * cm, cursor_y - 2.2 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 2.2 * cm)
     
     c.drawString(text_x_start, cursor_y - 3.5 * cm, "DATA:")
-    c.line(text_x_start + 2 * cm, cursor_y - 3.6 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 3.6 * cm)
+    c.line(text_x_start + 2.3 * cm, cursor_y - 3.7 * cm, PAGE_WIDTH - MARGIN_RIGHT, cursor_y - 3.7 * cm)
 
     cursor_y -= (logo_h + 1 * cm)
 
     def draw_blank_table(canvas_obj, title, start_y, rows=10):
-        canvas_obj.setFont("Helvetica-Bold", 12)
+        canvas_obj.setFont(FONT_BOLD, 18)
         canvas_obj.drawString(MARGIN_LEFT, start_y, title)
         
-        table_top = start_y - 0.5 * cm
+        table_top = start_y - 0.6 * cm
         
         data = [['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', '']]
         for _ in range(rows):
@@ -224,8 +253,8 @@ def generate_blank_template(output_path: str = "ficha_treino_vazia.pdf"):
         t = Table(data, colWidths=col_widths, rowHeights=0.7 * cm)
         t.setStyle(TableStyle([
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTNAME', (0, 0), (-1, -1), FONT_REGULAR),
+            ('FONTSIZE', (0, 0), (-1, -1), 16),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (1, 0), (2, 0), 'CENTER'),
         ]))

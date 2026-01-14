@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+// Force restart to reload Prisma Client schema
+
 const isDocker = process.env.DEPLOYMENT_TARGET === "docker";
 
 const nextConfig: NextConfig = {

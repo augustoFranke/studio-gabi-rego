@@ -23,6 +23,7 @@
     "docker:logs": "docker compose logs -f",
     "docker:backup": "./docker/scripts/backup.sh",
     "scrape:nextfit": "tsx utility/nextfit-scraper.ts",
+    "scrape:anamnesis": "tsx utility/scrape-anamnesis.ts",
     "update:plans": "tsx utility/update-plans.ts",
     "extract:prices": "tsx utility/extract-plan-prices.ts",
     "import:schedule": "tsx utility/import-schedule.ts",

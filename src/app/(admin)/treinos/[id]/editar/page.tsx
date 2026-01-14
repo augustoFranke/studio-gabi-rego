@@ -49,9 +49,8 @@ type Treino = {
         id: string;
         sessao: string;
         nome: string;
-        series: number;
+        series: string;
         repeticoes: string;
-        carga: string | null;
     }>;
 };
 
@@ -93,7 +92,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         exercises.push({
                             id: ex.id,
                             name: ex.nome,
-                            sets: ex.series.toString(),
+                            sets: ex.series,
                             reps: ex.repeticoes,
                         });
                         sessionsMap.set(ex.sessao, exercises);
@@ -240,7 +239,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             const exercicios: Array<{
                 sessao: string;
                 nome: string;
-                series: number;
+                series: string;
                 repeticoes: string;
             }> = [];
 
@@ -250,7 +249,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         exercicios.push({
                             sessao: s.name,
                             nome: e.name,
-                            series: parseInt(e.sets) || 1,
+                            series: e.sets || '3',
                             repeticoes: e.reps || '10',
                         });
                     }
@@ -495,7 +494,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                             <div className="col-span-1 md:col-span-2 flex md:block flex-col">
                                                 <Label className="md:hidden mb-1.5 block text-xs">Séries</Label>
                                                 <Input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="3"
                                                     className="text-center"
                                                     value={exercise.sets}
@@ -506,7 +505,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                             <div className="col-span-1 md:col-span-2 flex md:block flex-col">
                                                 <Label className="md:hidden mb-1.5 block text-xs">Repetições</Label>
                                                 <Input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="10"
                                                     className="text-center"
                                                     value={exercise.reps}

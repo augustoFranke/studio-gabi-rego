@@ -226,7 +226,7 @@ export default function TrainingPlanGeneratorPage() {
             const exercicios: Array<{
                 sessao: string;
                 nome: string;
-                series: number;
+                series: string;
                 repeticoes: string;
             }> = [];
 
@@ -236,7 +236,7 @@ export default function TrainingPlanGeneratorPage() {
                         exercicios.push({
                             sessao: s.name,
                             nome: e.name,
-                            series: parseInt(e.sets) || 1,
+                            series: e.sets || '3',
                             repeticoes: e.reps || '10',
                         });
                     }
@@ -326,7 +326,7 @@ export default function TrainingPlanGeneratorPage() {
             const exercicios: Array<{
                 sessao: string;
                 nome: string;
-                series: number;
+                series: string;
                 repeticoes: string;
             }> = [];
 
@@ -336,7 +336,7 @@ export default function TrainingPlanGeneratorPage() {
                         exercicios.push({
                             sessao: s.name,
                             nome: e.name,
-                            series: parseInt(e.sets) || 1,
+                            series: e.sets || '3',
                             repeticoes: e.reps || '10',
                         });
                     }
@@ -586,7 +586,7 @@ export default function TrainingPlanGeneratorPage() {
                                             <div className="col-span-1 md:col-span-2 flex md:block flex-col">
                                                 <Label className="md:hidden mb-1.5 block text-xs">Séries</Label>
                                                 <Input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="3"
                                                     className="text-center"
                                                     value={exercise.sets}
@@ -597,7 +597,7 @@ export default function TrainingPlanGeneratorPage() {
                                             <div className="col-span-1 md:col-span-2 flex md:block flex-col">
                                                 <Label className="md:hidden mb-1.5 block text-xs">Repetições</Label>
                                                 <Input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="10"
                                                     className="text-center"
                                                     value={exercise.reps}

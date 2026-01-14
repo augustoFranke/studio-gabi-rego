@@ -44,6 +44,74 @@ Missing data will be filled with "Pendente".
 
 ---
 
+## Anamnesis Scraper
+
+Extracts individual anamnesis (health questionnaire) answers from NextFit for all members.
+
+### Usage
+
+```bash
+npm run scrape:anamnesis
+# or
+npx tsx utility/scrape-anamnesis.ts
+```
+
+### What it does:
+1. Opens a browser window (uses Playwright)
+2. Checks if you're logged in (prompts for manual login if needed)
+3. Fetches all member IDs from the list
+4. Visits each member's anamnesis page
+5. Extracts question/answer pairs
+6. Saves results to JSON
+
+### Environment Variables (Optional)
+
+```bash
+NEXTFIT_USER=your@email.com
+NEXTFIT_PASS=yourpassword
+```
+
+### Output Format
+
+Results are saved to `utility/csv/anamnesis-dump-{date}.json`:
+
+```json
+{
+  "success": true,
+  "totalMembers": 50,
+  "successfulExtractions": 48,
+  "failedExtractions": 2,
+  "data": [
+    {
+      "memberId": 123,
+      "memberName": "Maria Silva",
+      "extractedAt": "2025-01-14T12:00:00.000Z",
+      "questions": [
+        { "pergunta": "Tem alguma restrição médica?", "resposta": "Não" },
+        { "pergunta": "Pratica exercícios regularmente?", "resposta": "Sim" }
+      ]
+    }
+  ],
+  "errors": []
+}
+```
+
+### Customization
+
+**Important:** The CSS selectors in the script are placeholders. To customize:
+
+1. Open `https://app.nextfit.com.br` in your browser
+2. Navigate to a member's anamnesis page
+3. Inspect the HTML structure (F12 → Elements)
+4. Update the selectors in `scrape-anamnesis.ts` to match the actual DOM
+
+Look for:
+- `anamnesisTabSelectors` - How to navigate to the anamnesis tab
+- `formGroupSelectors` - The structure of question/answer pairs
+- Table patterns or specific CSS classes
+
+---
+
 ## Method 1: Browser Console Script (Recommended)
 
 The easiest method - runs directly in your browser.

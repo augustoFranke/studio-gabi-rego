@@ -16,6 +16,10 @@ const membroSchema = z.object({
   endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.number().optional(),
+  sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
+    if (val === '') return undefined;
+    return val;
+  }),
 })
 
 // GET /api/membros - Listar todos os membros
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { nome, email, senha, cpf, rg, telefone, dataNascimento, endereco, planoId, precoCustomizado } = validation.data
+    const { nome, email, senha, cpf, rg, telefone, dataNascimento, endereco, planoId, precoCustomizado, sexo } = validation.data
 
     // Validate email if provided
     if (email && !validarEmail(email)) {
@@ -104,6 +108,7 @@ export async function POST(request: NextRequest) {
           endereco,
           planoId,
           precoCustomizado,
+          sexo,
           status: 'ATIVO',
         },
         include: {
