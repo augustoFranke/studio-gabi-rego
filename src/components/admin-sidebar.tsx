@@ -20,11 +20,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  DollarSign, 
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  DollarSign,
   Dumbbell,
   ChevronUp,
   LogOut,
@@ -71,13 +71,13 @@ export function AdminSidebar() {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-2">
-              <Image 
-                src="/logo.svg" 
-                alt="Gabi Studio" 
-                width={44} 
-                height={44} 
-                className="brightness-0 invert" 
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-2">
+              <Image
+                src="/logo.svg"
+                alt="Gabi Studio"
+                width={56}
+                height={56}
+                className="brightness-0 invert"
               />
             </div>
             <span className="font-semibold text-lg tracking-tight">Gabi Studio</span>
@@ -85,7 +85,7 @@ export function AdminSidebar() {
           <ThemeToggleSimple />
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
@@ -97,8 +97,8 @@ export function AdminSidebar() {
                 const isActive = pathname === item.url || pathname.startsWith(item.url + "/")
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={isActive}
                       className={isActive ? "bg-sidebar-accent text-primary font-medium" : ""}
                     >

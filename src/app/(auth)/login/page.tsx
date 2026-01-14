@@ -19,7 +19,7 @@ export default function LoginPage() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
-    
+
     const formData = new FormData(event.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
@@ -57,12 +57,12 @@ export default function LoginPage() {
         <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         {/* Center accent */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
-        
+
         {/* Decorative lines */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
       </div>
-      
+
       {/* Theme toggle in corner */}
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggleSimple />
@@ -77,30 +77,18 @@ export default function LoginPage() {
       <Card className="w-full max-w-md relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
         {/* Orange accent line at top of card */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 rounded-t-xl" />
-        
+
         <CardHeader className="text-center pb-4 pt-6">
-          <div className="flex justify-center mb-3">
-            <div className="relative group">
-              {/* Glow effect behind logo */}
-              <div className="absolute inset-0 bg-orange-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity" />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-3 shadow-lg shadow-orange-600/50 transition-all hover:scale-105 hover:shadow-orange-500/60 overflow-hidden">
-                <Image 
-                  src="/logo.svg" 
-                  alt="Gabi Studio" 
-                  width={96} 
-                  height={96} 
-                  className="brightness-0 invert object-contain"
-                />
-              </div>
-              {/* Small flame icon */}
-              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-                <Flame className="h-3 w-3 text-white" />
-              </div>
-            </div>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/logo.png"
+              alt="Gabi Studio"
+              width={224}
+              height={224}
+              className="object-contain"
+              priority
+            />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 bg-clip-text text-transparent">
-            Gabi Studio
-          </CardTitle>
           <CardDescription className="text-muted-foreground mt-1">
             Entre com seu email e senha para acessar
           </CardDescription>
@@ -137,9 +125,9 @@ export default function LoginPage() {
                 className="h-10 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full h-10 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-all border-0 mt-2" 
+            <Button
+              type="submit"
+              className="w-full h-10 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-all border-0 mt-2"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -155,14 +143,14 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-          
+
           {/* Decorative divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
             <Flame className="h-3 w-3 text-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
-          
+
           <div className="text-center">
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.

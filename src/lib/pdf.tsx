@@ -8,9 +8,8 @@ import { Document, Page, Text, View, StyleSheet, renderToBuffer } from '@react-p
 interface Exercicio {
   nome: string
   grupoMuscular: string
-  series: number
+  series: string
   repeticoes: string
-  carga?: string
   descanso?: string
   observacoes?: string
 }
@@ -164,7 +163,6 @@ const WorkoutPDF = ({ ficha }: { ficha: FichaTreino }) => {
             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Grupo</Text></View>
             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Séries</Text></View>
             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Reps</Text></View>
-            <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Carga</Text></View>
             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Descanso</Text></View>
             <View style={[styles.tableColHeader, { width: '25%' }]}><Text style={styles.tableCellHeader}>Obs</Text></View>
           </View>
@@ -175,7 +173,6 @@ const WorkoutPDF = ({ ficha }: { ficha: FichaTreino }) => {
               <View style={styles.tableCol}><Text style={styles.tableCell}>{ex.grupoMuscular}</Text></View>
               <View style={styles.tableCol}><Text style={styles.tableCell}>{ex.series}</Text></View>
               <View style={styles.tableCol}><Text style={styles.tableCell}>{ex.repeticoes}</Text></View>
-              <View style={styles.tableCol}><Text style={styles.tableCell}>{ex.carga || '-'}</Text></View>
               <View style={styles.tableCol}><Text style={styles.tableCell}>{ex.descanso || '-'}</Text></View>
               <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{ex.observacoes || '-'}</Text></View>
             </View>
@@ -203,7 +200,7 @@ const WorkoutPDF = ({ ficha }: { ficha: FichaTreino }) => {
  */
 export function gerarHTMLFichaTreino(ficha: FichaTreino): string {
   const dataFormatada = new Intl.DateTimeFormat('pt-BR').format(new Date(ficha.criadoEm))
-  
+
   const exerciciosHTML = ficha.exercicios
     .map(
       (ex, index) => `
@@ -213,7 +210,6 @@ export function gerarHTMLFichaTreino(ficha: FichaTreino): string {
         <td>${ex.grupoMuscular}</td>
         <td>${ex.series}</td>
         <td>${ex.repeticoes}</td>
-        <td>${ex.carga || '-'}</td>
         <td>${ex.descanso || '-'}</td>
         <td>${ex.observacoes || '-'}</td>
       </tr>
@@ -256,7 +252,7 @@ export function gerarHTMLFichaTreino(ficha: FichaTreino): string {
         </div>
       </div>
       <table>
-        <thead><tr><th>#</th><th>Exercício</th><th>Grupo</th><th>Séries</th><th>Reps</th><th>Carga</th><th>Descanso</th><th>Obs</th></tr></thead>
+        <thead><tr><th>#</th><th>Exercício</th><th>Grupo</th><th>Séries</th><th>Reps</th><th>Descanso</th><th>Obs</th></tr></thead>
         <tbody>${exerciciosHTML}</tbody>
       </table>
       ${ficha.observacoes ? `<div class="observacoes"><strong>Observações Gerais:</strong><p>${ficha.observacoes}</p></div>` : ''}

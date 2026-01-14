@@ -149,9 +149,8 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
                 {/* Table Header */}
                 <div className="hidden md:grid grid-cols-12 gap-4 px-1 text-sm font-medium text-muted-foreground border-b pb-2">
                   <div className="col-span-6">Exercício</div>
-                  <div className="col-span-2 text-center">Séries</div>
-                  <div className="col-span-2 text-center">Repetições</div>
-                  <div className="col-span-2 text-center">Carga</div>
+                  <div className="col-span-3 text-center">Séries</div>
+                  <div className="col-span-3 text-center">Repetições</div>
                 </div>
 
                 {/* Exercises */}
@@ -172,19 +171,14 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
                       </div>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 flex md:block">
+                    <div className="col-span-1 md:col-span-3 flex md:block">
                       <span className="md:hidden text-xs text-muted-foreground mr-2">Séries:</span>
                       <p className="text-center font-medium">{exercicio.series}</p>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 flex md:block">
+                    <div className="col-span-1 md:col-span-3 flex md:block">
                       <span className="md:hidden text-xs text-muted-foreground mr-2">Reps:</span>
                       <p className="text-center font-medium">{exercicio.repeticoes}</p>
-                    </div>
-
-                    <div className="col-span-1 md:col-span-2 flex md:block">
-                      <span className="md:hidden text-xs text-muted-foreground mr-2">Carga:</span>
-                      <p className="text-center text-muted-foreground">{exercicio.carga || '-'}</p>
                     </div>
                   </div>
                 ))}

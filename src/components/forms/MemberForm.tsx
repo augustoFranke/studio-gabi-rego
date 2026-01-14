@@ -42,6 +42,7 @@ const formSchema = z.object({
   endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional(),
+  sexo: z.enum(["MASCULINO", "FEMININO"]).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -76,6 +77,7 @@ export function MemberForm({
       endereco: initialData?.endereco || "",
       planoId: initialData?.planoId || "",
       precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
+      sexo: initialData?.sexo || "",
     },
   })
 
@@ -129,6 +131,9 @@ export function MemberForm({
       }
       if (body.precoCustomizado === "") {
         body.precoCustomizado = null
+      }
+      if (body.sexo === "") {
+        delete body.sexo
       }
 
       console.log('Sending body:', body) // Debug
@@ -297,6 +302,28 @@ export function MemberForm({
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sexo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sexo</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o sexo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="FEMININO">Feminino</SelectItem>
+                        <SelectItem value="MASCULINO">Masculino</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

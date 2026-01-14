@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, ClipboardList, Heart, Loader2, RefreshCw } from "lucide-react"
+import { ArrowLeft, ClipboardList, Heart, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -56,7 +56,6 @@ interface MemberInfo {
   id: string
   nome: string
   sexo: "Masculino" | "Feminino"
-  nextfitId?: string
 }
 
 export default function AnamnesePage() {
@@ -65,7 +64,6 @@ export default function AnamnesePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [syncing, setSyncing] = useState(false)
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
   const [formData, setFormData] = useState<AnamneseData>({})
 
@@ -90,26 +88,7 @@ export default function AnamnesePage() {
     }
   }
 
-  const syncFromNextFit = async () => {
-    try {
-      setSyncing(true)
-      const response = await fetch(`/api/membros/${memberId}/anamnese/sync`, {
-        method: "POST"
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(data.anamnese || {})
-        toast.success("Dados sincronizados com NextFit!")
-      } else {
-        toast.error("Erro ao sincronizar com NextFit")
-      }
-    } catch (error) {
-      console.error("Error syncing:", error)
-      toast.error("Erro ao sincronizar com NextFit")
-    } finally {
-      setSyncing(false)
-    }
-  }
+
 
   const handleSave = async () => {
     try {
@@ -163,22 +142,12 @@ export default function AnamnesePage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={syncFromNextFit} disabled={syncing}>
-            {syncing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Sincronizar NextFit
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Salvar
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : null}
+          Salvar
+        </Button>
       </div>
 
       {/* Anamnese Form */}

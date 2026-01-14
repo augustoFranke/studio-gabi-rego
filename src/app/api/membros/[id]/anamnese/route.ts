@@ -32,9 +32,10 @@ export async function GET(
       return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
     }
 
-    // Determine gender based on name or other criteria
-    // For now, we'll need to add a sexo field to the member or use other heuristics
-    const sexo = determineSexo(membro)
+    // Use actual sexo field from database, fall back to heuristic if not set
+    const sexo = membro.sexo
+      ? (membro.sexo === 'FEMININO' ? 'Feminino' : 'Masculino')
+      : determineSexo(membro)
 
     return NextResponse.json({
       member: {
