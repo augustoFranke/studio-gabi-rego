@@ -21,12 +21,31 @@ const isTimeInPast = (timeString: string, currentHour: number, currentMinute: nu
 }
 
 export default async function DashboardPage() {
+  // Get current time in Brazil (America/Sao_Paulo)
   const now = new Date()
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
+  const timeZone = 'America/Sao_Paulo'
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  })
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const parts = formatter.formatToParts(now)
+  const getPart = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10)
+
+  const year = getPart('year')
+  const month = getPart('month') - 1 // JS months are 0-based
+  const day = getPart('day')
+  const currentHour = getPart('hour')
+  const currentMinute = getPart('minute')
+
+  // Construct "today" as UTC midnight for the current day in Brazil
+  // This matches how Prisma reads @db.Date columns (UTC midnight)
+  const today = new Date(Date.UTC(year, month, day))
 
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -71,7 +90,7 @@ export default async function DashboardPage() {
         vagasTotal: true
       }
     }),
-    // Fetch more than 5 to allow for filtering, then slice to 5
+    // Fetch more to allow for filtering
     prisma.agendamento.findMany({
       where: {
         data: {
@@ -90,7 +109,7 @@ export default async function DashboardPage() {
         { data: 'asc' },
         { horario: { horaInicio: 'asc' } }
       ],
-      take: 20 // Fetch more to filter by time, then take 5
+      take: 100 // Increased from 20 to ensure we get upcoming classes even if many passed
     }),
     prisma.pagamento.findMany({
       where: {
