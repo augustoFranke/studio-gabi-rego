@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { spawn } from 'child_process'
-import { promises as fs } from 'fs'
-import path from 'path'
-import os from 'os'
+import { gerarPDFFichaTreino } from '@/lib/pdf'
 
 interface Exercise {
   name: string
@@ -25,7 +22,7 @@ interface TrainingPDFData {
 
 /**
  * POST /api/treinos/gerar-pdf
- * Generate a training plan PDF using Python reportlab
+ * Generate a training plan PDF using @react-pdf/renderer
  */
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -55,67 +52,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create temp file for output
-    const tempDir = os.tmpdir()
-    const outputPath = path.join(tempDir, `treino-${Date.now()}.pdf`)
+    // Convert hierarchical session data to flat exercise list expected by generator
+    const flatExercises = validSessions.flatMap(session => 
+      session.exercises.map(ex => ({
+        nome: ex.name,
+        sessao: session.name,
+        grupoMuscular: null,
+        series: ex.sets.toString(),
+        repeticoes: ex.reps.toString(),
+        descanso: null,
+        observacoes: null
+      }))
+    );
 
-    // Prepare data for Python script
-    const pdfData = {
-      aluno,
-      date,
-      observacoes: observacoes || undefined,
-      sessions: validSessions,
-    }
-
-    // Path to Python script
-    const scriptPath = path.join(process.cwd(), 'utility', 'pdf_creation.py')
-
-    // Use virtual environment Python if available
-    const venvPython = path.join(process.cwd(), '.venv', 'bin', 'python')
-
-    try {
-      await fs.access(venvPython)
-    } catch {
-      throw new Error(`Python interpreter not found at: ${venvPython}`)
-    }
-
-    // Execute Python script
-    const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      const pythonProcess = spawn(venvPython, [
-        scriptPath,
-        '--output', outputPath,
-      ])
-
-      let stderr = ''
-
-      pythonProcess.stdin.write(JSON.stringify(pdfData))
-      pythonProcess.stdin.end()
-
-      pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString()
-      })
-
-      pythonProcess.on('close', async (code) => {
-        if (code !== 0) {
-          console.error('Python script error:', stderr)
-          reject(new Error(`Python script failed with code ${code}: ${stderr}`))
-          return
-        }
-
-        try {
-          const buffer = await fs.readFile(outputPath)
-          // Clean up temp file
-          await fs.unlink(outputPath).catch(() => {})
-          resolve(buffer)
-        } catch (err) {
-          reject(err)
-        }
-      })
-
-      pythonProcess.on('error', (err) => {
-        reject(err)
-      })
-    })
+    const pdfBuffer = await gerarPDFFichaTreino({
+      nome: `Treino ${date}`,
+      data: date,
+      objetivo: null,
+      observacoes: observacoes || null,
+      membro: {
+        nome: aluno,
+      },
+      exercicios: flatExercises
+    });
 
     // Generate filename
     const safeAluno = aluno.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30)
@@ -137,4 +96,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
