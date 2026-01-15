@@ -7,7 +7,7 @@
   "functions": {
     "api/generate_pdf.py": {
       "runtime": "python@3.9",
-      "maxDuration": 30
+      "maxDuration": 10
     }
   }
 }
