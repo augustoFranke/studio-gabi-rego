@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { gerarPDFFichaTreino } from '@/lib/pdf'
 
 interface Exercise {
   name: string
@@ -22,7 +21,7 @@ interface TrainingPDFData {
 
 /**
  * POST /api/treinos/gerar-pdf
- * Generate a training plan PDF using @react-pdf/renderer
+ * Generate a training plan PDF using Python/ReportLab
  */
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Filter out empty sessions (no exercises)
     const validSessions = sessions.filter(s => s.exercises && s.exercises.length > 0)
-    
+
     if (validSessions.length === 0) {
       return NextResponse.json(
         { error: 'Adicione pelo menos um exercício em um treino.' },
@@ -52,29 +51,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert hierarchical session data to flat exercise list expected by generator
-    const flatExercises = validSessions.flatMap(session => 
-      session.exercises.map(ex => ({
-        nome: ex.name,
-        sessao: session.name,
-        grupoMuscular: null,
-        series: ex.sets.toString(),
-        repeticoes: ex.reps.toString(),
-        descanso: null,
-        observacoes: null
-      }))
-    );
+    // Call Python PDF generator endpoint
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
-    const pdfBuffer = await gerarPDFFichaTreino({
-      nome: `Treino ${date}`,
-      data: date,
-      objetivo: null,
-      observacoes: observacoes || null,
-      membro: {
-        nome: aluno,
+    const pdfResponse = await fetch(`${baseUrl}/api/generate_pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      exercicios: flatExercises
-    });
+      body: JSON.stringify({
+        aluno,
+        date,
+        observacoes: observacoes || '',
+        sessions: validSessions,
+      }),
+    })
+
+    if (!pdfResponse.ok) {
+      const errorData = await pdfResponse.json().catch(() => ({ error: 'Unknown error' }))
+      return NextResponse.json(
+        { error: errorData.error || 'Erro ao gerar PDF' },
+        { status: pdfResponse.status }
+      )
+    }
+
+    const pdfBuffer = await pdfResponse.arrayBuffer()
 
     // Generate filename
     const safeAluno = aluno.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30)
