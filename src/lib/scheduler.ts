@@ -47,7 +47,7 @@ export async function processarLembretesAula() {
 
   for (const agendamento of agendamentos) {
     const { membro, horario } = agendamento
-    const nome = membro.usuario.nome
+    const nome = membro.usuario.nome || 'Aluno(a)'
     const dataFormatada = formatarData(agendamento.data)
 
     // Verificar se já enviou notificação
@@ -133,7 +133,7 @@ export async function processarCobrancas() {
 
   for (const pagamento of pagamentos) {
     const { membro } = pagamento
-    const nome = membro.usuario.nome
+    const nome = membro.usuario.nome || 'Aluno(a)'
     const valor = formatarMoeda(Number(pagamento.valor))
     const vencimento = formatarData(pagamento.dataVencimento)
 
@@ -216,7 +216,7 @@ export async function processarAniversarios() {
   })
 
   for (const membro of aniversariantes) {
-    const nome = membro.usuario.nome
+    const nome = membro.usuario.nome || 'Aluno(a)'
 
     // Verificar se já enviou notificação
     const jaEnviou = await prisma.notificacao.findFirst({

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,9 +13,17 @@ import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { Flame } from "lucide-react"
 import Image from "next/image"
 
-export default function LoginPage() {
+function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Check for registration complete message
+  useEffect(() => {
+    if (searchParams.get("cadastro") === "completo") {
+      toast.success("Cadastro concluído! Agora você pode fazer login.")
+    }
+  }, [searchParams])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -151,7 +160,13 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Não tem uma conta?{" "}
+              <Link href="/cadastro" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
+                Cadastre-se
+              </Link>
+            </p>
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
             </p>
@@ -159,5 +174,17 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
+        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
