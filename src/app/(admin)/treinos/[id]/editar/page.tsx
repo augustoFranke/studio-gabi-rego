@@ -287,11 +287,23 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const handleGeneratePDF = async () => {
         setIsGenerating(true);
         try {
-            window.open(`/api/treinos/${id}/pdf`, '_blank');
+            const response = await fetch(`/api/treinos/${id}/pdf`);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Erro ao gerar PDF');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
             toast.success('PDF gerado!');
+            
+            // Cleanup after a delay to ensure the window has time to load
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
         } catch (error) {
             console.error('Error generating PDF:', error);
-            toast.error('Erro ao gerar PDF');
+            toast.error(error instanceof Error ? error.message : 'Erro ao gerar PDF');
         } finally {
             setIsGenerating(false);
         }

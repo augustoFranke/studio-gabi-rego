@@ -73,6 +73,12 @@ export async function POST(request: NextRequest) {
     // Use virtual environment Python if available
     const venvPython = path.join(process.cwd(), '.venv', 'bin', 'python')
 
+    try {
+      await fs.access(venvPython)
+    } catch {
+      throw new Error(`Python interpreter not found at: ${venvPython}`)
+    }
+
     // Execute Python script
     const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
       const pythonProcess = spawn(venvPython, [
@@ -124,8 +130,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error generating PDF:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Erro ao gerar PDF. Verifique se Python está instalado.' },
+      { error: `Erro ao gerar PDF: ${errorMessage}` },
       { status: 500 }
     )
   }
