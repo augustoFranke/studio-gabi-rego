@@ -322,7 +322,7 @@ async function findOrCreateMember(name: string): Promise<MemberResult> {
   })
 
   if (exactMatch) {
-    return { id: exactMatch.id, nome: exactMatch.usuario.nome, created: false }
+    return { id: exactMatch.id, nome: exactMatch.usuario.nome || name, created: false }
   }
 
   // Try fuzzy match on first + last name
@@ -343,8 +343,8 @@ async function findOrCreateMember(name: string): Promise<MemberResult> {
       include: { usuario: true },
     })
 
-    if (fuzzyMatch && fuzzyMatch.usuario.nome.toUpperCase().includes(lastName.toUpperCase())) {
-      return { id: fuzzyMatch.id, nome: fuzzyMatch.usuario.nome, created: false }
+    if (fuzzyMatch && (fuzzyMatch.usuario.nome || '').toUpperCase().includes(lastName.toUpperCase())) {
+      return { id: fuzzyMatch.id, nome: fuzzyMatch.usuario.nome || name, created: false }
     }
   }
 
@@ -381,7 +381,7 @@ async function findOrCreateMember(name: string): Promise<MemberResult> {
     })
   })
 
-  return { id: newMember.id, nome: newMember.usuario.nome, created: true }
+  return { id: newMember.id, nome: newMember.usuario.nome || name, created: true }
 }
 
 async function getOrCreateHorario(diaSemana: DiaSemana, hour: number): Promise<string> {
