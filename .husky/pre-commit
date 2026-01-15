@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "🔍 Running PDF generation tests..."
+
+npm run test:run
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Tests failed! Commit aborted."
+  echo "   Fix the failing tests before committing."
+  exit 1
+fi
+
+echo ""
+echo "✅ All tests passed!"
+exit 0
