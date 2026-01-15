@@ -257,7 +257,7 @@ async function findMemberByName(name: string): Promise<{ id: string; usuarioNome
   })
   
   if (exactMatch) {
-    return { id: exactMatch.id, usuarioNome: exactMatch.usuario.nome, planoId: exactMatch.planoId }
+    return { id: exactMatch.id, usuarioNome: exactMatch.usuario.nome || 'Desconhecido', planoId: exactMatch.planoId }
   }
   
   // Try fuzzy match on first name and last name
@@ -285,12 +285,12 @@ async function findMemberByName(name: string): Promise<{ id: string; usuarioNome
       if (nameParts.length >= 2) {
         const lastName = nameParts[nameParts.length - 1].toLowerCase()
         if (matchName.includes(lastName)) {
-          return { id: match.id, usuarioNome: match.usuario.nome, planoId: match.planoId }
+          return { id: match.id, usuarioNome: match.usuario.nome || 'Desconhecido', planoId: match.planoId }
         }
       } else {
         // Single name - check for close match
         if (matchName.startsWith(searchName) || searchName.startsWith(matchName.split(' ')[0])) {
-          return { id: match.id, usuarioNome: match.usuario.nome, planoId: match.planoId }
+          return { id: match.id, usuarioNome: match.usuario.nome || 'Desconhecido', planoId: match.planoId }
         }
       }
     }
@@ -298,7 +298,7 @@ async function findMemberByName(name: string): Promise<{ id: string; usuarioNome
     // Return first fuzzy match if only one result
     if (fuzzyMatches.length === 1) {
       const match = fuzzyMatches[0]
-      return { id: match.id, usuarioNome: match.usuario.nome, planoId: match.planoId }
+      return { id: match.id, usuarioNome: match.usuario.nome || 'Desconhecido', planoId: match.planoId }
     }
   }
   

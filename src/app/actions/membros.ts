@@ -33,7 +33,7 @@ export async function enviarLembreteBoasVindas(id: string) {
 
     const result = await enviarMensagemWhatsApp({
       telefone: membro.telefone,
-      mensagem: templates.boasVindas(membro.usuario.nome)
+      mensagem: templates.boasVindas(membro.usuario.nome || 'Aluno(a)')
     })
 
     if (result.success) {

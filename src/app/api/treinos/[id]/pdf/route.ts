@@ -67,14 +67,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Generate PDF using PDFKit
     const pdfBuffer = await generateTrainingPDF({
-      aluno: ficha.membro.usuario.nome,
+      aluno: ficha.membro.usuario.nome || 'Aluno',
       date: ficha.data || new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }),
       observacoes: ficha.observacoes || '',
       sessions,
     })
 
     // Generate filename
-    const safeNome = ficha.membro.usuario.nome.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
+    const safeNome = (ficha.membro.usuario.nome || 'aluno').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
     const filename = `treino-${safeNome}.pdf`
 
     return new NextResponse(new Uint8Array(pdfBuffer), {

@@ -297,7 +297,7 @@ async function findOrCreateMember(name: string, report: ImportReport): Promise<s
     
     // Try to find best match
     for (const match of fuzzyMatches) {
-      const matchName = match.usuario.nome.toLowerCase()
+      const matchName = (match.usuario.nome || '').toLowerCase()
       
       // If names have multiple parts, check if last name also matches
       if (nameParts.length >= 2) {
