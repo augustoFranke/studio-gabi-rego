@@ -238,16 +238,6 @@ export default async function MembroPage({ params }: MembroPageProps) {
               <p className="text-sm">{membro.usuario.email}</p>
             </div>
 
-            {membro.endereco && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  Endereço
-                </p>
-                <p className="text-sm">{membro.endereco}</p>
-              </div>
-            )}
-
             {membro.observacoes && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Observações</p>

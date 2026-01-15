@@ -111,7 +111,6 @@ export function MemberImportButton() {
                 <code className="bg-background px-1.5 py-0.5 rounded text-xs">plano</code>
                 <code className="bg-background px-1.5 py-0.5 rounded text-xs">plano_id</code>
                 <code className="bg-background px-1.5 py-0.5 rounded text-xs">rg</code>
-                <code className="bg-background px-1.5 py-0.5 rounded text-xs">endereco</code>
                 <code className="bg-background px-1.5 py-0.5 rounded text-xs">status</code>
                 <code className="bg-background px-1.5 py-0.5 rounded text-xs">senha</code>
               </div>

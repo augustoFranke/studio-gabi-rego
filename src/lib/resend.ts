@@ -148,6 +148,47 @@ export const emailTemplates = {
     </html>
   `,
 
+  verificacaoEmail: (nome: string | null, linkVerificacao: string) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px 20px; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+        .button:hover { background: linear-gradient(135deg, #c2410c, #ea580c); }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-top: 20px; font-size: 13px; color: #92400e; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0; font-size: 24px;">Verifique seu email</h1>
+        </div>
+        <div class="content">
+          <p>Olá${nome ? ` <strong>${nome}</strong>` : ''}!</p>
+          <p>Obrigado por se cadastrar no <strong>Gabi Studio</strong>!</p>
+          <p>Para continuar com seu cadastro, por favor verifique seu email clicando no botão abaixo:</p>
+          <div style="text-align: center;">
+            <a href="${linkVerificacao}" class="button" style="color: white;">Verificar meu email</a>
+          </div>
+          <div class="warning">
+            <strong>Importante:</strong> Este link é válido por 24 horas. Se você não solicitou este cadastro, pode ignorar este email.
+          </div>
+        </div>
+        <div class="footer">
+          <p>Gabi Studio - Seu estúdio de Pilates</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
+
   boasVindas: (nome: string) => `
     <!DOCTYPE html>
     <html>

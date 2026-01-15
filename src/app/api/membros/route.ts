@@ -13,7 +13,6 @@ const membroSchema = z.object({
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),
-  endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.number().optional(),
   sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { nome, email, senha, cpf, rg, telefone, dataNascimento, endereco, planoId, precoCustomizado, sexo } = validation.data
+    const { nome, email, senha, cpf, rg, telefone, dataNascimento, planoId, precoCustomizado, sexo } = validation.data
 
     // Validate email if provided
     if (email && !validarEmail(email)) {
@@ -105,7 +104,6 @@ export async function POST(request: NextRequest) {
           rg,
           telefone: telefone ? telefone.replace(/\D/g, '') : null,
           dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
-          endereco,
           planoId,
           precoCustomizado,
           sexo,
