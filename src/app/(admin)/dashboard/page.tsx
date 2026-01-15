@@ -21,9 +21,9 @@ const isTimeInPast = (timeString: string, currentHour: number, currentMinute: nu
 }
 
 export default async function DashboardPage() {
-  // Get current time in Brazil (America/Sao_Paulo)
+  // Get current time in Brazil (America/Cuiaba)
   const now = new Date()
-  const timeZone = 'America/Sao_Paulo'
+  const timeZone = 'America/Cuiaba'
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone,
     year: 'numeric',
