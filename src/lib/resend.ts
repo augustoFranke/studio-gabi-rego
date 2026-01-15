@@ -47,7 +47,7 @@ export async function enviarEmail({
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Gabi Studio <noreply@gabistudio.com.br>',
+        from: 'Gabi Studio <verificacao@studiogabirego.com>',
         to: para,
         subject: assunto,
         html,
