@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { generateTrainingPDF } from '@/lib/pdf'
 
 interface RouteParams {
   params: Promise<{
@@ -64,33 +65,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([name, exercises]) => ({ name, exercises }))
 
-    // Call Python PDF generator endpoint
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
-
-    const pdfResponse = await fetch(`${baseUrl}/api/generate_pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        aluno: ficha.membro.usuario.nome,
-        date: ficha.data || new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }),
-        observacoes: ficha.observacoes || '',
-        sessions,
-      }),
+    // Generate PDF using PDFKit
+    const pdfBuffer = await generateTrainingPDF({
+      aluno: ficha.membro.usuario.nome,
+      date: ficha.data || new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }),
+      observacoes: ficha.observacoes || '',
+      sessions,
     })
-
-    if (!pdfResponse.ok) {
-      const errorData = await pdfResponse.json().catch(() => ({ error: 'Unknown error' }))
-      return NextResponse.json(
-        { error: errorData.error || 'Erro ao gerar PDF' },
-        { status: pdfResponse.status }
-      )
-    }
-
-    const pdfBuffer = await pdfResponse.arrayBuffer()
 
     // Generate filename
     const safeNome = ficha.membro.usuario.nome.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
