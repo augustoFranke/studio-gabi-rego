@@ -6,9 +6,7 @@
   "regions": ["gru1"],
   "functions": {
     "src/app/api/**/*.ts": {
-      "includeFiles": [
-        "node_modules/pdfkit/js/data/*.afm"
-      ]
+      "includeFiles": "node_modules/pdfkit/js/data/*.afm"
     }
   }
 }
