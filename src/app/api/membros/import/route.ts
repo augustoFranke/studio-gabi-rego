@@ -14,7 +14,6 @@ type NormalizedRow = {
   planoId?: string
   planoNome?: string
   rg?: string
-  endereco?: string
   senha?: string
   status?: string
 }
@@ -46,9 +45,6 @@ const HEADER_MAP: Record<string, keyof NormalizedRow> = {
   plano_id: 'planoId',
   plano_codigo: 'planoId',
   rg: 'rg',
-  endereco: 'endereco',
-  endereco_completo: 'endereco',
-  address: 'endereco',
   senha: 'senha',
   password: 'senha',
   status: 'status',
@@ -198,7 +194,6 @@ export async function POST(request: NextRequest) {
     const planoNome = row.planoNome?.trim()
     const planoIdRaw = row.planoId?.trim()
     const rg = row.rg?.trim()
-    const endereco = row.endereco?.trim()
 
     const missingFields: string[] = []
     if (!nome) missingFields.push('nome')
@@ -283,7 +278,6 @@ export async function POST(request: NextRequest) {
             rg,
             telefone: telefoneRaw!,
             dataNascimento,
-            endereco,
             planoId,
             status,
           },

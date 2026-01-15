@@ -11,7 +11,6 @@ const updateMembroSchema = z.object({
     rg: z.string().optional(),
     telefone: z.string().optional(),
     dataNascimento: z.string().optional(),
-    endereco: z.string().optional(),
     planoId: z.string().optional(),
     precoCustomizado: z.union([z.number(), z.string(), z.null()]).optional().transform(val => {
         if (val === '' || val === null) return null;
@@ -131,7 +130,6 @@ export async function PATCH(
             if (data.rg !== undefined) memberUpdateData.rg = data.rg // Permitir limpar RG? se string vazia
             if (data.telefone) memberUpdateData.telefone = data.telefone.replace(/\D/g, '')
             if (data.dataNascimento) memberUpdateData.dataNascimento = new Date(data.dataNascimento)
-            if (data.endereco !== undefined) memberUpdateData.endereco = data.endereco
             if (data.planoId) memberUpdateData.planoId = data.planoId
             if (data.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = data.precoCustomizado
             if (data.sexo) memberUpdateData.sexo = data.sexo

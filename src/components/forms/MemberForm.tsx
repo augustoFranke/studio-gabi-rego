@@ -39,7 +39,6 @@ const formSchema = z.object({
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),
-  endereco: z.string().optional(),
   planoId: z.string().optional(),
   precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional(),
   sexo: z.enum(["MASCULINO", "FEMININO"]).optional(),
@@ -74,7 +73,6 @@ export function MemberForm({
       rg: initialData?.rg || "",
       telefone: initialData?.telefone ? formatarTelefone(initialData.telefone) : "",
       dataNascimento: initialData?.dataNascimento ? new Date(initialData.dataNascimento).toISOString().split('T')[0] : "",
-      endereco: initialData?.endereco || "",
       planoId: initialData?.planoId || "",
       precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
       sexo: initialData?.sexo || "",
@@ -430,20 +428,6 @@ export function MemberForm({
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Rua, número, bairro, cidade..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end gap-4">
               <Button
