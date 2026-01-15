@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { generateTrainingPDF } from '@/lib/pdf'
 
 interface Exercise {
   name: string
@@ -21,7 +22,7 @@ interface TrainingPDFData {
 
 /**
  * POST /api/treinos/gerar-pdf
- * Generate a training plan PDF using Python/ReportLab
+ * Generate a training plan PDF using PDFKit
  */
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -51,33 +52,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call Python PDF generator endpoint
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
-
-    const pdfResponse = await fetch(`${baseUrl}/api/generate_pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        aluno,
-        date,
-        observacoes: observacoes || '',
-        sessions: validSessions,
-      }),
+    // Generate PDF using PDFKit
+    const pdfBuffer = await generateTrainingPDF({
+      aluno,
+      date,
+      observacoes: observacoes || '',
+      sessions: validSessions.map(s => ({
+        name: s.name,
+        exercises: s.exercises.map(ex => ({
+          name: ex.name,
+          sets: String(ex.sets),
+          reps: String(ex.reps),
+        })),
+      })),
     })
-
-    if (!pdfResponse.ok) {
-      const errorData = await pdfResponse.json().catch(() => ({ error: 'Unknown error' }))
-      return NextResponse.json(
-        { error: errorData.error || 'Erro ao gerar PDF' },
-        { status: pdfResponse.status }
-      )
-    }
-
-    const pdfBuffer = await pdfResponse.arrayBuffer()
 
     // Generate filename
     const safeAluno = aluno.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30)
