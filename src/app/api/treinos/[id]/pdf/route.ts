@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { gerarPDFFichaTreino } from '@/lib/pdf'
 
 interface RouteParams {
   params: Promise<{
@@ -45,24 +44,53 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const pdfBuffer = await gerarPDFFichaTreino({
-      nome: ficha.nome,
-      data: ficha.data,
-      objetivo: ficha.objetivo,
-      observacoes: ficha.observacoes,
-      membro: {
-        nome: ficha.membro.usuario.nome,
+    // Group exercises by session
+    const sessionsMap = new Map<string, Array<{ name: string; sets: string; reps: string }>>()
+
+    for (const ex of ficha.exercicios) {
+      const sessionName = ex.sessao || 'A'
+      if (!sessionsMap.has(sessionName)) {
+        sessionsMap.set(sessionName, [])
+      }
+      sessionsMap.get(sessionName)!.push({
+        name: ex.nome,
+        sets: ex.series,
+        reps: ex.repeticoes,
+      })
+    }
+
+    // Convert to array format
+    const sessions = Array.from(sessionsMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, exercises]) => ({ name, exercises }))
+
+    // Call Python PDF generator endpoint
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+    const pdfResponse = await fetch(`${baseUrl}/api/generate_pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      exercicios: ficha.exercicios.map(ex => ({
-        nome: ex.nome,
-        sessao: ex.sessao,
-        grupoMuscular: ex.grupoMuscular,
-        series: ex.series,
-        repeticoes: ex.repeticoes,
-        descanso: ex.descanso,
-        observacoes: ex.observacoes
-      }))
-    });
+      body: JSON.stringify({
+        aluno: ficha.membro.usuario.nome,
+        date: ficha.data || new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }),
+        observacoes: ficha.observacoes || '',
+        sessions,
+      }),
+    })
+
+    if (!pdfResponse.ok) {
+      const errorData = await pdfResponse.json().catch(() => ({ error: 'Unknown error' }))
+      return NextResponse.json(
+        { error: errorData.error || 'Erro ao gerar PDF' },
+        { status: pdfResponse.status }
+      )
+    }
+
+    const pdfBuffer = await pdfResponse.arrayBuffer()
 
     // Generate filename
     const safeNome = ficha.membro.usuario.nome.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()

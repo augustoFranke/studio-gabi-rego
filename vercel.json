@@ -3,5 +3,11 @@
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["gru1"]
+  "regions": ["gru1"],
+  "functions": {
+    "api/generate_pdf.py": {
+      "runtime": "python3.11",
+      "maxDuration": 30
+    }
+  }
 }
