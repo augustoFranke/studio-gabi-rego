@@ -6,7 +6,7 @@
   "regions": ["gru1"],
   "functions": {
     "api/generate_pdf.py": {
-      "runtime": "python3.11",
+      "runtime": "python3.9",
       "maxDuration": 30
     }
   }
