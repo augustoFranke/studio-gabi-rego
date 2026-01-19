@@ -45,48 +45,81 @@ export async function POST(request: Request) {
       where: { email: email.toLowerCase() },
     })
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Este email já está cadastrado" },
-        { status: 400 }
-      )
-    }
-
-    // Generate verification token
+    // Generate verification token (needed for both paths)
     const verificationToken = randomBytes(32).toString("hex")
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    // Hash password
+    // Hash password (needed for both paths)
     const hashedPassword = await hash(senha, 12)
 
-    // Create user
-    const usuario = await prisma.usuario.create({
-      data: {
-        email: email.toLowerCase(),
-        senha: hashedPassword,
-        role: "MEMBRO",
-        tokenVerificacao: verificationToken,
-        tokenVerificacaoExpira: tokenExpiry,
-        etapaOnboarding: 1,
-        onboardingCompleto: false,
-      },
-    })
+    if (existingUser) {
+      // VERIFIED USER: Block registration
+      if (existingUser.emailVerificado) {
+        return NextResponse.json(
+          { error: "Este email já está cadastrado" },
+          { status: 400 }
+        )
+      }
+
+      // UNVERIFIED (ZOMBIE) USER: Update and resend
+      await prisma.usuario.update({
+        where: { id: existingUser.id },
+        data: {
+          senha: hashedPassword,
+          tokenVerificacao: verificationToken,
+          tokenVerificacaoExpira: tokenExpiry,
+          etapaOnboarding: 1,
+          onboardingCompleto: false,
+        },
+      })
+    } else {
+      // NEW USER: Create account
+      await prisma.usuario.create({
+        data: {
+          email: email.toLowerCase(),
+          senha: hashedPassword,
+          role: "MEMBRO",
+          tokenVerificacao: verificationToken,
+          tokenVerificacaoExpira: tokenExpiry,
+          etapaOnboarding: 1,
+          onboardingCompleto: false,
+        },
+      })
+    }
 
     // Send verification email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
 
     const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
 
+    console.log("Resend configured:", isResendConfigured())
+    console.log("Base URL:", baseUrl)
+    console.log("Verification link:", verificationLink)
+
     if (isResendConfigured()) {
-      await enviarEmail({
+      const emailResult = await enviarEmail({
         para: email,
         assunto: "Verifique seu email - Gabi Studio",
         html: emailTemplates.verificacaoEmail(null, verificationLink),
       })
+
+      if (!emailResult.success) {
+        console.error("Failed to send verification email:", emailResult.error)
+        return NextResponse.json(
+          { error: "Falha ao enviar email de verificação. Tente novamente." },
+          { status: 500 }
+        )
+      }
+
+      console.log("Verification email sent successfully:", emailResult.id)
     } else {
-      console.log("Resend not configured. Verification link:", verificationLink)
+      console.warn("Resend not configured - skipping email send")
+      // In production, this should probably return an error instead of success
+      return NextResponse.json(
+        { error: "Serviço de email não configurado. Contate o suporte." },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
