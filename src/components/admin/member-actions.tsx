@@ -28,8 +28,9 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const isActive = status === 'ATIVO'
 
-  const handleClick = () => {
+  const handleSelect = (e: Event) => {
     if (isActive) {
+      e.preventDefault()
       setShowConfirmDialog(true)
     } else {
       handleActivate()
@@ -61,7 +62,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
 
   return (
     <>
-      <DropdownMenuItem onClick={handleClick} disabled={isPending}>
+      <DropdownMenuItem onSelect={handleSelect} disabled={isPending}>
         {isActive ? (
           <>
             <Trash2 className="mr-2 h-4 w-4" />
