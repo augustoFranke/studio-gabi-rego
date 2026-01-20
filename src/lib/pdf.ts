@@ -55,7 +55,7 @@ function getLogoPath(): string | null {
   return null
 }
 
-function drawPageBorder(doc: PDFDocument): void {
+function drawPageBorder(doc: PDFKit.PDFDocument): void {
   doc.save()
   doc.lineWidth(PAGE_BORDER_LINE_WIDTH)
   doc.rect(
