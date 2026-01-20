@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import path from 'path'
+import { FREE_STYLE_SCRIPT_TTF_BASE64 } from '@/lib/fonts/FreeStyleScript.base64'
 
 // A4 Dimensions (PDFKit defaults to 72 DPI, but can accept other units or we convert)
 // PDFKit default is points. 1 cm = 28.3465 points
@@ -63,20 +64,18 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
       }
     })
 
-    const fontPaths = [
-      path.join(process.cwd(), 'public', 'fonts', 'FreeStyleScript.ttf'),
-      path.join(__dirname, '..', '..', 'public', 'fonts', 'FreeStyleScript.ttf'),
-    ]
+    let fontRegular = SCRIPT_FONT_NAME
+    let fontBold = SCRIPT_FONT_NAME
 
-    const scriptFontPath = fontPaths.find(p => fs.existsSync(p))
-
-    if (scriptFontPath) {
-      doc.registerFont(SCRIPT_FONT_NAME, scriptFontPath)
+    try {
+      // Embed font for serverless environments (no filesystem dependency).
+      const scriptFontBuffer = Buffer.from(FREE_STYLE_SCRIPT_TTF_BASE64, 'base64')
+      doc.registerFont(SCRIPT_FONT_NAME, scriptFontBuffer)
+    } catch (err) {
+      console.warn('FreeStyleScript font load failed; falling back to Helvetica.', err)
+      fontRegular = FONT_REGULAR_FALLBACK
+      fontBold = FONT_BOLD_FALLBACK
     }
-    // No else needed - PDFKit has Helvetica/Helvetica-Bold built-in
-
-    const fontRegular = scriptFontPath ? SCRIPT_FONT_NAME : FONT_REGULAR_FALLBACK
-    const fontBold = scriptFontPath ? SCRIPT_FONT_NAME : FONT_BOLD_FALLBACK
 
     const buffers: Buffer[] = []
 
