@@ -152,16 +152,23 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
         doc.font(isHeader ? fontBold : fontRegular)
            .fontSize(12)
 
-        
-        // Center text vertically
-        // For wrapping, we'd need more complex logic.
-        // Let's assume text fits or truncate for now, or simple wrap.
-        doc.text(text, x + 2, y + (rowHeight - 12)/2 + 2, {
+        const textX = x + 2
+        const textY = y + (rowHeight - 12) / 2 + 2
+        const textOptions = {
           width: width - 4,
           align: i > 0 ? 'center' : 'left', // Center sets/reps
           lineBreak: false,
           ellipsis: true
-        })
+        }
+
+        // Center text vertically
+        // For wrapping, we'd need more complex logic.
+        // Let's assume text fits or truncate for now, or simple wrap.
+        doc.text(text, textX, textY, textOptions)
+        if (isHeader) {
+          // Simulate bold by drawing twice with a slight offset.
+          doc.text(text, textX + 0.5, textY, textOptions)
+        }
         
         x += width
       })
