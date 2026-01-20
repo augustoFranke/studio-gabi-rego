@@ -30,6 +30,22 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
         notFound()
     }
 
+    // Transform Prisma null values to undefined for form compatibility
+    const formData = {
+        id: membro.id,
+        usuario: {
+            nome: membro.usuario.nome ?? undefined,
+            email: membro.usuario.email ?? undefined,
+        },
+        cpf: membro.cpf ?? undefined,
+        rg: membro.rg ?? undefined,
+        telefone: membro.telefone ?? undefined,
+        dataNascimento: membro.dataNascimento?.toISOString() ?? undefined,
+        planoId: membro.planoId ?? undefined,
+        precoCustomizado: membro.precoCustomizado ? String(membro.precoCustomizado) : undefined,
+        sexo: membro.sexo ?? undefined,
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
@@ -47,7 +63,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
             </div>
 
             <div className="max-w-4xl">
-                <MemberForm initialData={membro} mode="edit" />
+                <MemberForm initialData={formData} mode="edit" />
             </div>
         </div>
     )

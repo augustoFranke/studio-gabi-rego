@@ -51,7 +51,7 @@ const formSchema = z.object({
     z.null()
   ]).optional(),
   sexo: z.enum(["MASCULINO", "FEMININO"], {
-    errorMap: () => ({ message: "Por favor, selecione uma opção de sexo." }),
+    message: "Por favor, selecione uma opção de sexo.",
   }).optional(),
 })
 
@@ -99,7 +99,7 @@ export function MemberForm({
       dataNascimento: initialData?.dataNascimento ? new Date(initialData.dataNascimento).toISOString().split('T')[0] : "",
       planoId: initialData?.planoId || "",
       precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
-      sexo: initialData?.sexo || "",
+      sexo: initialData?.sexo || undefined,
     },
   })
 
@@ -135,7 +135,7 @@ export function MemberForm({
   async function onSubmit(values: FormValues) {
     setLoading(true)
     try {
-      const url = mode === 'create' ? "/api/membros" : `/api/membros/${initialData.id}`
+      const url = mode === 'create' ? "/api/membros" : `/api/membros/${initialData!.id}`
       const method = mode === 'create' ? "POST" : "PATCH"
 
       // Limpar campos opcionais vazios
@@ -150,7 +150,7 @@ export function MemberForm({
         delete body.sexo
       }
       if (body.cpf === "") {
-        body.cpf = null // Enviar null se vazio para permitir CPF opcional
+        (body as Record<string, unknown>).cpf = null // Enviar null se vazio para permitir CPF opcional
       }
 
       console.log('Sending body:', body) // Debug
@@ -170,7 +170,7 @@ export function MemberForm({
       }
 
       toast.success(mode === 'create' ? "Membro cadastrado com sucesso!" : "Dados do membro atualizados com sucesso!")
-      router.push(mode === 'create' ? "/membros" : `/membros/${initialData.id}`)
+      router.push(mode === 'create' ? "/membros" : `/membros/${initialData!.id}`)
       router.refresh()
     } catch (error) {
       console.error("Erro no formulário:", error)
