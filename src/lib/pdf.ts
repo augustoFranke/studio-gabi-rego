@@ -154,9 +154,10 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
 
         const textX = x + 2
         const textY = y + (rowHeight - 12) / 2 + 2
-        const textOptions = {
+        const align: PDFKit.TextOptions['align'] = i > 0 ? 'center' : 'left'
+        const textOptions: PDFKit.TextOptions = {
           width: width - 4,
-          align: i > 0 ? 'center' : 'left', // Center sets/reps
+          align, // Center sets/reps
           lineBreak: false,
           ellipsis: true
         }
