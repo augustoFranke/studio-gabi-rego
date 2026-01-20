@@ -99,6 +99,13 @@ interface Pagamento {
   }
 }
 
+interface FinanceiroStats {
+  totalPlanos: number
+  pagamentosPendentes: number
+  pagamentosAtrasados: number
+  receitaMes: number
+}
+
 // Helper functions
 function formatCurrency(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value) : value
@@ -139,7 +146,6 @@ export default function FinanceiroPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [totalPagamentos, setTotalPagamentos] = useState(0)
   const [loadingPagamentos, setLoadingPagamentos] = useState(false)
   const ITEMS_PER_PAGE = 10
 
@@ -173,6 +179,27 @@ export default function FinanceiroPage() {
   const [planoErrors, setPlanoErrors] = useState<Record<string, string>>({})
   const [pagamentoErrors, setPagamentoErrors] = useState<Record<string, string>>({})
 
+  // Stats state
+  const [stats, setStats] = useState<FinanceiroStats>({
+    totalPlanos: 0,
+    pagamentosPendentes: 0,
+    pagamentosAtrasados: 0,
+    receitaMes: 0
+  })
+
+  // Fetch stats
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/financeiro/stats")
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas:", error)
+    }
+  }, [])
+
   // Fetch pagamentos with pagination
   const fetchPagamentos = useCallback(async (page: number = 1) => {
     setLoadingPagamentos(true)
@@ -182,7 +209,6 @@ export default function FinanceiroPage() {
         const response = await res.json()
         setPagamentos(response.data)
         setTotalPages(response.meta.totalPages)
-        setTotalPagamentos(response.meta.total)
         setCurrentPage(response.meta.page)
       }
     } catch (error) {
@@ -212,13 +238,14 @@ export default function FinanceiroPage() {
 
       // Fetch first page of pagamentos
       await fetchPagamentos(1)
+      await fetchStats()
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       toast.error("Erro ao carregar dados")
     } finally {
       setLoading(false)
     }
-  }, [fetchPagamentos])
+  }, [fetchPagamentos, fetchStats])
 
   useEffect(() => {
     fetchData()
@@ -429,6 +456,7 @@ export default function FinanceiroPage() {
         toast.success(editingPagamento ? "Pagamento atualizado!" : "Pagamento criado!")
         setPagamentoDialogOpen(false)
         fetchPagamentos(currentPage)
+        fetchStats()
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao salvar pagamento")
@@ -451,6 +479,7 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success("Status atualizado!")
         fetchPagamentos(currentPage)
+        fetchStats()
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao atualizar status")
@@ -472,6 +501,7 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success(data.message || "Pagamento removido!")
         fetchPagamentos(currentPage)
+        fetchStats()
       } else {
         toast.error(data.error || "Erro ao remover pagamento")
       }
@@ -486,16 +516,6 @@ export default function FinanceiroPage() {
     const matchesStatus = filterStatus === "all" || p.status === filterStatus
     return matchesSearch && matchesStatus
   })
-
-  // Stats
-  const stats = {
-    totalPlanos: planos.filter((p) => p.ativo).length,
-    pagamentosPendentes: pagamentos.filter((p) => p.status === "PENDENTE").length,
-    pagamentosAtrasados: pagamentos.filter((p) => p.status === "ATRASADO").length,
-    receitaMes: pagamentos
-      .filter((p) => p.status === "PAGO" && new Date(p.dataPagamento!).getMonth() === new Date().getMonth())
-      .reduce((acc, p) => acc + parseFloat(String(p.valor)), 0),
-  }
 
   if (loading) {
     return (
