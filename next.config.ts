@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     unoptimized: isDocker,
   },
 
+  // Keep pdfkit external so its standard font data can be resolved at runtime.
+  serverExternalPackages: ["pdfkit"],
+
   // Enable experimental features
   experimental: {
     serverActions: {
