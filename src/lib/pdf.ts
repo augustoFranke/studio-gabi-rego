@@ -72,10 +72,8 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
 
     if (scriptFontPath) {
       doc.registerFont(SCRIPT_FONT_NAME, scriptFontPath)
-    } else {
-      doc.registerFont(FONT_REGULAR_FALLBACK, path.join(__dirname, 'fonts', 'Helvetica.afm'))
-      doc.registerFont(FONT_BOLD_FALLBACK, path.join(__dirname, 'fonts', 'Helvetica-Bold.afm'))
     }
+    // No else needed - PDFKit has Helvetica/Helvetica-Bold built-in
 
     const fontRegular = scriptFontPath ? SCRIPT_FONT_NAME : FONT_REGULAR_FALLBACK
     const fontBold = scriptFontPath ? SCRIPT_FONT_NAME : FONT_BOLD_FALLBACK
