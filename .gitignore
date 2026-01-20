@@ -40,7 +40,6 @@ yarn-error.log*
 
 # Keep example/template files (safe to commit)
 !.env.example
-!.env.development
 !.env.production.example
 
 # vercel
