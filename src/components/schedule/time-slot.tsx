@@ -41,6 +41,9 @@ const TimeSlotBase = function TimeSlot({
 }: TimeSlotProps) {
   const capacity = getSlotCapacityInfo(agendamentos.length)
   const hourLabel = `${hour.toString().padStart(2, '0')}:00`
+  const capacityBackground = capacity.isFull
+    ? 'bg-red-50/40 dark:bg-red-950/20'
+    : 'bg-emerald-50/40 dark:bg-emerald-950/15'
 
   const handleDragStart = useCallback((agendamento: Agendamento) => (e: React.DragEvent) => {
     e.dataTransfer.setData('agendamentoId', agendamento.id)
@@ -57,8 +60,8 @@ const TimeSlotBase = function TimeSlot({
       <div
         className={cn(
           'min-h-[40px] p-1 border-b border-r last:border-r-0 transition-colors',
+          capacityBackground,
           isDragOver && 'bg-primary/10',
-          capacity.isFull && 'bg-red-50 dark:bg-red-950/20'
         )}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -130,7 +133,7 @@ const TimeSlotBase = function TimeSlot({
       <div
         className={cn(
           'flex-1 min-h-[60px] p-2',
-          capacity.isFull && 'bg-red-50 dark:bg-red-950/20'
+          capacityBackground
         )}
       >
         {agendamentos.length > 0 ? (
@@ -194,4 +197,3 @@ const TimeSlotBase = function TimeSlot({
 }
 
 export const TimeSlot = memo(TimeSlotBase)
-
