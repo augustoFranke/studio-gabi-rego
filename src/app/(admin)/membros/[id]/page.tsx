@@ -192,7 +192,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">CPF</p>
-                <p className="text-sm">{formatCPF(membro.cpf)}</p>
+                <p className="text-sm">{membro.cpf ? formatCPF(membro.cpf) : '-'}</p>
               </div>
               {membro.rg && (
                 <div>
