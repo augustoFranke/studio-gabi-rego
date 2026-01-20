@@ -290,7 +290,7 @@ export default async function MembrosPage({
                             </DropdownMenuItem>
                             <SendMemberReminder id={membro.id} />
                             <DropdownMenuSeparator />
-                            <MemberStatusToggle id={membro.id} status={membro.status} />
+                            <MemberStatusToggle id={membro.id} status={membro.status} nome={membro.usuario.nome || undefined} />
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

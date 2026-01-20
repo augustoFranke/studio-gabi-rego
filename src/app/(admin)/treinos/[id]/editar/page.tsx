@@ -30,6 +30,7 @@ type Exercise = {
 type Session = {
     id: string;
     name: string;
+    description: string;
     exercises: Exercise[];
 };
 
@@ -98,16 +99,31 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         sessionsMap.set(ex.sessao, exercises);
                     });
 
+                    // Parse session names to extract letter and description
+                    // Format: "A" or "A - Description"
+                    const parseSessionName = (fullName: string): { letter: string; description: string } => {
+                        const match = fullName.match(/^([A-Z])(?:\s*-\s*(.*))?$/);
+                        if (match) {
+                            return { letter: match[1], description: match[2] || '' };
+                        }
+                        // Fallback: use first character as letter
+                        return { letter: fullName.charAt(0) || 'A', description: '' };
+                    };
+
                     const loadedSessions: Session[] = Array.from(sessionsMap.entries())
                         .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([name, exercises]) => ({
-                            id: crypto.randomUUID(),
-                            name,
-                            exercises,
-                        }));
+                        .map(([fullName, exercises]) => {
+                            const { letter, description } = parseSessionName(fullName);
+                            return {
+                                id: crypto.randomUUID(),
+                                name: letter,
+                                description,
+                                exercises,
+                            };
+                        });
 
                     if (loadedSessions.length === 0) {
-                        loadedSessions.push({ id: crypto.randomUUID(), name: 'A', exercises: [] });
+                        loadedSessions.push({ id: crypto.randomUUID(), name: 'A', description: '', exercises: [] });
                     }
 
                     setSessions(loadedSessions);
@@ -141,17 +157,36 @@ export default function EditarTreinoPage({ params }: PageProps) {
         const nextLetter = String.fromCharCode(65 + sessions.length);
         setSessions([
             ...sessions,
-            { id: crypto.randomUUID(), name: nextLetter, exercises: [] },
+            { id: crypto.randomUUID(), name: nextLetter, description: '', exercises: [] },
         ]);
     };
 
     const removeSession = (sessionId: string) => {
         const newSessions = sessions.filter((s) => s.id !== sessionId);
+        // Re-index names (keep descriptions)
         const reindexed = newSessions.map((s, idx) => ({
             ...s,
             name: String.fromCharCode(65 + idx),
         }));
         setSessions(reindexed);
+    };
+
+    const updateSessionDescription = (sessionId: string, description: string) => {
+        setSessions(
+            sessions.map((s) => {
+                if (s.id === sessionId) {
+                    return { ...s, description };
+                }
+                return s;
+            })
+        );
+    };
+
+    // Get full session name combining letter and description
+    const getFullSessionName = (session: Session) => {
+        return session.description.trim()
+            ? `${session.name} - ${session.description.trim()}`
+            : session.name;
     };
 
     const addExercise = (sessionId: string) => {
@@ -244,10 +279,11 @@ export default function EditarTreinoPage({ params }: PageProps) {
             }> = [];
 
             sessions.forEach(s => {
+                const fullSessionName = getFullSessionName(s);
                 s.exercises.forEach((e) => {
                     if (e.name.trim()) {
                         exercicios.push({
-                            sessao: s.name,
+                            sessao: fullSessionName,
                             nome: e.name,
                             series: e.sets || '3',
                             repeticoes: e.reps || '10',
@@ -466,10 +502,17 @@ export default function EditarTreinoPage({ params }: PageProps) {
 
                         <CardHeader className="bg-muted/30 pb-4">
                             <CardTitle className="flex items-center gap-2 text-xl">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                     {session.name}
                                 </div>
-                                Treino {session.name}
+                                <span className="whitespace-nowrap">Treino {session.name}</span>
+                                <span className="text-muted-foreground font-normal">-</span>
+                                <Input
+                                    placeholder="Ex: Costas e Bíceps"
+                                    value={session.description}
+                                    onChange={(e) => updateSessionDescription(session.id, e.target.value)}
+                                    className="flex-1 h-8 text-base font-normal bg-background max-w-xs"
+                                />
                             </CardTitle>
                         </CardHeader>
 

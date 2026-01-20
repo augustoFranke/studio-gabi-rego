@@ -1,47 +1,109 @@
 'use client'
 
-import { 
-  DropdownMenuItem, 
+import { useState, useTransition } from "react"
+import {
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { ShieldAlert, ShieldCheck, Send } from "lucide-react"
-import { toggleMembroStatus, enviarLembreteBoasVindas } from "@/app/actions/membros"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { ShieldCheck, Send, Trash2 } from "lucide-react"
+import { toggleMembroStatus, enviarLembreteBoasVindas, deleteMembro } from "@/app/actions/membros"
 import { toast } from "sonner"
-import { useTransition } from "react"
 
 interface MemberActionsProps {
   id: string
   status: string
+  nome?: string
 }
 
-export function MemberStatusToggle({ id, status }: MemberActionsProps) {
+export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
   const [isPending, startTransition] = useTransition()
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const isActive = status === 'ATIVO'
 
-  const handleToggle = () => {
+  const handleClick = () => {
+    if (isActive) {
+      setShowConfirmDialog(true)
+    } else {
+      handleActivate()
+    }
+  }
+
+  const handleActivate = () => {
     startTransition(async () => {
       const result = await toggleMembroStatus(id, status)
       if (result.success) {
-        toast.success(isActive ? "Membro desativado" : "Membro ativado")
+        toast.success("Membro ativado")
       } else {
         toast.error(result.error || "Erro ao alterar status")
       }
     })
   }
 
+  const handleConfirmDelete = () => {
+    startTransition(async () => {
+      const result = await deleteMembro(id)
+      if (result.success) {
+        toast.success("Membro excluído permanentemente")
+        setShowConfirmDialog(false)
+      } else {
+        toast.error(result.error || "Erro ao excluir membro")
+      }
+    })
+  }
+
   return (
-    <DropdownMenuItem onClick={handleToggle} disabled={isPending}>
-      {isActive ? (
-        <>
-          <ShieldAlert className="mr-2 h-4 w-4" />
-          Desativar
-        </>
-      ) : (
-        <>
-          <ShieldCheck className="mr-2 h-4 w-4" />
-          Ativar
-        </>
-      )}
-    </DropdownMenuItem>
+    <>
+      <DropdownMenuItem onClick={handleClick} disabled={isPending}>
+        {isActive ? (
+          <>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Excluir
+          </>
+        ) : (
+          <>
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Ativar
+          </>
+        )}
+      </DropdownMenuItem>
+
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir {nome ? <strong>{nome}</strong> : "este membro"}?
+              Esta ação é <strong>permanente</strong> e irá remover todos os dados do membro,
+              incluindo agendamentos, pagamentos, treinos e anamnese.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isPending}
+            >
+              {isPending ? "Excluindo..." : "Excluir permanentemente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
