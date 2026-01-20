@@ -31,17 +31,28 @@ import { validarCPF, formatarCPF, formatarTelefone } from "@/lib/validators"
 
 const formSchema = z.object({
   nome: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal('')),
+  email: z.string()
+    .email("Por favor, insira um endereço de email válido.")
+    .optional()
+    .or(z.literal('')),
   senha: z.string().optional(),
-  cpf: z.string().min(1, "CPF é obrigatório").refine((val) => validarCPF(val), {
-    message: "CPF inválido",
-  }),
+  cpf: z.string()
+    .optional()
+    .refine((val) => !val || validarCPF(val), {
+      message: "O CPF informado é inválido. Verifique os números digitados.",
+    }),
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),
   planoId: z.string().optional(),
-  precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional(),
-  sexo: z.enum(["MASCULINO", "FEMININO"]).optional(),
+  precoCustomizado: z.union([
+    z.string().transform((val) => val === '' ? null : val), 
+    z.number(), 
+    z.null()
+  ]).optional(),
+  sexo: z.enum(["MASCULINO", "FEMININO"], {
+    errorMap: () => ({ message: "Por favor, selecione uma opção de sexo." }),
+  }).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -56,7 +67,20 @@ export function MemberForm({
   initialData,
   mode = 'create'
 }: {
-  initialData?: any,
+  initialData?: {
+    id: string
+    usuario?: {
+      nome?: string
+      email?: string
+    }
+    cpf?: string
+    rg?: string
+    telefone?: string
+    dataNascimento?: string
+    planoId?: string
+    precoCustomizado?: string | number | null
+    sexo?: 'MASCULINO' | 'FEMININO' | null
+  },
   mode?: 'create' | 'edit'
 }) {
   const router = useRouter()
@@ -91,15 +115,7 @@ export function MemberForm({
     }
   }, [mode])
 
-  // Ajuste do schema para edição (senha opcional)
-  const activeSchema = mode === 'edit'
-    ? formSchema.extend({ senha: z.string().optional() })
-    : formSchema;
 
-  // Atualizar resolver com schema correto
-  // Nota: mudar o resolver dinamicamente no hook-form pode ser tricky.
-  // Melhor abordagem: schema único com refine ou preprocess?
-  // Ou simplesmente passar o schema correto no useForm, mas aqui já iniciamos.
 
   useEffect(() => {
     const fetchPlanos = async () => {
@@ -123,15 +139,18 @@ export function MemberForm({
       const method = mode === 'create' ? "POST" : "PATCH"
 
       // Limpar campos opcionais vazios
-      const body = { ...values } as any
+      const body = { ...values }
       if (mode === 'edit' && !body.senha) {
         delete body.senha
       }
       if (body.precoCustomizado === "") {
         body.precoCustomizado = null
       }
-      if (body.sexo === "") {
+      if (body.sexo === undefined) {
         delete body.sexo
+      }
+      if (body.cpf === "") {
+        body.cpf = null // Enviar null se vazio para permitir CPF opcional
       }
 
       console.log('Sending body:', body) // Debug
@@ -147,14 +166,23 @@ export function MemberForm({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao salvar membro")
+        throw new Error(data.error || "Ocorreu um erro ao processar sua solicitação.")
       }
 
-      toast.success(mode === 'create' ? "Membro cadastrado com sucesso!" : "Membro atualizado com sucesso!")
+      toast.success(mode === 'create' ? "Membro cadastrado com sucesso!" : "Dados do membro atualizados com sucesso!")
       router.push(mode === 'create' ? "/membros" : `/membros/${initialData.id}`)
       router.refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao salvar membro")
+      console.error("Erro no formulário:", error)
+      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro inesperado. Tente novamente."
+      
+      // Tradução de mensagens comuns se necessário (caso venham do backend em inglês ou genéricas)
+      let displayMessage = errorMessage
+      if (errorMessage.includes("Email already exists")) displayMessage = "Este email já está sendo utilizado por outro membro."
+      if (errorMessage.includes("CPF already exists")) displayMessage = "Este CPF já está cadastrado no sistema."
+      if (errorMessage.includes("Invalid input")) displayMessage = "Verifique os dados informados e tente novamente."
+      
+      toast.error(displayMessage)
     } finally {
       setLoading(false)
     }
@@ -170,19 +198,11 @@ export function MemberForm({
     form.setValue("telefone", formatted, { shouldValidate: true })
   }
 
-  // Custom resolver to handle optional password in edit mode
-  const customResolver = async (values: any, context: any, options: any) => {
-    const schema = mode === 'edit'
-      ? formSchema.extend({ senha: z.string().min(6, "Senha muito curta").optional().or(z.literal('')) })
-      : formSchema;
-
-    return zodResolver(schema)(values, context, options);
+  const handleSendPasswordLink = () => {
+    toast.info("Funcionalidade em desenvolvimento: Link de redefinição de senha")
   }
 
-  // Re-register form with custom resolver? Not easy.
-  // Instead, let's just accept that we use a relaxed schema for everything or handle it in the Submit.
-  // Actually, we can pass `context` to schema maybe?
-  // Let's modify the ORIGINAL schema definition outside component to be more flexible, or use a trick.
+
 
   return (
     <Card>
@@ -224,22 +244,34 @@ export function MemberForm({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="senha"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{mode === 'edit' ? 'Nova Senha (Opcional)' : 'Senha de Acesso'}</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder={mode === 'edit' ? "Deixe em branco para manter" : "******"} {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      {mode === 'create' ? "Senha que o membro usará para acessar o sistema." : "Preencha apenas se quiser alterar a senha."}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="senha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{mode === 'edit' ? 'Nova Senha (Opcional)' : 'Senha de Acesso'}</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input type="password" placeholder={mode === 'edit' ? "Deixe em branco para manter" : "******"} {...field} />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={handleSendPasswordLink}
+                          title="Enviar link de redefinição de senha"
+                        >
+                          Enviar Link
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        {mode === 'create' ? "Senha que o membro usará para acessar o sistema." : "Preencha apenas se quiser alterar a senha."}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

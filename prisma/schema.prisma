@@ -86,7 +86,7 @@ model Usuario {
 model Membro {
   id              String        @id @default(cuid())
   usuarioId       String        @unique @map("usuario_id")
-  cpf             String        @unique
+  cpf             String?       @unique
   rg              String?
   telefone        String?
   dataNascimento  DateTime?     @map("data_nascimento")

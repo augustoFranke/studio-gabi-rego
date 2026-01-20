@@ -7,14 +7,18 @@ import { z } from 'zod'
 
 const membroSchema = z.object({
   nome: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  email: z.string().email('Por favor, forneça um email válido.').optional().or(z.literal('')),
   senha: z.string().optional(),
-  cpf: z.string().min(1, "CPF é obrigatório"),
+  cpf: z.string().nullable().optional().or(z.literal('')),
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),
   planoId: z.string().optional(),
-  precoCustomizado: z.number().optional(),
+  precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional().transform(val => {
+     if (val === '') return null;
+     if (typeof val === 'string') return Number(val);
+     return val;
+  }),
   sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
     if (val === '') return undefined;
     return val;
@@ -47,12 +51,20 @@ export async function GET() {
 // POST /api/membros - Criar novo membro
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    const body = await request.json()
+    let body;
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "Dados inválidos enviados. Verifique o formulário." }, { status: 400 })
+    }
+
     const validation = membroSchema.safeParse(body)
 
     if (!validation.success) {
+      const errorMessage = validation.error.issues[0].message;
+      const path = validation.error.issues[0].path.join('.');
       return NextResponse.json(
-        { error: validation.error.issues[0].message },
+        { error: `Erro no campo '${path}': ${errorMessage}` },
         { status: 400 }
       )
     }
@@ -61,27 +73,30 @@ export async function POST(request: NextRequest) {
 
     // Validate email if provided
     if (email && !validarEmail(email)) {
-      return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
+      return NextResponse.json({ error: 'O email informado é inválido.' }, { status: 400 })
     }
 
-    // Validate CPF
-    if (!validarCPF(cpf)) {
-      return NextResponse.json({ error: 'CPF inválido' }, { status: 400 })
+    // Validate CPF if provided
+    if (cpf && !validarCPF(cpf)) {
+      return NextResponse.json({ error: 'O CPF informado é inválido.' }, { status: 400 })
     }
 
     // Check if email already exists (only if provided)
     if (email) {
       const emailExiste = await prisma.usuario.findUnique({ where: { email } })
       if (emailExiste) {
-        return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
+        return NextResponse.json({ error: 'Este email já está cadastrado no sistema.' }, { status: 400 })
       }
     }
 
-    // Check if CPF already exists
-    const cpfLimpo = cpf.replace(/\D/g, '')
-    const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
-    if (cpfExiste) {
-      return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
+    // Check if CPF already exists (only if provided)
+    let cpfLimpo: string | null = null
+    if (cpf) {
+      cpfLimpo = cpf.replace(/\D/g, '')
+      const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+      if (cpfExiste) {
+        return NextResponse.json({ error: 'Este CPF já está cadastrado para outro membro.' }, { status: 400 })
+      }
     }
 
     // Create password hash if provided, otherwise generate a random one

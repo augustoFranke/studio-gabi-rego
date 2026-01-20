@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import {
   Sidebar,
   SidebarContent,
@@ -20,12 +21,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  User, 
-  Calendar, 
+import {
+  User,
+  Calendar,
   Dumbbell,
   ChevronUp,
   LogOut,
+  Home,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -33,6 +35,11 @@ import { usePathname } from "next/navigation"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 
 const menuItems = [
+  {
+    title: "Início",
+    url: "/inicio",
+    icon: Home,
+  },
   {
     title: "Meus Dados",
     url: "/meus-dados",
@@ -52,6 +59,12 @@ const menuItems = [
 
 export function MembroSidebar() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch with Radix UI dropdown
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <Sidebar>
@@ -106,29 +119,42 @@ export function MembroSidebar() {
         <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="w-full hover:bg-sidebar-accent">
-                  <Avatar className="h-7 w-7 border-2 border-primary/20">
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">MB</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col flex-1 text-left">
-                    <span className="text-sm font-medium">Membro</span>
-                    <span className="text-xs text-muted-foreground">Aluno</span>
-                  </div>
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {mounted ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="w-full hover:bg-sidebar-accent">
+                    <Avatar className="h-7 w-7 border-2 border-primary/20">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">MB</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col flex-1 text-left">
+                      <span className="text-sm font-medium">Membro</span>
+                      <span className="text-xs text-muted-foreground">Aluno</span>
+                    </div>
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  className="w-[--radix-popper-anchor-width]"
+                >
+                  <DropdownMenuItem className="text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton className="w-full hover:bg-sidebar-accent">
+                <Avatar className="h-7 w-7 border-2 border-primary/20">
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">MB</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col flex-1 text-left">
+                  <span className="text-sm font-medium">Membro</span>
+                  <span className="text-xs text-muted-foreground">Aluno</span>
+                </div>
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

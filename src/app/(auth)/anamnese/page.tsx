@@ -69,29 +69,48 @@ function AnamneseContent() {
 
   // Load user data on mount
   useEffect(() => {
+    let isMounted = true
+
     async function loadData() {
       try {
         const response = await fetch("/api/minha-anamnese")
         if (response.ok) {
           const data = await response.json()
-          if (data.anamnese) {
-            setFormData(data.anamnese)
+          if (isMounted) {
+            if (data.anamnese) {
+              setFormData(data.anamnese)
+            }
+            if (data.sexo) {
+              setSexo(data.sexo)
+            }
+            setLoadingData(false)
           }
-          if (data.sexo) {
-            setSexo(data.sexo)
+        } else if (response.status === 404) {
+          // Profile not found - redirect to complete profile first (no toast needed, the redirect is self-explanatory)
+          router.push("/completar-perfil")
+          // Don't set loadingData to false - keep loading state during redirect
+        } else {
+          // Other errors
+          if (isMounted) {
+            setLoadingData(false)
           }
         }
       } catch (error) {
         console.error("Error loading data:", error)
-      } finally {
-        setLoadingData(false)
+        if (isMounted) {
+          setLoadingData(false)
+        }
       }
     }
 
     if (status !== "loading") {
       loadData()
     }
-  }, [status])
+
+    return () => {
+      isMounted = false
+    }
+  }, [status, router])
 
   // Redirect if not authenticated
   useEffect(() => {

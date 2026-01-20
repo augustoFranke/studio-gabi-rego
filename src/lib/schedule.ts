@@ -157,11 +157,22 @@ export function formatDateISO(date: Date): string {
 // Parse a date from API response as local date (handles UTC conversion issue)
 // When Prisma returns a Date field, it comes as UTC midnight which shifts day in negative UTC offsets
 export function parseDateFromAPI(dateValue: Date | string): Date {
-  const dateStr = typeof dateValue === 'string' ? dateValue : dateValue.toISOString()
-  // Extract just the date part (yyyy-MM-dd) and create local date at noon
-  const datePart = dateStr.split('T')[0]
-  const [year, month, day] = datePart.split('-').map(Number)
-  return new Date(year, month - 1, day, 12, 0, 0)
+  if (!dateValue) return new Date(NaN) // Return Invalid Date if null/undefined
+  
+  try {
+    const dateStr = typeof dateValue === 'string' ? dateValue : dateValue.toISOString()
+    // Extract just the date part (yyyy-MM-dd) and create local date at noon
+    const datePart = dateStr.split('T')[0]
+    const [year, month, day] = datePart.split('-').map(Number)
+    
+    // Validate parsed values
+    if (!year || !month || !day) return new Date(NaN) 
+    
+    return new Date(year, month - 1, day, 12, 0, 0)
+  } catch (e) {
+    console.error('Error parsing date:', dateValue, e)
+    return new Date(NaN)
+  }
 }
 
 /**

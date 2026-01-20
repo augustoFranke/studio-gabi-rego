@@ -56,11 +56,20 @@ export default function MinhaAgendaPage() {
   // Group agendamentos by date
   const agendamentosByDate = new Map<string, Agendamento[]>()
   for (const agendamento of agendamentos) {
-    const dateKey = formatDateISO(parseDateFromAPI(agendamento.data))
-    if (!agendamentosByDate.has(dateKey)) {
-      agendamentosByDate.set(dateKey, [])
+    try {
+      const parsedDate = parseDateFromAPI(agendamento.data)
+      if (isNaN(parsedDate.getTime())) {
+        console.error('Invalid date for agendamento:', agendamento)
+        continue
+      }
+      const dateKey = formatDateISO(parsedDate)
+      if (!agendamentosByDate.has(dateKey)) {
+        agendamentosByDate.set(dateKey, [])
+      }
+      agendamentosByDate.get(dateKey)!.push(agendamento)
+    } catch (e) {
+      console.error('Error parsing date for agendamento:', agendamento, e)
     }
-    agendamentosByDate.get(dateKey)!.push(agendamento)
   }
 
   // Sort agendamentos by hour within each day
@@ -173,7 +182,7 @@ export default function MinhaAgendaPage() {
               <div>
                 <CardTitle>Agenda Semanal</CardTitle>
                 <CardDescription>
-                  {formatDayMonth(weekDays[0])} - {formatDayMonth(weekDays[6])},{' '}
+                  {formatDayMonth(weekDays[0])} - {formatDayMonth(weekDays[weekDays.length - 1])},{' '}
                   {formatMonthYear(currentDate)}
                 </CardDescription>
               </div>
@@ -206,6 +215,16 @@ export default function MinhaAgendaPage() {
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
+            </div>
+          ) : totalAulas === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Calendar className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">Nenhuma aula agendada</h3>
+              <p className="text-muted-foreground max-w-sm">
+                Você ainda não tem aulas agendadas para esta semana. Entre em contato com a equipe para agendar seus treinos!
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
