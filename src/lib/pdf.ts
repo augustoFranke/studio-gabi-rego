@@ -12,6 +12,8 @@ const MARGIN_LEFT = 1.5 * CM
 const MARGIN_RIGHT = 1.5 * CM
 const MARGIN_TOP = 1.5 * CM
 const MARGIN_BOTTOM = 1.5 * CM
+const PAGE_BORDER_MARGIN = 0.5 * CM
+const PAGE_BORDER_LINE_WIDTH = 0.5
 const USABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 
 // Fonts
@@ -53,6 +55,18 @@ function getLogoPath(): string | null {
   return null
 }
 
+function drawPageBorder(doc: PDFDocument): void {
+  doc.save()
+  doc.lineWidth(PAGE_BORDER_LINE_WIDTH)
+  doc.rect(
+    PAGE_BORDER_MARGIN,
+    PAGE_BORDER_MARGIN,
+    PAGE_WIDTH - PAGE_BORDER_MARGIN * 2,
+    PAGE_HEIGHT - PAGE_BORDER_MARGIN * 2
+  ).stroke()
+  doc.restore()
+}
+
 export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -82,6 +96,11 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
     doc.on('data', buffers.push.bind(buffers))
     doc.on('end', () => resolve(Buffer.concat(buffers)))
     doc.on('error', reject)
+    doc.on('pageAdded', () => {
+      drawPageBorder(doc)
+    })
+
+    drawPageBorder(doc)
 
     let cursorY = MARGIN_TOP
 

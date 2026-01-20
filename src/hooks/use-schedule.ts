@@ -25,7 +25,7 @@ interface UseScheduleReturn {
   createAgendamento: (membroId: string, date: Date, hour: number) => Promise<boolean>
   updateAgendamento: (
     id: string,
-    data: { presente?: boolean | null; observacao?: string }
+    data: { observacao?: string }
   ) => Promise<boolean>
   deleteAgendamento: (id: string) => Promise<boolean>
   moveAgendamento: (
@@ -162,7 +162,7 @@ export function useSchedule({
   const updateAgendamento = useCallback(
     async (
       id: string,
-      data: { presente?: boolean | null; observacao?: string }
+      data: { observacao?: string }
     ): Promise<boolean> => {
       try {
         const response = await fetch(`/api/agendamentos/${id}`, {

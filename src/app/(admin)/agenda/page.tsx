@@ -89,7 +89,7 @@ export default function AgendaPage() {
   // Handle modal save
   const handleModalSave = useCallback(async (data: {
     membroId?: string
-    presente?: boolean | null
+    data?: string
     observacao?: string
   }) => {
     setIsSaving(true)
@@ -99,7 +99,6 @@ export default function AgendaPage() {
         if (success) setModalOpen(false)
       } else if (modalMode === 'edit' && selectedAgendamento) {
         const success = await updateAgendamento(selectedAgendamento.id, {
-          presente: data.presente,
           observacao: data.observacao,
         })
         if (success) setModalOpen(false)

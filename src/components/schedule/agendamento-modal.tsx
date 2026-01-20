@@ -20,8 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Check, X, Clock, Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2 } from 'lucide-react'
 import { formatDateBR, formatHour, parseDateFromAPI, HOURS } from '@/lib/schedule'
 import type { Agendamento, Membro } from '@/types/schedule'
 
@@ -37,7 +36,6 @@ interface AgendamentoModalProps {
     membroId?: string
     horarioId?: string
     data?: string
-    presente?: boolean | null
     observacao?: string
   }) => void
   onDelete?: () => void
@@ -60,7 +58,6 @@ export function AgendamentoModal({
   const [selectedHourValue, setSelectedHourValue] = useState<string>(
     agendamento?.horario.horaInicio.split(':')[0] || selectedHour?.toString() || ''
   )
-  const [presente, setPresente] = useState<boolean | null>(agendamento?.presente ?? null)
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
 
 
@@ -72,7 +69,6 @@ export function AgendamentoModal({
       })
     } else {
       onSave?.({
-        presente,
         observacao,
       })
     }
@@ -86,21 +82,8 @@ export function AgendamentoModal({
       .join('')
       .toUpperCase()
 
-  const getPresenceStatus = () => {
-    if (presente === true) {
-      return { label: 'Presente', icon: Check, color: 'bg-green-100 text-green-700' }
-    }
-    if (presente === false) {
-      return { label: 'Faltou', icon: X, color: 'bg-red-100 text-red-700' }
-    }
-    return { label: 'Pendente', icon: Clock, color: 'bg-gray-100 text-gray-700' }
-  }
-
   const renderViewMode = () => {
     if (!agendamento) return null
-
-    const status = getPresenceStatus()
-    const StatusIcon = status.icon
 
     return (
       <>
@@ -123,10 +106,6 @@ export function AgendamentoModal({
             </Avatar>
             <div>
               <p className="font-medium">{agendamento.membro.usuario.nome}</p>
-              <Badge className={status.color}>
-                <StatusIcon className="h-3 w-3 mr-1" />
-                {status.label}
-              </Badge>
             </div>
           </div>
 
@@ -156,43 +135,6 @@ export function AgendamentoModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Presence status */}
-          <div className="space-y-2">
-            <Label>Presença</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={presente === true ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresente(true)}
-                className="flex-1"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Presente
-              </Button>
-              <Button
-                type="button"
-                variant={presente === false ? 'destructive' : 'outline'}
-                size="sm"
-                onClick={() => setPresente(false)}
-                className="flex-1"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Faltou
-              </Button>
-              <Button
-                type="button"
-                variant={presente === null ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => setPresente(null)}
-                className="flex-1"
-              >
-                <Clock className="h-4 w-4 mr-1" />
-                Pendente
-              </Button>
-            </div>
-          </div>
-
           {/* Observation */}
           <div className="space-y-2">
             <Label htmlFor="observacao">Observação</Label>

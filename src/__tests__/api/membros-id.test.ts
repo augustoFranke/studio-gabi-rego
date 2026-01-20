@@ -1,0 +1,88 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { PATCH } from '@/app/api/membros/[id]/route'
+import { prisma } from '@/lib/prisma'
+import { NextRequest } from 'next/server'
+
+// Mocks
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    membro: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    usuario: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
+  },
+}))
+
+vi.mock('@/lib/api', () => ({
+  withApiAuth: vi.fn((handler) => handler({ user: { role: 'ADMIN' } })),
+}))
+
+vi.mock('@/lib/validators', () => ({
+  validarCPF: vi.fn(() => true),
+  validarEmail: vi.fn(() => true),
+}))
+
+describe('Membros API - PATCH /api/membros/[id]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const createRequest = (body: any) => {
+    return new NextRequest('http://localhost:3000/api/membros/123', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  }
+
+  const params = Promise.resolve({ id: '123' })
+
+  it('should update member details successfully', async () => {
+    const updateBody = {
+      nome: 'John Updated',
+      email: 'john.updated@example.com',
+      cpf: '111.222.333-44'
+    }
+
+    // Mock existing member
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce({
+      id: '123',
+      usuarioId: 'user-123',
+      cpf: '00000000000',
+      usuario: { email: 'old@example.com' }
+    } as any)
+
+    // Mock email/cpf checks
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null) // Email unique check
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(null) // CPF unique check (second call)
+
+    vi.mocked(prisma.membro.update).mockResolvedValue({
+      id: '123',
+      usuarioId: 'user-123',
+    } as any)
+
+    const req = createRequest(updateBody)
+    const res = await PATCH(req, { params })
+    const json = await res.json()
+
+    expect(prisma.usuario.update).toHaveBeenCalledWith({
+      where: { id: 'user-123' },
+      data: { nome: updateBody.nome, email: updateBody.email },
+    })
+    expect(prisma.membro.update).toHaveBeenCalled()
+    expect(json.id).toBe('123')
+  })
+
+  it('should return 404 if member not found', async () => {
+    vi.mocked(prisma.membro.findUnique).mockResolvedValue(null)
+
+    const req = createRequest({ nome: 'Ghost' })
+    const res = await PATCH(req, { params })
+
+    expect(res.status).toBe(404)
+  })
+})

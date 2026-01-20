@@ -1,0 +1,177 @@
+{
+  "executedAt": "2026-01-20T13:48:21.822Z",
+  "mode": "dry-run",
+  "totalInactiveFound": 28,
+  "totalDeleted": 0,
+  "backupPath": "/Users/augustodoregofranke/Developer/Studio Gabi/utility/logs/cleanup-backup-2026-01-20T13-48-21-820Z.json",
+  "deletedMembers": [
+    {
+      "usuarioId": "cmkb7kl7d02402mrmb96uq0lq",
+      "membroId": "cmkb7kl8x02422mrmgu6gh91i",
+      "email": "carlos.edu.@placeholder.local",
+      "nome": "Carlos Edu."
+    },
+    {
+      "usuarioId": "cmkb75s8t009k2mrmp612huwe",
+      "membroId": "cmkb75sad009m2mrm96un92r8",
+      "email": "be@placeholder.local",
+      "nome": "Be"
+    },
+    {
+      "usuarioId": "cmkb7l8jv026x2mrmjv6rxj1n",
+      "membroId": "cmkb7l8lg026z2mrmsfb74xu0",
+      "email": "b@placeholder.local",
+      "nome": "Bê"
+    },
+    {
+      "usuarioId": "cmkb7gu9u01mi2mrm9xydo2bb",
+      "membroId": "cmkb7gubh01mk2mrmhc535wqe",
+      "email": "belinha@placeholder.local",
+      "nome": "Belinha"
+    },
+    {
+      "usuarioId": "cmk2kqiyd01042msaphtk55fq",
+      "membroId": "cmk2kqiyg01062msaafd05eid",
+      "email": "bia.gabbi@placeholder.local",
+      "nome": "Bia Gabbi"
+    },
+    {
+      "usuarioId": "cmkb7cjwv01202mrmimyj51st",
+      "membroId": "cmkb7cjyh01222mrmzl0ip9nc",
+      "email": "bruna.agost.@placeholder.local",
+      "nome": "Bruna Agost."
+    },
+    {
+      "usuarioId": "cmkb7kgqg023f2mrm5y15pzyu",
+      "membroId": "cmkb7kgs4023h2mrmz2cg39hw",
+      "email": "bruna.agos.@placeholder.local",
+      "nome": "Bruna Agos."
+    },
+    {
+      "usuarioId": "cmk198tl6001c2mi0g7czkulo",
+      "membroId": "cmk198tl8001e2mi07taxjf5h",
+      "email": "maythani_correa@hotmail.com",
+      "nome": "Arlete Corrêa Coelho Ferreira"
+    },
+    {
+      "usuarioId": "cmk2kqgun00ux2msacqmkkpcs",
+      "membroId": "cmk2kqguq00uz2msavx18643b",
+      "email": "andré.barbosa@placeholder.local",
+      "nome": "André Barbosa"
+    },
+    {
+      "usuarioId": "cmk2kqip800z12msa7vmrmfth",
+      "membroId": "cmk2kqipa00z32msadkpyp3tm",
+      "email": "andré.s@placeholder.local",
+      "nome": "André S"
+    },
+    {
+      "usuarioId": "cmkb751so00642mrmyz4dbvgk",
+      "membroId": "cmkb751w800662mrmmurv8doc",
+      "email": "andr.s.@placeholder.local",
+      "nome": "André S."
+    },
+    {
+      "usuarioId": "cmkb75fba007v2mrmpdkzn3qc",
+      "membroId": "cmkb75fcw007x2mrm2pmakbcm",
+      "email": "andr.b.@placeholder.local",
+      "nome": "André B."
+    },
+    {
+      "usuarioId": "cmk2kqezq00qs2msazxfjkuz3",
+      "membroId": "cmk2kqezs00qu2msaw9c33xkv",
+      "email": "anderson@placeholder.local",
+      "nome": "Anderson"
+    },
+    {
+      "usuarioId": "cmk198sit00102mi0ltj8ll4t",
+      "membroId": "cmk198siv00122mi0u2fiogvo",
+      "email": "ana-verdi@outlook.com",
+      "nome": "Analice Verdi"
+    },
+    {
+      "usuarioId": "cmk2kqm0d017m2msauui0kx3e",
+      "membroId": "cmk2kqm0g017o2msa4s9se2lr",
+      "email": "ana.paula.s.@placeholder.local",
+      "nome": "Ana Paula S."
+    },
+    {
+      "usuarioId": "cmk2kqn5u01a12msa506mz04j",
+      "membroId": "cmk2kqn5x01a32msadwsxwlrv",
+      "email": "ana.paula.biazo.@placeholder.local",
+      "nome": "Ana Paula Biazo."
+    },
+    {
+      "usuarioId": "cmk2kqd8b00j82msa7p5oljv1",
+      "membroId": "cmk2kqd8e00ja2msav15vzm1f",
+      "email": "ana.flávia.meazza@placeholder.local",
+      "nome": "Ana Flávia Meazza"
+    },
+    {
+      "usuarioId": "cmkb7e88e01a02mrms7nd9jfb",
+      "membroId": "cmkb7e89z01a22mrm68lh7yfv",
+      "email": "aline.vila@placeholder.local",
+      "nome": "Aline Ávila"
+    },
+    {
+      "usuarioId": "cmk2kqge300u12msae8htfc1v",
+      "membroId": "cmk2kqge500u32msac14ajf8o",
+      "email": "aline.avila@placeholder.local",
+      "nome": "Aline Avila"
+    },
+    {
+      "usuarioId": "cmkb779v600gl2mrmmyjdazcu",
+      "membroId": "cmkb779yy00gn2mrmd98961kk",
+      "email": "walquria@placeholder.local",
+      "nome": "Walquíria"
+    },
+    {
+      "usuarioId": "cmk2kqeqg00ph2msarucypg69",
+      "membroId": "cmk2kqeqi00pj2msabdpxs074",
+      "email": "walquiria@placeholder.local",
+      "nome": "Walquiria"
+    },
+    {
+      "usuarioId": "cmk2kqkcg01342msazva02l97",
+      "membroId": "cmk2kqkci01362msa6wk4jvb5",
+      "email": "viviane.cabelo@placeholder.local",
+      "nome": "Viviane Cabelo"
+    },
+    {
+      "usuarioId": "cmk2kqcat00h62msajj7qmpnz",
+      "membroId": "cmk2kqcau00h82msampwhw1vx",
+      "email": "vitória.meazza@placeholder.local",
+      "nome": "Vitória Meazza"
+    },
+    {
+      "usuarioId": "cmkb7k5k902202mrmqog3mkq9",
+      "membroId": "cmkb7k5lu02222mrmpfyxvc3y",
+      "email": "yasmn@placeholder.local",
+      "nome": "Yasmn"
+    },
+    {
+      "usuarioId": "cmk2kqgm800uc2msa47ye5irw",
+      "membroId": "cmk2kqgmb00ue2msa0rbwzk5y",
+      "email": "adriana.dra@placeholder.local",
+      "nome": "Adriana Dra"
+    },
+    {
+      "usuarioId": "cmk2kqlhf014t2msat6trhd0b",
+      "membroId": "cmk2kqlhi014v2msaoovqd54a",
+      "email": "adalgisa@placeholder.local",
+      "nome": "Adalgisa"
+    },
+    {
+      "usuarioId": "cmk198pv000062mi0ke8aosey",
+      "membroId": "cmk198pv300082mi0ahybq1z0",
+      "email": "adailtonmendesdelima@hotmail.com",
+      "nome": "Adailton Mendes de Lima"
+    },
+    {
+      "usuarioId": "cmk1993y9004l2mi0a9ltpj6k",
+      "membroId": "cmk1993yb004n2mi0q9l6xiz4",
+      "email": "reinaogaya@gmail.com",
+      "nome": "Irma Ampuero Ogaya"
+    }
+  ]
+}
