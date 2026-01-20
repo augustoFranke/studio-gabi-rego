@@ -14,8 +14,9 @@ const MARGIN_BOTTOM = 1.5 * CM
 const USABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 
 // Fonts
-const FONT_REGULAR = 'Helvetica'
-const FONT_BOLD = 'Helvetica-Bold'
+const FONT_REGULAR_FALLBACK = 'Helvetica'
+const FONT_BOLD_FALLBACK = 'Helvetica-Bold'
+const SCRIPT_FONT_NAME = 'FreeStyleScript'
 
 const EXTRA_ROWS = 3
 
@@ -62,7 +63,25 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
       }
     })
 
+    const fontPaths = [
+      path.join(process.cwd(), 'public', 'fonts', 'FreeStyleScript.ttf'),
+      path.join(__dirname, '..', '..', 'public', 'fonts', 'FreeStyleScript.ttf'),
+    ]
+
+    const scriptFontPath = fontPaths.find(p => fs.existsSync(p))
+
+    if (scriptFontPath) {
+      doc.registerFont(SCRIPT_FONT_NAME, scriptFontPath)
+    } else {
+      doc.registerFont(FONT_REGULAR_FALLBACK, path.join(__dirname, 'fonts', 'Helvetica.afm'))
+      doc.registerFont(FONT_BOLD_FALLBACK, path.join(__dirname, 'fonts', 'Helvetica-Bold.afm'))
+    }
+
+    const fontRegular = scriptFontPath ? SCRIPT_FONT_NAME : FONT_REGULAR_FALLBACK
+    const fontBold = scriptFontPath ? SCRIPT_FONT_NAME : FONT_BOLD_FALLBACK
+
     const buffers: Buffer[] = []
+
     doc.on('data', buffers.push.bind(buffers))
     doc.on('end', () => resolve(Buffer.concat(buffers)))
     doc.on('error', reject)
@@ -93,9 +112,9 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
     
     // Aluno
     let textY = MARGIN_TOP + 1.5 * CM
-    doc.font(FONT_BOLD).fontSize(20)
+    doc.font(fontBold).fontSize(20)
     doc.text('ALUNO:', textStartX, textY, { continued: true })
-    doc.font(FONT_REGULAR).text(`  ${data.aluno}`)
+    doc.font(fontRegular).text(`  ${data.aluno}`)
     
     // Underline Aluno
     doc.moveTo(textStartX + 2.3 * CM, textY + 22) // Approx underline position
@@ -104,8 +123,8 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
 
     // Data
     textY += 1.5 * CM
-    doc.font(FONT_BOLD).text('DATA:', textStartX, textY, { continued: true })
-    doc.font(FONT_REGULAR).text(`  ${data.date}`)
+    doc.font(fontBold).text('DATA:', textStartX, textY, { continued: true })
+    doc.font(fontRegular).text(`  ${data.date}`)
 
     // Underline Data
     doc.moveTo(textStartX + 2.3 * CM, textY + 22)
@@ -133,8 +152,9 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
         doc.rect(x, y, width, rowHeight).stroke()
         
         // Draw text
-        doc.font(isHeader ? FONT_BOLD : FONT_REGULAR)
-           .fontSize(isHeader ? 12 : 10) // Slightly smaller for content
+        doc.font(isHeader ? fontBold : fontRegular)
+           .fontSize(12)
+
         
         // Center text vertically
         // For wrapping, we'd need more complex logic.
@@ -160,7 +180,7 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
       }
 
       // Title
-      doc.font(FONT_BOLD).fontSize(18)
+      doc.font(fontBold).fontSize(18)
       doc.text(title, MARGIN_LEFT, cursorY)
       cursorY += 1 * CM
 
@@ -182,9 +202,10 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
          if (cursorY > MARGIN_TOP + 5 * CM) { // Only break if we aren't already at top
              doc.addPage()
              cursorY = MARGIN_TOP
-             doc.font(FONT_BOLD).fontSize(18)
-             doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
-             cursorY += 1 * CM
+              doc.font(fontBold).fontSize(18)
+              doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
+              cursorY += 1 * CM
+
          }
       }
 
@@ -194,7 +215,7 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
 
       // Rows
       sessions.forEach(ex => {
-        drawRow(cursorY, [ex.name, ex.sets, ex.reps, ''], colWidths)
+        drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''], colWidths)
         cursorY += rowHeight
       })
 
@@ -221,11 +242,11 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
         cursorY = MARGIN_TOP
       }
 
-      doc.font(FONT_BOLD).fontSize(12)
+      doc.font(fontBold).fontSize(12)
       doc.text('OBSERVAÇÕES:', MARGIN_LEFT, cursorY)
       
-      doc.font(FONT_REGULAR).fontSize(12)
-      doc.text(data.observacoes.trim(), MARGIN_LEFT + 100, cursorY, { // Offset text
+      doc.font(fontRegular).fontSize(12)
+      doc.text(data.observacoes.trim().toUpperCase(), MARGIN_LEFT + 100, cursorY, { // Offset text
         width: USABLE_WIDTH - 100,
         align: 'left'
       })

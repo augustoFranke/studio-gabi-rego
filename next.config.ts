@@ -22,6 +22,19 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "2mb",
     },
   },
+
+  outputFileTracingIncludes: {
+    "/api/treinos/gerar-pdf": [
+      "public/fonts/FreeStyleScript.ttf",
+      "public/logo-black.png",
+      "node_modules/pdfkit/js/data/**/*",
+    ],
+    "/api/treinos/[id]/pdf": [
+      "public/fonts/FreeStyleScript.ttf",
+      "public/logo-black.png",
+      "node_modules/pdfkit/js/data/**/*",
+    ],
+  },
 };
 
 export default nextConfig;
