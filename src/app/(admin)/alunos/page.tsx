@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MemberStatusToggle, SendMemberReminder } from "@/components/admin/member-actions"
-import { MemberImportButton } from "@/components/admin/member-import-button"
 import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 
@@ -97,7 +96,6 @@ export default async function MembrosPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <MemberImportButton />
           <Button asChild className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all">
             <Link href="/alunos/novo">
               <Plus className="mr-2 h-4 w-4" />
