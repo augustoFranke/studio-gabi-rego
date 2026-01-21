@@ -55,10 +55,10 @@ export function MemberImportButton() {
       setResult(data)
       router.refresh()
 
-      toast.success(`Importação concluída: ${data.createdCount} membro(s) adicionados.`)
+      toast.success(`Importação concluída: ${data.createdCount} aluno(s) adicionados.`)
     } catch (error) {
       console.error(error)
-      toast.error(error instanceof Error ? error.message : "Erro ao importar membros.")
+      toast.error(error instanceof Error ? error.message : "Erro ao importar alunos.")
     } finally {
       setUploading(false)
     }
@@ -88,9 +88,9 @@ export function MemberImportButton() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Importar membros via CSV</DialogTitle>
+          <DialogTitle>Importar alunos via CSV</DialogTitle>
           <DialogDescription>
-            Use este importador para trazer os membros que estão no sistema antigo. Apenas administradores podem usar esta opção.
+            Use este importador para trazer os alunos que estão no sistema antigo. Apenas administradores podem usar esta opção.
           </DialogDescription>
         </DialogHeader>
 
@@ -152,7 +152,7 @@ export function MemberImportButton() {
 
               {result.created.length > 0 && (
                 <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1">
-                  <p className="font-medium">Membros adicionados</p>
+                  <p className="font-medium">Alunos adicionados</p>
                   <ul className="space-y-1">
                     {result.created.map((row) => (
                       <li key={row.cpf} className="flex flex-col gap-0.5">

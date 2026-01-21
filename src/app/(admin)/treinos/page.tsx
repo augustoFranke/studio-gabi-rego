@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dumbbell, Plus, Calendar, User, Printer } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dumbbell, Plus, Calendar, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
@@ -40,7 +41,7 @@ export default async function TreinosPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Treinos</h1>
           <p className="text-muted-foreground">
-            Crie e gerencie fichas de treino para os membros
+            Crie e gerencie fichas de treino para os alunos
           </p>
         </div>
         <Link href="/treinos/gerador">
@@ -81,50 +82,64 @@ export default async function TreinosPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {treinos.map((treino) => {
-            const sessions = groupExercisesBySession(treino.exercicios)
-            return (
-              <Card key={treino.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        {treino.membro.usuario.nome}
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {treino.data || new Date(treino.criadoEm).toLocaleDateString('pt-BR')}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="secondary">{treino.exercicios.length} exercícios</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {sessions.map((session) => (
-                      <Badge key={session} variant="outline" className="text-xs">
-                        Treino {session}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Link href={`/treinos/${treino.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Ver Detalhes
-                      </Button>
-                    </Link>
-                    <Link href={`/api/treinos/${treino.id}/pdf`}>
-                      <Button variant="ghost" size="sm">
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="rounded-md border border-border/50 bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Aluno</TableHead>
+                <TableHead>Sessões</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {treinos.map((treino) => {
+                const sessions = groupExercisesBySession(treino.exercicios)
+                const displayDate = new Date(treino.data ?? treino.criadoEm).toLocaleDateString('pt-BR')
+                return (
+                  <TableRow key={treino.id} className="hover:bg-primary/5">
+                    <TableCell className="whitespace-normal">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">{treino.membro.usuario.nome}</span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="secondary">{treino.exercicios.length} exercícios</Badge>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {displayDate}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-normal">
+                      {sessions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {sessions.map((session) => (
+                            <Badge key={session} variant="outline" className="text-xs">
+                              Treino {session}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Sem sessões</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button asChild variant="outline" size="sm" className="hover:border-primary/40 hover:text-primary">
+                          <Link href={`/treinos/${treino.id}`}>Ver Detalhes</Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
+                          <Link href={`/api/treinos/${treino.id}/pdf`}>
+                            <Printer className="h-4 w-4" />
+                            <span className="sr-only">Baixar PDF</span>
+                          </Link>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

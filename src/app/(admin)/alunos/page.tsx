@@ -91,17 +91,17 @@ export default async function MembrosPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Alunos</h1>
           <p className="text-muted-foreground">
-            Gerencie os membros do seu estúdio ({totalMembros} total)
+            Gerencie os alunos do seu estúdio ({totalMembros} total)
           </p>
         </div>
         <div className="flex items-center gap-2">
           <MemberImportButton />
           <Button asChild className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all">
-            <Link href="/membros/novo">
+            <Link href="/alunos/novo">
               <Plus className="mr-2 h-4 w-4" />
-              Novo Membro
+              Novo Aluno
             </Link>
           </Button>
         </div>
@@ -117,7 +117,7 @@ export default async function MembrosPage({
               <div>
                 <CardTitle>Filtros</CardTitle>
                 <CardDescription>
-                  Refine sua busca por membros
+                  Refine sua busca por alunos
                 </CardDescription>
               </div>
             </div>
@@ -213,7 +213,7 @@ export default async function MembrosPage({
                 Filtrar
               </Button>
               <Button type="button" variant="ghost" asChild className="hover:text-primary">
-                <Link href="/membros">Limpar</Link>
+                <Link href="/alunos">Limpar</Link>
               </Button>
             </form>
           </div>
@@ -223,7 +223,7 @@ export default async function MembrosPage({
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Membro</TableHead>
+                  <TableHead>Aluno</TableHead>
                   <TableHead>Contato</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
@@ -283,7 +283,7 @@ export default async function MembrosPage({
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                              <Link href={`/membros/${membro.id}`} className="flex items-center">
+                              <Link href={`/alunos/${membro.id}`} className="flex items-center">
                                 <User className="mr-2 h-4 w-4 text-primary" />
                                 Ver Detalhes
                               </Link>
@@ -303,7 +303,7 @@ export default async function MembrosPage({
                         <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                           <Users className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <p className="text-muted-foreground">Nenhum membro encontrado.</p>
+                        <p className="text-muted-foreground">Nenhum aluno encontrado.</p>
                       </div>
                     </TableCell>
                   </TableRow>

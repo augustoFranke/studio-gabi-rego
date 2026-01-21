@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Calendar, Dumbbell, Edit, Printer, User } from 'lucide-react'
 import Link from 'next/link'
+import { TreinoTemplateButton } from '@/components/admin/treino-template-button'
 
 interface PageProps {
   params: Promise<{
@@ -50,6 +51,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
   }, {} as Record<string, typeof treino.exercicios>)
 
   const sessoes = Object.keys(exerciciosPorSessao).sort()
+  const templateDefaultName = `${treino.nome} - ${treino.membro.usuario.nome}`
 
   return (
     <div className="container mx-auto max-w-5xl py-8 space-y-8">
@@ -68,6 +70,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
         </div>
 
         <div className="flex gap-2">
+          <TreinoTemplateButton treinoId={treino.id} defaultName={templateDefaultName} />
           <Link href={`/treinos/${treino.id}/editar`}>
             <Button variant="outline" className="gap-2">
               <Edit className="h-4 w-4" />
@@ -130,12 +133,15 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
 
       {/* Sessions */}
       <div className="grid grid-cols-1 gap-6">
-        {sessoes.map((sessao) => (
+        {sessoes.map((sessao) => {
+          // Extract just the letter from session name (e.g., "A - Costas" → "A")
+          const sessionLetter = sessao.charAt(0)
+          return (
           <Card key={sessao} className="relative overflow-hidden border-l-4 border-l-primary">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm">
-                  {sessao}
+                  {sessionLetter}
                 </div>
                 Treino {sessao}
                 <Badge variant="secondary" className="ml-auto">
@@ -185,7 +191,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       {sessoes.length === 0 && (

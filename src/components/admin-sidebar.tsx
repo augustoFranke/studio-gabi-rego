@@ -33,7 +33,6 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { ThemeToggleSimple } from "@/components/theme-toggle"
 
 const menuItems = [
   {
@@ -42,8 +41,8 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Membros",
-    url: "/membros",
+    title: "Alunos",
+    url: "/alunos",
     icon: Users,
   },
   {
@@ -69,20 +68,13 @@ export function AdminSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-2">
-              <Image
-                src="/logo.svg"
-                alt="Gabi Studio"
-                width={56}
-                height={56}
-                className="brightness-0 invert"
-              />
-            </div>
-            <span className="font-semibold text-lg tracking-tight">Gabi Studio</span>
-          </div>
-          <ThemeToggleSimple />
+        <div className="flex items-center justify-center">
+          <Image
+            src="/logo.svg"
+            alt="Studio Gabi Rêgo"
+            width={72}
+            height={72}
+          />
         </div>
       </SidebarHeader>
 

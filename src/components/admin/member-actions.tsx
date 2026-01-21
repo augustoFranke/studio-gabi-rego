@@ -41,7 +41,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
     startTransition(async () => {
       const result = await toggleMembroStatus(id, status)
       if (result.success) {
-        toast.success("Membro ativado")
+        toast.success("Aluno ativado")
       } else {
         toast.error(result.error || "Erro ao alterar status")
       }
@@ -52,10 +52,10 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
     startTransition(async () => {
       const result = await deleteMembro(id)
       if (result.success) {
-        toast.success("Membro excluído permanentemente")
+        toast.success("Aluno excluído permanentemente")
         setShowConfirmDialog(false)
       } else {
-        toast.error(result.error || "Erro ao excluir membro")
+        toast.error(result.error || "Erro ao excluir aluno")
       }
     })
   }
@@ -81,8 +81,8 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
           <DialogHeader>
             <DialogTitle>Confirmar exclusão</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir {nome ? <strong>{nome}</strong> : "este membro"}?
-              Esta ação é <strong>permanente</strong> e irá remover todos os dados do membro,
+              Tem certeza que deseja excluir {nome ? <strong>{nome}</strong> : "este aluno"}?
+              Esta ação é <strong>permanente</strong> e irá remover todos os dados do aluno,
               incluindo agendamentos, pagamentos, treinos e anamnese.
             </DialogDescription>
           </DialogHeader>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PDF Generator for Gabi Studio Training Plans
+PDF Generator for Studio Gabi Rêgo Training Plans
 
 Usage:
     python pdf_creation.py --output output.pdf --data '{"aluno": "Maria", "date": "01/2026", "sessions": [...]}'

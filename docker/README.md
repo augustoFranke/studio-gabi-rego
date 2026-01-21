@@ -1,6 +1,6 @@
-# 🐳 Gabi Studio - Docker Deployment
+# 🐳 Studio Gabi Rêgo - Docker Deployment
 
-Este guia explica como executar o Gabi Studio usando Docker para hospedagem local.
+Este guia explica como executar o Studio Gabi Rêgo usando Docker para hospedagem local.
 
 ## 📋 Pré-requisitos
 

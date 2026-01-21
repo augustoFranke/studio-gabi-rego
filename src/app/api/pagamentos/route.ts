@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const membroId = searchParams.get('membroId')
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const skip = (page - 1) * limit
@@ -34,8 +35,17 @@ export async function GET(request: NextRequest) {
       where.membroId = membroId
     }
 
-    if (status) {
+    if (status && status !== 'all') {
       where.status = status as StatusPagamento
+    }
+
+    // Search by member name
+    if (search) {
+      where.membro = {
+        usuario: {
+          nome: { contains: search, mode: 'insensitive' }
+        }
+      }
     }
 
     // Run count and findMany in parallel for efficiency

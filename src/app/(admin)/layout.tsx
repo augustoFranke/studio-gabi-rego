@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
@@ -33,6 +34,7 @@ export default async function AdminLayout({
             <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-primary transition-colors" />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex-1" />
+            <ThemeToggleSimple />
           </header>
           <div className="p-6">
             {children}
