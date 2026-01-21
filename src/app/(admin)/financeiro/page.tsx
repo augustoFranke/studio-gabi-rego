@@ -77,6 +77,14 @@ interface Membro {
     nome: string
     email?: string
   }
+  planoId?: string | null
+  precoCustomizado?: string | number | null
+  plano?: {
+    id: string
+    nome: string
+    valor: string | number
+    ativo: boolean
+  } | null
 }
 
 interface Pagamento {
@@ -178,6 +186,27 @@ export default function FinanceiroPage() {
   // Validation error states
   const [planoErrors, setPlanoErrors] = useState<Record<string, string>>({})
   const [pagamentoErrors, setPagamentoErrors] = useState<Record<string, string>>({})
+  const getMemberPlanDefaults = (memberId: string) => {
+    const member = membros.find((m) => m.id === memberId)
+    if (!member) {
+      return { planoId: "", valor: "" }
+    }
+
+    const planoId = member.planoId || member.plano?.id || ""
+    if (!planoId) {
+      return { planoId: "", valor: "" }
+    }
+
+    const plano = planos.find((p) => p.id === planoId)
+    const customPrice = member.precoCustomizado
+    const valor = customPrice !== null && customPrice !== undefined && String(customPrice).trim() !== ""
+      ? String(customPrice)
+      : plano
+        ? String(plano.valor)
+        : ""
+
+    return { planoId, valor }
+  }
 
   // Stats state
   const [stats, setStats] = useState<FinanceiroStats>({
@@ -200,11 +229,18 @@ export default function FinanceiroPage() {
     }
   }, [])
 
-  // Fetch pagamentos with pagination
-  const fetchPagamentos = useCallback(async (page: number = 1) => {
+  // Fetch pagamentos with pagination and filters
+  const fetchPagamentos = useCallback(async (page: number = 1, search?: string, status?: string) => {
     setLoadingPagamentos(true)
     try {
-      const res = await fetch(`/api/pagamentos?page=${page}&limit=${ITEMS_PER_PAGE}`)
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(ITEMS_PER_PAGE),
+      })
+      if (search) params.set('search', search)
+      if (status && status !== 'all') params.set('status', status)
+
+      const res = await fetch(`/api/pagamentos?${params.toString()}`)
       if (res.ok) {
         const response = await res.json()
         setPagamentos(response.data)
@@ -250,6 +286,14 @@ export default function FinanceiroPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Refetch when search or filter changes (with debounce for search)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPagamentos(1, searchPagamento, filterStatus)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchPagamento, filterStatus, fetchPagamentos])
 
   // Plano handlers
   const handleOpenPlanoDialog = (plano?: Plano) => {
@@ -455,7 +499,7 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success(editingPagamento ? "Pagamento atualizado!" : "Pagamento criado!")
         setPagamentoDialogOpen(false)
-        fetchPagamentos(currentPage)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus)
         fetchStats()
       } else {
         const data = await res.json()
@@ -478,7 +522,7 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success("Status atualizado!")
-        fetchPagamentos(currentPage)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus)
         fetchStats()
       } else {
         const data = await res.json()
@@ -500,7 +544,7 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success(data.message || "Pagamento removido!")
-        fetchPagamentos(currentPage)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus)
         fetchStats()
       } else {
         toast.error(data.error || "Erro ao remover pagamento")
@@ -510,12 +554,6 @@ export default function FinanceiroPage() {
     }
   }
 
-  // Filter pagamentos
-  const filteredPagamentos = pagamentos.filter((p) => {
-    const matchesSearch = p.membro.usuario.nome.toLowerCase().includes(searchPagamento.toLowerCase())
-    const matchesStatus = filterStatus === "all" || p.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
 
   if (loading) {
     return (
@@ -609,7 +647,7 @@ export default function FinanceiroPage() {
                   <div>
                     <CardTitle>Pagamentos</CardTitle>
                     <CardDescription>
-                      Controle de pagamentos dos membros
+                      Controle de pagamentos dos alunos
                     </CardDescription>
                   </div>
                 </div>
@@ -628,26 +666,35 @@ export default function FinanceiroPage() {
                       <DialogDescription>
                         {editingPagamento
                           ? "Atualize as informações do pagamento"
-                          : "Registre um novo pagamento para um membro"}
+                          : "Registre um novo pagamento para um aluno"}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label htmlFor="membro" className={pagamentoErrors.membroId ? "text-destructive" : ""}>
-                          Membro
+                          Aluno
                         </Label>
                         <Select
                           value={pagamentoForm.membroId}
                           onValueChange={(v) => {
-                            setPagamentoForm({ ...pagamentoForm, membroId: v })
+                            const defaults = getMemberPlanDefaults(v)
+                            setPagamentoForm({
+                              ...pagamentoForm,
+                              membroId: v,
+                              planoId: defaults.planoId,
+                              valor: defaults.valor,
+                            })
                             if (pagamentoErrors.membroId) {
                               setPagamentoErrors({ ...pagamentoErrors, membroId: "" })
+                            }
+                            if (pagamentoErrors.planoId || pagamentoErrors.valor) {
+                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
                             }
                           }}
                           disabled={!!editingPagamento}
                         >
                           <SelectTrigger className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}>
-                            <SelectValue placeholder="Selecione o membro" />
+                            <SelectValue placeholder="Selecione o aluno" />
                           </SelectTrigger>
                           <SelectContent>
                             {membros.map((m) => (
@@ -861,7 +908,7 @@ export default function FinanceiroPage() {
                 </Select>
               </div>
 
-              {filteredPagamentos.length === 0 ? (
+              {pagamentos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                     <DollarSign className="h-6 w-6 text-muted-foreground" />
@@ -875,7 +922,7 @@ export default function FinanceiroPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead>Membro</TableHead>
+                        <TableHead>Aluno</TableHead>
                         <TableHead>Plano</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Vencimento</TableHead>
@@ -884,7 +931,7 @@ export default function FinanceiroPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredPagamentos.map((pagamento) => (
+                      {pagamentos.map((pagamento) => (
                         <TableRow key={pagamento.id} className="hover:bg-primary/5">
                           <TableCell className="font-medium">
                             {pagamento.membro.usuario.nome}
@@ -941,7 +988,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(1)}
+                      onClick={() => fetchPagamentos(1, searchPagamento, filterStatus)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Primeira página</span>
@@ -950,7 +997,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage - 1)}
+                      onClick={() => fetchPagamentos(currentPage - 1, searchPagamento, filterStatus)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Página anterior</span>
@@ -959,7 +1006,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage + 1)}
+                      onClick={() => fetchPagamentos(currentPage + 1, searchPagamento, filterStatus)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Próxima página</span>
@@ -968,7 +1015,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(totalPages)}
+                      onClick={() => fetchPagamentos(totalPages, searchPagamento, filterStatus)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Última página</span>
@@ -1210,7 +1257,7 @@ export default function FinanceiroPage() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <Users className="h-4 w-4 text-amber-500" />
-                                          {plano._count?.membros || 0} membros
+                                          {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
                                       <div className="flex gap-2 pt-2">
@@ -1297,7 +1344,7 @@ export default function FinanceiroPage() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <Users className="h-4 w-4 text-sky-500" />
-                                          {plano._count?.membros || 0} membros
+                                          {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
                                       <div className="flex gap-2 pt-2">
@@ -1384,7 +1431,7 @@ export default function FinanceiroPage() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <Users className="h-4 w-4 text-violet-500" />
-                                          {plano._count?.membros || 0} membros
+                                          {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
                                       <div className="flex gap-2 pt-2">

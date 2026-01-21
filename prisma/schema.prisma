@@ -1,4 +1,4 @@
-// Schema do Sistema de Gestão - Gabi Studio
+// Schema do Sistema de Gestão - Studio Gabi Rêgo
 // Documentação: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -220,6 +220,40 @@ model Exercicio {
   ficha           FichaTreino   @relation(fields: [fichaId], references: [id], onDelete: Cascade)
 
   @@map("exercicios")
+}
+
+model TreinoTemplate {
+  id              String                   @id @default(cuid())
+  nome            String
+  objetivo        String?
+  observacoes     String?
+  criadoEm        DateTime                 @default(now()) @map("criado_em")
+  atualizadoEm    DateTime                 @updatedAt @map("atualizado_em")
+
+  // Relações
+  exercicios      TreinoTemplateExercicio[]
+
+  @@map("treinos_template")
+}
+
+model TreinoTemplateExercicio {
+  id              String         @id @default(cuid())
+  templateId      String         @map("template_id")
+  sessao          String         @default("A")
+  nome            String
+  grupoMuscular   String?        @map("grupo_muscular")
+  series          String
+  repeticoes      String
+  descanso        String?
+  observacoes     String?
+  ordem           Int            @default(0)
+  criadoEm        DateTime       @default(now()) @map("criado_em")
+  atualizadoEm    DateTime       @updatedAt @map("atualizado_em")
+
+  // Relações
+  template        TreinoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("treinos_template_exercicios")
 }
 
 model Notificacao {

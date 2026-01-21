@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText } from 'lucide-react';
+import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,25 @@ type Session = {
     exercises: Exercise[];
 };
 
+type TemplateExercise = {
+    id: string;
+    sessao: string;
+    nome: string;
+    series: string;
+    repeticoes: string;
+    grupoMuscular?: string | null;
+    descanso?: string | null;
+    observacoes?: string | null;
+};
+
+type Template = {
+    id: string;
+    nome: string;
+    objetivo?: string | null;
+    observacoes?: string | null;
+    exercicios: TemplateExercise[];
+};
+
 type Member = {
     id: string;
     usuario: {
@@ -52,6 +71,10 @@ export default function TrainingPlanGeneratorPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [membersLoading, setMembersLoading] = useState(true);
     const [memberSelectOpen, setMemberSelectOpen] = useState(false);
+    const [templates, setTemplates] = useState<Template[]>([]);
+    const [templatesLoading, setTemplatesLoading] = useState(true);
+    const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
     const [date, setDate] = useState('');
     const [observacoes, setObservacoes] = useState('');
@@ -79,6 +102,23 @@ export default function TrainingPlanGeneratorPage() {
         fetchMembers();
     }, []);
 
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const response = await fetch('/api/treinos/templates');
+                if (response.ok) {
+                    const data = await response.json();
+                    setTemplates(data || []);
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            } finally {
+                setTemplatesLoading(false);
+            }
+        };
+        fetchTemplates();
+    }, []);
+
     // Initialize
     useEffect(() => {
         setMounted(true);
@@ -99,6 +139,7 @@ export default function TrainingPlanGeneratorPage() {
     }, []);
 
     const selectedMember = members.find(m => m.id === selectedMemberId);
+    const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
     const addSession = () => {
         const nextLetter = String.fromCharCode(65 + sessions.length); // A, B, C...
@@ -127,6 +168,49 @@ export default function TrainingPlanGeneratorPage() {
                 return s;
             })
         );
+    };
+
+    const applyTemplate = (template: Template) => {
+        const sessionsMap = new Map<string, Exercise[]>();
+        template.exercicios.forEach((ex) => {
+            const exercises = sessionsMap.get(ex.sessao) || [];
+            exercises.push({
+                id: crypto.randomUUID(),
+                name: ex.nome,
+                sets: ex.series,
+                reps: ex.repeticoes,
+            });
+            sessionsMap.set(ex.sessao, exercises);
+        });
+
+        const parseSessionName = (fullName: string): { letter: string; description: string } => {
+            const match = fullName.match(/^([A-Z])(?:\s*-\s*(.*))?$/);
+            if (match) {
+                return { letter: match[1], description: match[2] || '' };
+            }
+            return { letter: fullName.charAt(0) || 'A', description: '' };
+        };
+
+        const loadedSessions: Session[] = Array.from(sessionsMap.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([fullName, exercises]) => {
+                const { letter, description } = parseSessionName(fullName);
+                return {
+                    id: crypto.randomUUID(),
+                    name: letter,
+                    description,
+                    exercises,
+                };
+            });
+
+        if (loadedSessions.length === 0) {
+            loadedSessions.push({ id: crypto.randomUUID(), name: 'A', description: '', exercises: [] });
+        }
+
+        setSessions(loadedSessions);
+        setObservacoes(template.observacoes || '');
+        setSelectedTemplateId(template.id);
+        toast.success('Template aplicado!');
     };
 
     const addExercise = (sessionId: string) => {
@@ -465,7 +549,67 @@ export default function TrainingPlanGeneratorPage() {
             {/* Header Form - Aluno and Date */}
             <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="font-medium text-base flex items-center gap-2">
+                            <Bookmark className="h-4 w-4" />
+                            Template
+                        </Label>
+                        <Popover open={templateSelectOpen} onOpenChange={setTemplateSelectOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={templateSelectOpen}
+                                    className="w-full justify-between bg-background"
+                                    disabled={templatesLoading || templates.length === 0}
+                                >
+                                    {templatesLoading ? (
+                                        <span className="text-muted-foreground">Carregando...</span>
+                                    ) : selectedTemplate ? (
+                                        selectedTemplate.nome
+                                    ) : templates.length === 0 ? (
+                                        <span className="text-muted-foreground">Nenhum template cadastrado</span>
+                                    ) : (
+                                        <span className="text-muted-foreground">Selecione um template...</span>
+                                    )}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Buscar template..." />
+                                    <CommandList>
+                                        <CommandEmpty>Nenhum template encontrado.</CommandEmpty>
+                                        <CommandGroup>
+                                            {templates.map((template) => (
+                                                <CommandItem
+                                                    key={template.id}
+                                                    value={template.nome}
+                                                    onSelect={() => {
+                                                        applyTemplate(template);
+                                                        setTemplateSelectOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            selectedTemplateId === template.id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {template.nome}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                        <p className="text-xs text-muted-foreground">
+                            Aplicar um template substitui as sessões atuais.
+                        </p>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label className="font-medium text-base flex items-center gap-2">
                                 <User className="h-4 w-4" />

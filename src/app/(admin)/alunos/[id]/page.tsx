@@ -145,7 +145,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/membros">
+            <Link href="/alunos">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -155,19 +155,19 @@ export default async function MembroPage({ params }: MembroPageProps) {
               {getMemberStatusBadge(membro.status)}
             </div>
             <p className="text-muted-foreground">
-              Membro desde {format(new Date(membro.criadoEm), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              Aluno desde {format(new Date(membro.criadoEm), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/membros/${id}/anamnese`}>
+            <Link href={`/alunos/${id}/anamnese`}>
               <ClipboardList className="mr-2 h-4 w-4" />
               Anamnese
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/membros/${id}/editar`}>
+            <Link href={`/alunos/${id}/editar`}>
               <Pencil className="mr-2 h-4 w-4" />
               Editar
             </Link>
@@ -185,7 +185,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
               Dados Pessoais
             </CardTitle>
             <CardDescription>
-              Informações básicas do membro
+              Informações básicas do aluno
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -338,7 +338,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">Nenhum plano atribuído</p>
                 <Button variant="outline" className="mt-4" asChild>
-                  <Link href={`/membros/${id}/editar`}>Atribuir Plano</Link>
+                  <Link href={`/alunos/${id}/editar`}>Atribuir Plano</Link>
                 </Button>
               </div>
             )}
@@ -356,7 +356,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 Ficha de Treino
               </CardTitle>
               <CardDescription>
-                Treino atual do membro
+                Treino atual do aluno
               </CardDescription>
             </div>
             {membro.fichasTreino.length > 0 && (

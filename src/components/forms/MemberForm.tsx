@@ -169,8 +169,8 @@ export function MemberForm({
         throw new Error(data.error || "Ocorreu um erro ao processar sua solicitação.")
       }
 
-      toast.success(mode === 'create' ? "Membro cadastrado com sucesso!" : "Dados do membro atualizados com sucesso!")
-      router.push(mode === 'create' ? "/membros" : `/membros/${initialData!.id}`)
+      toast.success(mode === 'create' ? "Aluno cadastrado com sucesso!" : "Dados do aluno atualizados com sucesso!")
+      router.push(mode === 'create' ? "/alunos" : `/alunos/${initialData!.id}`)
       router.refresh()
     } catch (error) {
       console.error("Erro no formulário:", error)
@@ -178,7 +178,7 @@ export function MemberForm({
       
       // Tradução de mensagens comuns se necessário (caso venham do backend em inglês ou genéricas)
       let displayMessage = errorMessage
-      if (errorMessage.includes("Email already exists")) displayMessage = "Este email já está sendo utilizado por outro membro."
+      if (errorMessage.includes("Email already exists")) displayMessage = "Este email já está sendo utilizado por outro aluno."
       if (errorMessage.includes("CPF already exists")) displayMessage = "Este CPF já está cadastrado no sistema."
       if (errorMessage.includes("Invalid input")) displayMessage = "Verifique os dados informados e tente novamente."
       
@@ -207,9 +207,9 @@ export function MemberForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{mode === 'create' ? 'Dados do Membro' : 'Editar Membro'}</CardTitle>
+        <CardTitle>{mode === 'create' ? 'Dados do Aluno' : 'Editar Aluno'}</CardTitle>
         <CardDescription>
-          {mode === 'create' ? 'Preencha os dados abaixo para cadastrar um novo membro.' : 'Atualize os dados do membro.'}
+          {mode === 'create' ? 'Preencha os dados abaixo para cadastrar um novo aluno.' : 'Atualize os dados do aluno.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -265,7 +265,7 @@ export function MemberForm({
                         </Button>
                       </div>
                       <FormDescription>
-                        {mode === 'create' ? "Senha que o membro usará para acessar o sistema." : "Preencha apenas se quiser alterar a senha."}
+                        {mode === 'create' ? "Senha que o aluno usará para acessar o sistema." : "Preencha apenas se quiser alterar a senha."}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -471,7 +471,7 @@ export function MemberForm({
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : (mode === 'create' ? "Cadastrar Membro" : "Salvar Alterações")}
+                {loading ? "Salvando..." : (mode === 'create' ? "Cadastrar Aluno" : "Salvar Alterações")}
               </Button>
             </div>
           </form>

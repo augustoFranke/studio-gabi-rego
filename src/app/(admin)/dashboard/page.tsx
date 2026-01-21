@@ -167,7 +167,7 @@ export default async function DashboardPage() {
         <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Membros Ativos
+              Alunos Ativos
             </CardTitle>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
               <Users className="h-4 w-4 text-primary" />
@@ -297,7 +297,7 @@ export default async function DashboardPage() {
               Pagamentos Pendentes
             </CardTitle>
             <CardDescription>
-              Membros com pagamento em atraso ou pendente
+              Alunos com pagamento em atraso ou pendente
             </CardDescription>
           </CardHeader>
           <CardContent>

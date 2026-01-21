@@ -8,14 +8,14 @@ export default function NovoMembroPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/membros">
+          <Link href="/alunos">
             <ChevronLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Novo Membro</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Novo Aluno</h1>
           <p className="text-muted-foreground">
-            Adicione um novo membro ao sistema
+            Adicione um novo aluno ao sistema
           </p>
         </div>
       </div>

@@ -32,7 +32,6 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { ThemeToggleSimple } from "@/components/theme-toggle"
 
 const menuItems = [
   {
@@ -57,7 +56,7 @@ const menuItems = [
   },
 ]
 
-export function MembroSidebar() {
+export function AlunoSidebar() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
@@ -69,20 +68,13 @@ export function MembroSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md overflow-hidden p-2">
-              <Image 
-                src="/logo.svg" 
-                alt="Gabi Studio" 
-                width={44} 
-                height={44} 
-                className="brightness-0 invert"
-              />
-            </div>
-            <span className="font-semibold text-lg tracking-tight">Gabi Studio</span>
-          </div>
-          <ThemeToggleSimple />
+        <div className="flex items-center justify-center">
+          <Image
+            src="/logo.svg"
+            alt="Studio Gabi Rêgo"
+            width={72}
+            height={72}
+          />
         </div>
       </SidebarHeader>
       
@@ -124,11 +116,11 @@ export function MembroSidebar() {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton className="w-full hover:bg-sidebar-accent">
                     <Avatar className="h-7 w-7 border-2 border-primary/20">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">MB</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">AL</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col flex-1 text-left">
-                      <span className="text-sm font-medium">Membro</span>
-                      <span className="text-xs text-muted-foreground">Aluno</span>
+                      <span className="text-sm font-medium">Aluno</span>
+                      <span className="text-xs text-muted-foreground">Perfil</span>
                     </div>
                     <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   </SidebarMenuButton>
@@ -146,11 +138,11 @@ export function MembroSidebar() {
             ) : (
               <SidebarMenuButton className="w-full hover:bg-sidebar-accent">
                 <Avatar className="h-7 w-7 border-2 border-primary/20">
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">MB</AvatarFallback>
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">AL</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col flex-1 text-left">
-                  <span className="text-sm font-medium">Membro</span>
-                  <span className="text-xs text-muted-foreground">Aluno</span>
+                  <span className="text-sm font-medium">Aluno</span>
+                  <span className="text-xs text-muted-foreground">Perfil</span>
                 </div>
                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
               </SidebarMenuButton>

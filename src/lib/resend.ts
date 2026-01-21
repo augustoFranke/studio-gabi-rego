@@ -47,7 +47,7 @@ export async function enviarEmail({
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Gabi Studio <verificacao@studiogabirego.com>',
+        from: 'Studio Gabi Rêgo <verificacao@studiogabirego.com>',
         to: para,
         subject: assunto,
         html,
@@ -93,7 +93,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Gabi Studio</h1>
+          <h1>Studio Gabi Rêgo</h1>
         </div>
         <div class="content">
           <p>Olá <strong>${nome}</strong>!</p>
@@ -105,7 +105,7 @@ export const emailTemplates = {
           <p>Te esperamos! 💪</p>
         </div>
         <div class="footer">
-          <p>Gabi Studio - Seu estúdio de Pilates</p>
+          <p>Studio Gabi Rêgo - Seu estúdio de Pilates</p>
         </div>
       </div>
     </body>
@@ -129,7 +129,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Gabi Studio</h1>
+          <h1>Studio Gabi Rêgo</h1>
         </div>
         <div class="content">
           <p>Olá <strong>${nome}</strong>!</p>
@@ -141,7 +141,7 @@ export const emailTemplates = {
           <p>Qualquer dúvida, estamos à disposição!</p>
         </div>
         <div class="footer">
-          <p>Gabi Studio - Seu estúdio de Pilates</p>
+          <p>Studio Gabi Rêgo - Seu estúdio de Pilates</p>
         </div>
       </div>
     </body>
@@ -172,7 +172,7 @@ export const emailTemplates = {
         </div>
         <div class="content">
           <p>Olá${nome ? ` <strong>${nome}</strong>` : ''}!</p>
-          <p>Obrigado por se cadastrar no <strong>Gabi Studio</strong>!</p>
+          <p>Obrigado por se cadastrar no <strong>Studio Gabi Rêgo</strong>!</p>
           <p>Para continuar com seu cadastro, por favor verifique seu email clicando no botão abaixo:</p>
           <div style="text-align: center;">
             <a href="${linkVerificacao}" class="button" style="color: white;">Verificar meu email</a>
@@ -182,7 +182,7 @@ export const emailTemplates = {
           </div>
         </div>
         <div class="footer">
-          <p>Gabi Studio - Seu estúdio de Pilates</p>
+          <p>Studio Gabi Rêgo - Seu estúdio de Pilates</p>
         </div>
       </div>
     </body>
@@ -205,17 +205,17 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 Bem-vindo(a) ao Gabi Studio!</h1>
+          <h1>🎉 Bem-vindo(a) ao Studio Gabi Rêgo!</h1>
         </div>
         <div class="content">
           <p>Olá <strong>${nome}</strong>!</p>
-          <p>Seja muito bem-vindo(a) ao Gabi Studio!</p>
+          <p>Seja muito bem-vindo(a) ao Studio Gabi Rêgo!</p>
           <p>Estamos muito felizes em ter você conosco. Nossa equipe está pronta para ajudá-lo(a) a alcançar seus objetivos.</p>
           <p>Qualquer dúvida, é só entrar em contato!</p>
           <p>Vamos juntos nessa jornada! 💪</p>
         </div>
         <div class="footer">
-          <p>Gabi Studio - Seu estúdio de Pilates</p>
+          <p>Studio Gabi Rêgo - Seu estúdio de Pilates</p>
         </div>
       </div>
     </body>

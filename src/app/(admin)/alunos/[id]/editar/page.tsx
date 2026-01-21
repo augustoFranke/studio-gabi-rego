@@ -50,12 +50,12 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/membros/${id}`}>
+                    <Link href={`/alunos/${id}`}>
                         <ChevronLeft className="h-4 w-4" />
                     </Link>
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Editar Membro</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Editar Aluno</h1>
                     <p className="text-muted-foreground">
                         {membro.usuario.nome}
                     </p>

@@ -114,7 +114,7 @@ async function main() {
 
   // Criar configurações iniciais
   const configs = [
-    { chave: 'NOME_ESTUDIO', valor: 'Gabi Studio', descricao: 'Nome do estúdio' },
+    { chave: 'NOME_ESTUDIO', valor: 'Studio Gabi Rêgo', descricao: 'Nome do estúdio' },
     { chave: 'TELEFONE_CONTATO', valor: '', descricao: 'Telefone para contato' },
     { chave: 'EMAIL_CONTATO', valor: 'contato@gabistudio.com.br', descricao: 'Email para contato' },
     { chave: 'DIAS_AVISO_VENCIMENTO', valor: '3', descricao: 'Dias antes do vencimento para enviar aviso' },
