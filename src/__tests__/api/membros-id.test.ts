@@ -32,7 +32,7 @@ describe('Membros API - PATCH /api/membros/[id]', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: any) => {
+  const createRequest = (body: Record<string, unknown>) => {
     return new NextRequest('http://localhost:3000/api/membros/123', {
       method: 'PATCH',
       body: JSON.stringify(body),
@@ -49,21 +49,23 @@ describe('Membros API - PATCH /api/membros/[id]', () => {
     }
 
     // Mock existing member
-    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce({
+    const existingMember = {
       id: '123',
       usuarioId: 'user-123',
       cpf: '00000000000',
       usuario: { email: 'old@example.com' }
-    } as any)
+    } satisfies { id: string; usuarioId: string; cpf: string | null; usuario: { email: string } }
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(existingMember)
 
     // Mock email/cpf checks
     vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null) // Email unique check
     vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(null) // CPF unique check (second call)
 
-    vi.mocked(prisma.membro.update).mockResolvedValue({
+    const updatedMember = {
       id: '123',
       usuarioId: 'user-123',
-    } as any)
+    } satisfies { id: string; usuarioId: string }
+    vi.mocked(prisma.membro.update).mockResolvedValue(updatedMember)
 
     const req = createRequest(updateBody)
     const res = await PATCH(req, { params })

@@ -4,6 +4,7 @@ import { withApiAuth } from '@/lib/api'
 import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { z } from 'zod'
+import { Prisma, StatusMembro } from '@prisma/client'
 
 const membroSchema = z.object({
   nome: z.string().optional(),
@@ -26,19 +27,48 @@ const membroSchema = z.object({
 })
 
 // GET /api/membros - Listar todos os membros
-export async function GET() {
+export async function GET(request: NextRequest) {
   return withApiAuth(async () => {
-    const membros = await prisma.membro.findMany({
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-          },
+    const searchParams = request.nextUrl.searchParams
+    const status = searchParams.get('status')
+    const fields = searchParams.get('fields')
+
+    const where: Prisma.MembroWhereInput = {}
+    if (status && status !== 'todos') {
+      where.status = status as StatusMembro
+    }
+
+    const compactSelect = {
+      id: true,
+      usuarioId: true,
+      cpf: true,
+      telefone: true,
+      status: true,
+      fotoUrl: true,
+      usuario: {
+        select: {
+          nome: true,
+          email: true,
         },
-        plano: true,
       },
+    } satisfies Prisma.MembroSelect
+
+    const membros = await prisma.membro.findMany({
+      where,
+      ...(fields === 'compact'
+        ? { select: compactSelect }
+        : {
+          include: {
+            usuario: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+              },
+            },
+            plano: true,
+          },
+        }),
       orderBy: {
         criadoEm: 'desc',
       },
@@ -71,8 +101,11 @@ export async function POST(request: NextRequest) {
 
     const { nome, email, senha, cpf, rg, telefone, dataNascimento, planoId, precoCustomizado, sexo } = validation.data
 
+    // Normalize email to lowercase
+    const normalizedEmail = email ? email.toLowerCase().trim() : null
+
     // Validate email if provided
-    if (email && !validarEmail(email)) {
+    if (normalizedEmail && !validarEmail(normalizedEmail)) {
       return NextResponse.json({ error: 'O email informado é inválido.' }, { status: 400 })
     }
 
@@ -82,8 +115,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists (only if provided)
-    if (email) {
-      const emailExiste = await prisma.usuario.findUnique({ where: { email } })
+    if (normalizedEmail) {
+      const emailExiste = await prisma.usuario.findUnique({ where: { email: normalizedEmail } })
       if (emailExiste) {
         return NextResponse.json({ error: 'Este email já está cadastrado no sistema.' }, { status: 400 })
       }
@@ -106,9 +139,12 @@ export async function POST(request: NextRequest) {
       const usuario = await tx.usuario.create({
         data: {
           nome: nome || 'Sem nome',
-          email: email || `temp_${Date.now()}@placeholder.local`,
+          email: normalizedEmail || `temp_${Date.now()}@placeholder.local`,
           senha: senhaHash,
           role: 'MEMBRO',
+          // Skip onboarding for admin-created users
+          onboardingCompleto: true,
+          etapaOnboarding: 4,
         },
       })
 
@@ -140,4 +176,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(membro, { status: 201 })
   }, { requiredRole: 'ADMIN' })
 }
-

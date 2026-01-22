@@ -81,12 +81,11 @@ export async function POST(
 
 // Helper function to determine gender
 // This could be improved by adding a sexo field to the Membro model
-function determineSexo(membro: any): "Masculino" | "Feminino" {
+function determineSexo(membro: { usuario: { nome: string } }): "Masculino" | "Feminino" {
   const nome = membro.usuario.nome.toLowerCase()
 
   // Common female name endings in Portuguese
   const femaleEndings = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
-  const maleEndings = ['o', 'os', 'on', 'or', 'er', 'son']
 
   // Common female names
   const femaleNames = ['maria', 'ana', 'julia', 'gabriela', 'fernanda', 'amanda', 'bruna', 'camila', 'carla', 'claudia', 'cristina', 'daniela', 'elaine', 'fabiana', 'juliana', 'larissa', 'leticia', 'luciana', 'marcia', 'patricia', 'priscila', 'renata', 'sandra', 'tatiana', 'vanessa', 'adriana', 'aline', 'beatriz', 'bianca', 'carolina', 'debora', 'denise', 'eduarda', 'eliana', 'elisabete', 'flavia', 'franciele', 'gisele', 'helena', 'isabela', 'jessica', 'joana', 'jussara', 'karen', 'karina', 'lais', 'lilian', 'livia', 'luana', 'lucia', 'luciane', 'luiza', 'mara', 'marcela', 'mariana', 'marina', 'marta', 'michele', 'milena', 'monica', 'natalia', 'paula', 'rafaela', 'raquel', 'regina', 'roberta', 'rosana', 'sabrina', 'samantha', 'simone', 'solange', 'sonia', 'suzana', 'tais', 'thais', 'vera', 'vivian', 'viviane']

@@ -2,9 +2,6 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 
-// Determine if we're in production
-const isProduction = process.env.NODE_ENV === "production"
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Required for Vercel deployment - trust the proxy headers
   trustHost: true,
@@ -22,7 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        const email = credentials.email as string
+        const email = (credentials.email as string).toLowerCase().trim()
         const password = credentials.password as string
 
         // Dynamic import to avoid Prisma initialization at module load time
@@ -34,13 +31,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         })
 
         if (!usuario) {
-          return null
+          throw new Error("USER_NOT_FOUND")
         }
 
         const senhaCorreta = await compare(password, usuario.senha)
 
         if (!senhaCorreta) {
-          return null
+          throw new Error("WRONG_PASSWORD")
         }
 
         return {
@@ -78,4 +75,3 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
 })
-

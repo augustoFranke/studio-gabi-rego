@@ -88,7 +88,7 @@ export default function TrainingPlanGeneratorPage() {
     useEffect(() => {
         const fetchMembers = async () => {
             try {
-                const response = await fetch('/api/membros?status=ATIVO');
+                const response = await fetch('/api/membros?status=ATIVO&fields=compact');
                 if (response.ok) {
                     const data = await response.json();
                     setMembers(data.membros || data);
@@ -315,65 +315,6 @@ export default function TrainingPlanGeneratorPage() {
             observacoes: observacoes.trim() || undefined,
             sessions: validSessions,
         };
-    };
-
-    // Save to database
-    const handleSave = async () => {
-        if (!isValid) return;
-
-        setIsSaving(true);
-        saveAllToHistory();
-
-        try {
-            // Build exercises array with sessions
-            const exercicios: Array<{
-                sessao: string;
-                nome: string;
-                series: string;
-                repeticoes: string;
-            }> = [];
-
-            sessions.forEach(s => {
-                const fullSessionName = getFullSessionName(s);
-                s.exercises.forEach((e) => {
-                    if (e.name.trim()) {
-                        exercicios.push({
-                            sessao: fullSessionName,
-                            nome: e.name,
-                            series: e.sets || '3',
-                            repeticoes: e.reps || '10',
-                        });
-                    }
-                });
-            });
-
-            const response = await fetch('/api/treinos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    membroId: selectedMemberId,
-                    nome: `Treino ${date}`,
-                    data: date,
-                    observacoes: observacoes.trim() || undefined,
-                    exercicios,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao salvar treino');
-            }
-
-            toast.success('Treino salvo com sucesso!');
-            router.push('/treinos');
-        } catch (error) {
-            console.error('Error saving training:', error);
-            toast.error(error instanceof Error ? error.message : 'Erro ao salvar treino');
-        } finally {
-            setIsSaving(false);
-        }
     };
 
     // Generate PDF using Python backend

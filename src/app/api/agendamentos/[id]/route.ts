@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 // Helper to parse date string as local date (not UTC)
 function parseLocalDate(dateStr: string): Date {
@@ -12,6 +13,33 @@ function parseLocalDate(dateStr: string): Date {
   // Otherwise parse as-is (ISO string with time)
   return new Date(dateStr)
 }
+
+const agendamentoSelect = {
+  id: true,
+  membroId: true,
+  horarioId: true,
+  data: true,
+  presente: true,
+  observacao: true,
+  membro: {
+    select: {
+      id: true,
+      fotoUrl: true,
+      usuario: {
+        select: { nome: true, email: true },
+      },
+    },
+  },
+  horario: {
+    select: {
+      id: true,
+      diaSemana: true,
+      horaInicio: true,
+      horaFim: true,
+      vagasTotal: true,
+    },
+  },
+} satisfies Prisma.AgendamentoSelect
 
 // GET /api/agendamentos/[id] - Obter agendamento especifico
 export async function GET(
@@ -27,16 +55,7 @@ export async function GET(
 
   const agendamento = await prisma.agendamento.findUnique({
     where: { id },
-    include: {
-      membro: {
-        include: {
-          usuario: {
-            select: { nome: true, email: true },
-          },
-        },
-      },
-      horario: true,
-    },
+    select: agendamentoSelect,
   })
 
   if (!agendamento) {
@@ -143,16 +162,7 @@ export async function PATCH(
     const agendamentoAtualizado = await prisma.agendamento.update({
       where: { id },
       data: updateData,
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        horario: true,
-      },
+      select: agendamentoSelect,
     })
 
     return NextResponse.json(agendamentoAtualizado)

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ClipboardList, Heart, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 interface AnamneseData {
@@ -67,11 +67,7 @@ export default function AnamnesePage() {
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
   const [formData, setFormData] = useState<AnamneseData>({})
 
-  useEffect(() => {
-    loadMemberData()
-  }, [memberId])
-
-  const loadMemberData = async () => {
+  const loadMemberData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/membros/${memberId}/anamnese`)
@@ -86,7 +82,11 @@ export default function AnamnesePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [memberId])
+
+  useEffect(() => {
+    loadMemberData()
+  }, [loadMemberData])
 
 
 
@@ -131,7 +131,7 @@ export default function AnamnesePage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/membros/${memberId}`}>
+            <Link href={`/alunos/${memberId}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -689,7 +689,7 @@ export default function AnamnesePage() {
       {/* Save Button */}
       <div className="flex justify-end gap-2">
         <Button variant="outline" asChild>
-          <Link href={`/membros/${memberId}`}>Cancelar</Link>
+          <Link href={`/alunos/${memberId}`}>Cancelar</Link>
         </Button>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (

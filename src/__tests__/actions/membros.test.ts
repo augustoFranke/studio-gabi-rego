@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { toggleMembroStatus, deleteMembro, enviarLembreteBoasVindas } from '@/app/actions/membros'
+import { toggleMembroStatus, deleteMembro } from '@/app/actions/membros'
 import { prisma } from '@/lib/prisma'
+import type { Membro } from '@prisma/client'
 
 // Mocks
 vi.mock('@/lib/prisma', () => ({
@@ -74,7 +75,7 @@ describe('Membros Server Actions', () => {
 
       vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce({
         usuarioId: mockUsuarioId,
-      } as any)
+      } as Pick<Membro, 'usuarioId'>)
 
       const result = await deleteMembro(mockMembroId)
 

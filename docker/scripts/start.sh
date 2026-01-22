@@ -1,10 +1,10 @@
 #!/bin/bash
-# ==================== Studio Gabi Rêgo - Docker Start Script ====================
-# Este script inicializa todos os serviços do Studio Gabi Rêgo
+# ==================== Gabi Rêgo Studio - Docker Start Script ====================
+# Este script inicializa todos os serviços do Gabi Rêgo Studio
 
 set -e
 
-echo "🚀 Iniciando Studio Gabi Rêgo..."
+echo "🚀 Iniciando Gabi Rêgo Studio..."
 echo "=================================="
 
 # Cores para output
@@ -76,7 +76,7 @@ docker compose exec -T app npx prisma migrate deploy 2>/dev/null || {
 # Resumo
 echo ""
 echo "=================================="
-echo -e "${GREEN}🎉 Studio Gabi Rêgo está rodando!${NC}"
+echo -e "${GREEN}🎉 Gabi Rêgo Studio está rodando!${NC}"
 echo ""
 echo "📍 Endereços:"
 echo "   • App:          http://localhost:3000"

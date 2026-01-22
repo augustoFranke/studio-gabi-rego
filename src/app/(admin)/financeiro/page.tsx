@@ -150,6 +150,7 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true)
   const [searchPagamento, setSearchPagamento] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [sortPagamento, setSortPagamento] = useState<string>("vencimento_desc")
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -163,6 +164,11 @@ export default function FinanceiroPage() {
   const [editingPlano, setEditingPlano] = useState<Plano | null>(null)
   const [editingPagamento, setEditingPagamento] = useState<Pagamento | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // Delete confirmation dialog states
+  const [showDeletePagamentoDialog, setShowDeletePagamentoDialog] = useState(false)
+  const [pagamentoToDelete, setPagamentoToDelete] = useState<Pagamento | null>(null)
+  const [deletingPagamento, setDeletingPagamento] = useState(false)
 
   // Form states for Plano
   const [planoForm, setPlanoForm] = useState({
@@ -230,7 +236,7 @@ export default function FinanceiroPage() {
   }, [])
 
   // Fetch pagamentos with pagination and filters
-  const fetchPagamentos = useCallback(async (page: number = 1, search?: string, status?: string) => {
+  const fetchPagamentos = useCallback(async (page: number = 1, search?: string, status?: string, sort?: string) => {
     setLoadingPagamentos(true)
     try {
       const params = new URLSearchParams({
@@ -239,6 +245,7 @@ export default function FinanceiroPage() {
       })
       if (search) params.set('search', search)
       if (status && status !== 'all') params.set('status', status)
+      if (sort) params.set('sort', sort)
 
       const res = await fetch(`/api/pagamentos?${params.toString()}`)
       if (res.ok) {
@@ -273,7 +280,7 @@ export default function FinanceiroPage() {
       }
 
       // Fetch first page of pagamentos
-      await fetchPagamentos(1)
+      await fetchPagamentos(1, undefined, undefined, sortPagamento)
       await fetchStats()
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
@@ -281,7 +288,7 @@ export default function FinanceiroPage() {
     } finally {
       setLoading(false)
     }
-  }, [fetchPagamentos, fetchStats])
+  }, [fetchPagamentos, fetchStats, sortPagamento])
 
   useEffect(() => {
     fetchData()
@@ -290,10 +297,10 @@ export default function FinanceiroPage() {
   // Refetch when search or filter changes (with debounce for search)
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchPagamentos(1, searchPagamento, filterStatus)
+      fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)
     }, 300)
     return () => clearTimeout(timer)
-  }, [searchPagamento, filterStatus, fetchPagamentos])
+  }, [searchPagamento, filterStatus, sortPagamento, fetchPagamentos])
 
   // Plano handlers
   const handleOpenPlanoDialog = (plano?: Plano) => {
@@ -499,7 +506,7 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success(editingPagamento ? "Pagamento atualizado!" : "Pagamento criado!")
         setPagamentoDialogOpen(false)
-        fetchPagamentos(currentPage, searchPagamento, filterStatus)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
         fetchStats()
       } else {
         const data = await res.json()
@@ -522,7 +529,7 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success("Status atualizado!")
-        fetchPagamentos(currentPage, searchPagamento, filterStatus)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
         fetchStats()
       } else {
         const data = await res.json()
@@ -533,24 +540,32 @@ export default function FinanceiroPage() {
     }
   }
 
-  const handleDeletePagamento = async (pagamento: Pagamento) => {
-    if (!confirm("Deseja realmente remover este pagamento?")) {
-      return
-    }
+  const handleDeletePagamento = (pagamento: Pagamento) => {
+    setPagamentoToDelete(pagamento)
+    setShowDeletePagamentoDialog(true)
+  }
 
+  const handleConfirmDeletePagamento = async () => {
+    if (!pagamentoToDelete) return
+
+    setDeletingPagamento(true)
     try {
-      const res = await fetch(`/api/pagamentos/${pagamento.id}`, { method: "DELETE" })
+      const res = await fetch(`/api/pagamentos/${pagamentoToDelete.id}`, { method: "DELETE" })
       const data = await res.json()
 
       if (res.ok) {
         toast.success(data.message || "Pagamento removido!")
-        fetchPagamentos(currentPage, searchPagamento, filterStatus)
+        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
         fetchStats()
+        setShowDeletePagamentoDialog(false)
+        setPagamentoToDelete(null)
       } else {
         toast.error(data.error || "Erro ao remover pagamento")
       }
     } catch {
       toast.error("Erro ao remover pagamento")
+    } finally {
+      setDeletingPagamento(false)
     }
   }
 
@@ -880,6 +895,51 @@ export default function FinanceiroPage() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={showDeletePagamentoDialog} onOpenChange={setShowDeletePagamentoDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Confirmar exclusão</DialogTitle>
+                      <DialogDescription>
+                        Tem certeza que deseja excluir o pagamento de{" "}
+                        {pagamentoToDelete?.membro?.usuario?.nome ? (
+                          <strong>{pagamentoToDelete.membro.usuario.nome}</strong>
+                        ) : (
+                          "este aluno"
+                        )}
+                        {" "}no valor de <strong>{pagamentoToDelete ? formatCurrency(pagamentoToDelete.valor) : ""}</strong>?
+                        Esta ação é <strong>permanente</strong> e não poderá ser desfeita.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowDeletePagamentoDialog(false)
+                          setPagamentoToDelete(null)
+                        }}
+                        disabled={deletingPagamento}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleConfirmDeletePagamento}
+                        disabled={deletingPagamento}
+                      >
+                        {deletingPagamento ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Excluindo...
+                          </>
+                        ) : (
+                          "Excluir permanentemente"
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -904,6 +964,16 @@ export default function FinanceiroPage() {
                     <SelectItem value="PAGO">Pagos</SelectItem>
                     <SelectItem value="ATRASADO">Atrasados</SelectItem>
                     <SelectItem value="CANCELADO">Cancelados</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortPagamento} onValueChange={setSortPagamento}>
+                  <SelectTrigger className="w-[200px] border-input/50">
+                    <SelectValue placeholder="Ordenar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vencimento_desc">Vencimento (mais distante)</SelectItem>
+                    <SelectItem value="vencimento_asc">Vencimento (mais próximo)</SelectItem>
+                    <SelectItem value="recent_desc">Mais recentes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -936,7 +1006,12 @@ export default function FinanceiroPage() {
                           <TableCell className="font-medium">
                             {pagamento.membro.usuario.nome}
                           </TableCell>
-                          <TableCell>{pagamento.plano.nome}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="flex items-center w-fit border-primary/30 text-primary">
+                              <CreditCard className="mr-1 h-3 w-3" />
+                              {pagamento.plano.nome}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{formatCurrency(pagamento.valor)}</TableCell>
                           <TableCell>{formatDate(pagamento.dataVencimento)}</TableCell>
                           <TableCell>{getStatusBadge(pagamento.status)}</TableCell>
@@ -988,7 +1063,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(1, searchPagamento, filterStatus)}
+                      onClick={() => fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Primeira página</span>
@@ -997,7 +1072,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage - 1, searchPagamento, filterStatus)}
+                      onClick={() => fetchPagamentos(currentPage - 1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Página anterior</span>
@@ -1006,7 +1081,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage + 1, searchPagamento, filterStatus)}
+                      onClick={() => fetchPagamentos(currentPage + 1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Próxima página</span>
@@ -1015,7 +1090,7 @@ export default function FinanceiroPage() {
                     <Button
                       variant="outline"
                       className="h-8 w-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(totalPages, searchPagamento, filterStatus)}
+                      onClick={() => fetchPagamentos(totalPages, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Última página</span>

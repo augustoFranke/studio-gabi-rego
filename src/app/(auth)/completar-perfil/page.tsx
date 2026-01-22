@@ -14,7 +14,7 @@ import { Flame, ArrowRight, User, Check } from "lucide-react"
 import Image from "next/image"
 
 function CompletarPerfilContent() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const searchParams = useSearchParams()
   const profileToken = searchParams.get("token")
   const [isLoading, setIsLoading] = useState(false)

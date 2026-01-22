@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Search, MoreHorizontal, Phone, Mail, User, CreditCard, Users } from "lucide-react"
+import { Plus, MoreHorizontal, Phone, Mail, User, CreditCard, Users } from "lucide-react"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import {
@@ -20,26 +20,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { MemberStatusToggle, SendMemberReminder } from "@/components/admin/member-actions"
 import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
+import { AlunosFilters } from "@/components/admin/alunos-filters"
 
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string; plano?: string; page?: string }>
+  searchParams: Promise<{ search?: string; status?: string; plano?: string; page?: string; order?: string }>
 }) {
-  const { search, status, plano, page } = await searchParams
+  const { search, status, plano, page, order } = await searchParams
   const currentPage = Number(page) || 1
   const itemsPerPage = 10
   const skip = (currentPage - 1) * itemsPerPage
@@ -62,19 +53,34 @@ export default async function MembrosPage({
     where.planoId = plano
   }
 
+  const orderBy: Prisma.MembroOrderByWithRelationInput =
+    order === "recent_desc"
+      ? { criadoEm: "desc" }
+      : { usuario: { nome: "asc" } }
+
   const [totalMembros, membros, planos] = await Promise.all([
     prisma.membro.count({ where }),
     prisma.membro.findMany({
       where,
-      include: {
-        usuario: true,
-        plano: true,
-      },
-      orderBy: {
+      select: {
+        id: true,
+        cpf: true,
+        telefone: true,
+        status: true,
         usuario: {
-          nome: 'asc'
-        }
+          select: {
+            nome: true,
+            email: true,
+          },
+        },
+        plano: {
+          select: {
+            id: true,
+            nome: true,
+          },
+        },
       },
+      orderBy,
       skip,
       take: itemsPerPage,
     }),
@@ -119,101 +125,14 @@ export default async function MembrosPage({
                 </CardDescription>
               </div>
             </div>
-            <form className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  name="search"
-                  placeholder="Nome, CPF ou Email..."
-                  className="pl-8 border-input/50 focus:border-primary"
-                  defaultValue={search}
-                />
-              </div>
-
-              <Select name="status" defaultValue={status || 'todos'}>
-                <SelectTrigger className="w-[140px] border-input/50">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos Status</SelectItem>
-                  <SelectItem value="ATIVO">Ativos</SelectItem>
-                  <SelectItem value="INATIVO">Inativos</SelectItem>
-                  <SelectItem value="PENDENTE">Pendentes</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(() => {
-                const planosGabi = planos.filter(p => p.nome.toLowerCase().includes('gabi'))
-                const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
-                const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-
-                return (
-                  <Select name="plano" defaultValue={plano || 'todos'}>
-                    <SelectTrigger className="w-[220px] border-input/50">
-                      <SelectValue placeholder="Plano" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos Planos</SelectItem>
-                      {planosGabi.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                            Gabi
-                          </SelectLabel>
-                          {planosGabi.map((p) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              <span className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                {p.nome}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                      {planosEstagiarios.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                            Estagiários
-                          </SelectLabel>
-                          {planosEstagiarios.map((p) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              <span className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                                {p.nome}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                      {planosOutros.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-violet-500"></span>
-                            Outros
-                          </SelectLabel>
-                          {planosOutros.map((p) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              <span className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-                                {p.nome}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                    </SelectContent>
-                  </Select>
-                )
-              })()}
-
-              <Button type="submit" variant="secondary" className="hover:bg-primary/10 hover:text-primary">
-                Filtrar
-              </Button>
-              <Button type="button" variant="ghost" asChild className="hover:text-primary">
-                <Link href="/alunos">Limpar</Link>
-              </Button>
-            </form>
+            <AlunosFilters
+              key={`${search ?? ""}-${status ?? ""}-${plano ?? ""}-${order ?? ""}`}
+              search={search}
+              status={status}
+              plano={plano}
+              order={order}
+              planos={planos}
+            />
           </div>
         </CardHeader>
         <CardContent>

@@ -36,7 +36,7 @@ describe('Membros API - POST /api/membros', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: any) => {
+  const createRequest = (body: Record<string, unknown>) => {
     return new NextRequest('http://localhost:3000/api/membros', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -53,12 +53,14 @@ describe('Membros API - POST /api/membros', () => {
 
     vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null) // Email check
     vi.mocked(prisma.membro.findUnique).mockResolvedValue(null) // CPF check
-    vi.mocked(prisma.usuario.create).mockResolvedValue({ id: 'user-123' } as any)
-    vi.mocked(prisma.membro.create).mockResolvedValue({
+    const createdUser = { id: 'user-123' } satisfies { id: string }
+    vi.mocked(prisma.usuario.create).mockResolvedValue(createdUser)
+    const createdMember = {
       id: 'membro-123',
       usuarioId: 'user-123',
       status: 'ATIVO',
-    } as any)
+    } satisfies { id: string; usuarioId: string; status: string }
+    vi.mocked(prisma.membro.create).mockResolvedValue(createdMember)
 
     const req = createRequest(validBody)
     const res = await POST(req)
@@ -71,7 +73,8 @@ describe('Membros API - POST /api/membros', () => {
   })
 
   it('should return error if email already exists', async () => {
-    vi.mocked(prisma.usuario.findUnique).mockResolvedValue({ id: 'existing' } as any)
+    const existingUser = { id: 'existing' } satisfies { id: string }
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(existingUser)
     
     const req = createRequest({ email: 'exists@example.com' })
     const res = await POST(req)
@@ -83,7 +86,8 @@ describe('Membros API - POST /api/membros', () => {
 
   it('should return error if CPF already exists', async () => {
      vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
-     vi.mocked(prisma.membro.findUnique).mockResolvedValue({ id: 'existing' } as any)
+     const existingMember = { id: 'existing' } satisfies { id: string }
+     vi.mocked(prisma.membro.findUnique).mockResolvedValue(existingMember)
 
      const req = createRequest({ cpf: '123.456.789-00', email: 'new@example.com' })
      const res = await POST(req)

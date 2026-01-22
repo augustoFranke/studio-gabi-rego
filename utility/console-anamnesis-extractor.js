@@ -114,7 +114,7 @@
                             usedEndpoint = endpoint;
                             break;
                         }
-                    } catch (e) {
+                    } catch {
                         // Try next endpoint
                         continue;
                     }
@@ -187,7 +187,7 @@
                                 });
                             }
                         }
-                    } catch (e) {
+                    } catch {
                         // Client fetch failed
                     }
                 }

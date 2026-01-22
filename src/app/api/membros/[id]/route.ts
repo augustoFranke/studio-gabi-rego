@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
+import { hash } from 'bcryptjs'
 import { z } from 'zod'
 import { validarCPF, validarEmail } from '@/lib/validators'
+import { Prisma } from '@prisma/client'
 
 const updateMembroSchema = z.object({
     nome: z.string().optional(),
     email: z.string().email('Email inválido').optional().or(z.literal('')),
+    senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional().or(z.literal('')),
     cpf: z.string().optional(),
     rg: z.string().optional(),
     telefone: z.string().optional(),
@@ -77,6 +80,9 @@ export async function PATCH(
 
         const data = validation.data
 
+        // Normalize email to lowercase
+        const normalizedEmail = data.email ? data.email.toLowerCase().trim() : undefined
+
         // Verificar se membro existe
         const membroExistente = await prisma.membro.findUnique({
             where: { id },
@@ -88,11 +94,11 @@ export async function PATCH(
         }
 
         // Validações de unicidade se houver alteração
-        if (data.email && data.email !== membroExistente.usuario.email) {
-            if (!validarEmail(data.email)) {
+        if (normalizedEmail && normalizedEmail !== membroExistente.usuario.email) {
+            if (!validarEmail(normalizedEmail)) {
                 return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
             }
-            const emailExiste = await prisma.usuario.findUnique({ where: { email: data.email } })
+            const emailExiste = await prisma.usuario.findUnique({ where: { email: normalizedEmail } })
             if (emailExiste) {
                 return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
             }
@@ -114,18 +120,20 @@ export async function PATCH(
         // Atualizar dados em transação
         const membroAtualizado = await prisma.$transaction(async (tx) => {
             // Atualizar usuário se necessário
-            if (data.nome || data.email) {
+            if (data.nome || normalizedEmail || data.senha) {
+                const usuarioUpdateData: { nome?: string; email?: string; senha?: string } = {}
+                if (data.nome) usuarioUpdateData.nome = data.nome
+                if (normalizedEmail) usuarioUpdateData.email = normalizedEmail
+                if (data.senha) usuarioUpdateData.senha = await hash(data.senha, 12)
+
                 await tx.usuario.update({
                     where: { id: membroExistente.usuarioId },
-                    data: {
-                        nome: data.nome,
-                        email: data.email,
-                    },
+                    data: usuarioUpdateData,
                 })
             }
 
             // Preparar dados de atualização do membro
-            const memberUpdateData: any = {}
+            const memberUpdateData: Prisma.MembroUpdateInput = {}
             if (data.cpf) memberUpdateData.cpf = data.cpf.replace(/\D/g, '')
             if (data.rg !== undefined) memberUpdateData.rg = data.rg // Permitir limpar RG? se string vazia
             if (data.telefone) memberUpdateData.telefone = data.telefone.replace(/\D/g, '')

@@ -11,6 +11,33 @@ const agendamentoSchema = z.object({
   data: z.string().optional(),
 })
 
+const agendamentoSelect = {
+  id: true,
+  membroId: true,
+  horarioId: true,
+  data: true,
+  presente: true,
+  observacao: true,
+  membro: {
+    select: {
+      id: true,
+      fotoUrl: true,
+      usuario: {
+        select: { nome: true, email: true },
+      },
+    },
+  },
+  horario: {
+    select: {
+      id: true,
+      diaSemana: true,
+      horaInicio: true,
+      horaFim: true,
+      vagasTotal: true,
+    },
+  },
+} satisfies Prisma.AgendamentoSelect
+
 // GET /api/agendamentos - Listar agendamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
@@ -37,16 +64,7 @@ export async function GET(request: NextRequest) {
 
     const agendamentos = await prisma.agendamento.findMany({
       where,
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        horario: true,
-      },
+      select: agendamentoSelect,
       orderBy: [{ data: 'asc' }, { horario: { horaInicio: 'asc' } }],
     })
 
@@ -126,19 +144,9 @@ export async function POST(request: NextRequest) {
         horarioId,
         data: dataAgendamento,
       },
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        horario: true,
-      },
+      select: agendamentoSelect,
     })
 
     return NextResponse.json(agendamento, { status: 201 })
   })
 }
-

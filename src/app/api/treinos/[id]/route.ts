@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 interface RouteParams {
   params: Promise<{
@@ -28,6 +29,33 @@ const updateFichaSchema = z.object({
   exercicios: z.array(exercicioSchema).optional(),
 })
 
+const fichaSelect = {
+  id: true,
+  nome: true,
+  data: true,
+  objetivo: true,
+  observacoes: true,
+  membroId: true,
+  membro: {
+    select: {
+      id: true,
+      usuario: {
+        select: { nome: true },
+      },
+    },
+  },
+  exercicios: {
+    select: {
+      id: true,
+      sessao: true,
+      nome: true,
+      series: true,
+      repeticoes: true,
+    },
+    orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
+  },
+} satisfies Prisma.FichaTreinoSelect
+
 // GET /api/treinos/[id] - Get a single training plan
 export async function GET(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async (session) => {
@@ -35,18 +63,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const ficha = await prisma.fichaTreino.findUnique({
       where: { id },
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
+      select: fichaSelect,
     })
 
     if (!ficha) {
@@ -124,18 +141,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const ficha = await prisma.fichaTreino.update({
       where: { id },
       data: updateData,
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
+      select: fichaSelect,
     })
 
     return NextResponse.json(ficha)

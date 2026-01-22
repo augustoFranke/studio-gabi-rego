@@ -25,7 +25,7 @@ describe('Pagamentos API - POST /api/pagamentos', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: any) => {
+  const createRequest = (body: Record<string, unknown>) => {
     return new NextRequest('http://localhost:3000/api/pagamentos', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -41,10 +41,11 @@ describe('Pagamentos API - POST /api/pagamentos', () => {
       formaPagamento: 'PIX',
     }
 
-    vi.mocked(prisma.pagamento.create).mockResolvedValue({
+    const createdPagamento = {
       id: 'pag-123',
       ...validBody,
-    } as any)
+    } satisfies { id: string }
+    vi.mocked(prisma.pagamento.create).mockResolvedValue(createdPagamento)
 
     const req = createRequest(validBody)
     const res = await POST(req)

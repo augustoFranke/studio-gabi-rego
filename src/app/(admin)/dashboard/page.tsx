@@ -5,12 +5,12 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
-}
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
+
+const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 // Helper function to check if a time string (HH:MM) is before the current time
 const isTimeInPast = (timeString: string, currentHour: number, currentMinute: number): boolean => {
@@ -97,13 +97,23 @@ export default async function DashboardPage() {
           gte: today,
         }
       },
-      include: {
+      select: {
+        id: true,
+        data: true,
+        presente: true,
         membro: {
-          include: {
-            usuario: true
-          }
+          select: {
+            usuario: {
+              select: { nome: true },
+            },
+          },
         },
-        horario: true,
+        horario: {
+          select: {
+            horaInicio: true,
+            horaFim: true,
+          },
+        },
       },
       orderBy: [
         { data: 'asc' },
@@ -117,12 +127,18 @@ export default async function DashboardPage() {
           in: ['PENDENTE', 'ATRASADO']
         }
       },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        valor: true,
+        dataVencimento: true,
         membro: {
-          include: {
-            usuario: true
-          }
-        }
+          select: {
+            usuario: {
+              select: { nome: true },
+            },
+          },
+        },
       },
       orderBy: {
         dataVencimento: 'asc'

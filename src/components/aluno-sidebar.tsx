@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useSyncExternalStore } from "react"
 import {
   Sidebar,
   SidebarContent,
@@ -22,13 +22,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  User,
   Calendar,
   Dumbbell,
   ChevronUp,
   LogOut,
   Home,
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -38,11 +38,6 @@ const menuItems = [
     title: "Início",
     url: "/inicio",
     icon: Home,
-  },
-  {
-    title: "Meus Dados",
-    url: "/meus-dados",
-    icon: User,
   },
   {
     title: "Minha Agenda",
@@ -58,12 +53,11 @@ const menuItems = [
 
 export function AlunoSidebar() {
   const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
-
-  // Prevent hydration mismatch with Radix UI dropdown
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   return (
     <Sidebar>
@@ -71,7 +65,7 @@ export function AlunoSidebar() {
         <div className="flex items-center justify-center">
           <Image
             src="/logo.svg"
-            alt="Studio Gabi Rêgo"
+            alt="Gabi Rêgo Studio"
             width={72}
             height={72}
           />
@@ -129,7 +123,10 @@ export function AlunoSidebar() {
                   side="top"
                   className="w-[--radix-popper-anchor-width]"
                 >
-                  <DropdownMenuItem className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sair</span>
                   </DropdownMenuItem>

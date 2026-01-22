@@ -17,15 +17,29 @@ interface PageProps {
 async function getTreino(id: string) {
   const treino = await prisma.fichaTreino.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      nome: true,
+      data: true,
+      criadoEm: true,
+      objetivo: true,
+      observacoes: true,
       membro: {
-        include: {
+        select: {
           usuario: {
             select: { nome: true },
           },
         },
       },
       exercicios: {
+        select: {
+          id: true,
+          sessao: true,
+          nome: true,
+          grupoMuscular: true,
+          series: true,
+          repeticoes: true,
+        },
         orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
       },
     },

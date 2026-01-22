@@ -14,12 +14,6 @@
  */
 
 (async function() {
-  const DELAY_MS = 2000; // Delay between requests to avoid rate limiting
-  const results = [];
-
-  // Helper: Wait for specified milliseconds
-  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
   // Helper: Download JSON data
   const downloadJSON = (data, filename) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -31,18 +25,6 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  // Helper: Extract client ID from URL
-  const extractClientId = (url) => {
-    const match = url.match(/\/cliente\/(\d+)/);
-    return match ? match[1] : null;
-  };
-
-  // Helper: Extract evaluation ID from URL
-  const extractEvaluationId = (url) => {
-    const match = url.match(/\/avaliacao\/(\d+)/);
-    return match ? match[1] : null;
   };
 
   // Step 1: Get list of clients from the current page (evaluations report)

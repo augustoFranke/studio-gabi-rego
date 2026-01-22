@@ -30,6 +30,8 @@ export default async function MemberDashboard() {
   const membroId = membro.id
   const firstName = session.user.name?.split(' ')[0] || 'Aluno'
   const now = new Date()
+  const todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
   
   // Set time to midnight for today to include classes from today that might be later?
   // Actually 'now' is fine for "Next Class". 
@@ -39,7 +41,7 @@ export default async function MemberDashboard() {
   const endWeek = endOfWeek(now, { weekStartsOn: 1 })
 
   // Parallel data fetching
-  const [nextClass, weeklyStats] = await Promise.all([
+  const [nextClass, classesScheduledCount, classesAttendedCount] = await Promise.all([
     // 1. Next upcoming class
     prisma.agendamento.findFirst({
       where: {
@@ -51,20 +53,27 @@ export default async function MemberDashboard() {
         // For simplicity, let's just get the first one >= today 
         // and let the user see it even if it was 1 hour ago (today).
         data: {
-          gte: new Date(now.setHours(0, 0, 0, 0)),
+          gte: todayStart,
         },
       },
       orderBy: [
         { data: 'asc' },
         { horario: { horaInicio: 'asc' } }
       ],
-      include: {
-        horario: true
-      }
+      select: {
+        data: true,
+        presente: true,
+        horario: {
+          select: {
+            horaInicio: true,
+            horaFim: true,
+          },
+        },
+      },
     }),
 
     // 2. Weekly stats (attended vs total scheduled this week)
-    prisma.agendamento.findMany({
+    prisma.agendamento.count({
       where: {
         membroId,
         data: {
@@ -72,12 +81,22 @@ export default async function MemberDashboard() {
           lte: endWeek
         }
       }
-    })
+    }),
+    prisma.agendamento.count({
+      where: {
+        membroId,
+        data: {
+          gte: startWeek,
+          lte: endWeek
+        },
+        presente: true,
+      }
+    }),
   ])
 
   // Process Weekly Stats
-  const classesAttended = weeklyStats.filter(a => a.presente === true).length
-  const classesScheduled = weeklyStats.length
+  const classesAttended = classesAttendedCount
+  const classesScheduled = classesScheduledCount
   
   // Determine greeting based on time of day
   const hour = now.getHours()

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const membroId = searchParams.get('membroId')
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || 'vencimento_desc'
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const skip = (page - 1) * limit
@@ -48,6 +49,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const orderBy: Prisma.PagamentoOrderByWithRelationInput =
+      sort === 'recent_desc'
+        ? { criadoEm: 'desc' }
+        : sort === 'vencimento_asc'
+          ? { dataVencimento: 'asc' }
+          : { dataVencimento: 'desc' }
+
     // Run count and findMany in parallel for efficiency
     const [total, pagamentos] = await Promise.all([
       prisma.pagamento.count({ where }),
@@ -63,7 +71,7 @@ export async function GET(request: NextRequest) {
           },
           plano: true,
         },
-        orderBy: { dataVencimento: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
@@ -123,4 +131,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(pagamento, { status: 201 })
   }, { requiredRole: 'ADMIN' })
 }
-

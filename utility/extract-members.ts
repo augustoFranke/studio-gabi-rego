@@ -7,7 +7,7 @@
  * Usage: npx tsx utility/extract-members.ts
  */
 
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { chromium, type Page } from "playwright";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -264,4 +264,3 @@ async function main() {
 }
 
 main().catch(console.error);
-
