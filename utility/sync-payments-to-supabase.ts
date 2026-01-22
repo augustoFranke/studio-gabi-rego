@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Pagamento } from '@prisma/client'
 
 type Args = {
   dryRun: boolean
@@ -95,11 +95,17 @@ async function main() {
     let lastId: string | null = null
 
     while (true) {
-      const batch = await localPrisma.pagamento.findMany({
-        take: batchSize,
-        ...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
-        orderBy: { id: 'asc' },
-      })
+      const batch: Pagamento[] = lastId
+        ? await localPrisma.pagamento.findMany({
+            take: batchSize,
+            skip: 1,
+            cursor: { id: lastId },
+            orderBy: { id: 'asc' },
+          })
+        : await localPrisma.pagamento.findMany({
+            take: batchSize,
+            orderBy: { id: 'asc' },
+          })
 
       if (batch.length === 0) break
 
