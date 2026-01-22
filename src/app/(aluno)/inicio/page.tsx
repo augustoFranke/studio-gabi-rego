@@ -222,18 +222,6 @@ export default async function MemberDashboard() {
             </CardHeader>
           </Card>
         </Link>
-        
-        <Link href="/meus-dados" className="group">
-          <Card className="h-full transition-colors hover:bg-muted/50 hover:border-primary/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center justify-between">
-                Meus Dados
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
-              </CardTitle>
-              <CardDescription>Atualize seu perfil</CardDescription>
-            </CardHeader>
-          </Card>
-        </Link>
 
         <Link href="/minha-agenda" className="group">
           <Card className="h-full transition-colors hover:bg-muted/50 hover:border-primary/50">

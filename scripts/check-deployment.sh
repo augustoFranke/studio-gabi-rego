@@ -4,7 +4,7 @@
 # Usage: ./scripts/check-deployment.sh [domain]
 
 # Configuration
-DOMAIN="${1:-gabi-studio-vibe-coded.vercel.app}"
+DOMAIN="${1:-studiogabirego.com}"
 BASE_URL="https://${DOMAIN}"
 TIMEOUT=10
 
