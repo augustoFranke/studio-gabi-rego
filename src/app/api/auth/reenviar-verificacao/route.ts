@@ -16,9 +16,18 @@ export async function POST(request: Request) {
       )
     }
 
+    const normalizedEmail = email.toLowerCase().trim()
+
     // Find user
     const usuario = await prisma.usuario.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        nome: true,
+        emailVerificado: true,
+        onboardingCompleto: true,
+        membro: { select: { id: true } },
+      },
     })
 
     if (!usuario) {
@@ -29,12 +38,46 @@ export async function POST(request: Request) {
       })
     }
 
-    // Check if already verified
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
     if (usuario.emailVerificado) {
-      return NextResponse.json(
-        { error: "Este email já foi verificado. Faça login." },
-        { status: 400 }
-      )
+      if (usuario.membro || usuario.onboardingCompleto) {
+        return NextResponse.json(
+          { error: "Este email já foi verificado. Faça login." },
+          { status: 400 }
+        )
+      }
+
+      const profileToken = randomBytes(32).toString("hex")
+      const profileTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+      await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: {
+          tokenReset: profileToken,
+          tokenResetExpira: profileTokenExpiry,
+          etapaOnboarding: 2,
+          onboardingCompleto: false,
+        },
+      })
+
+      const completionLink = `${baseUrl}/completar-perfil?token=${profileToken}`
+
+      if (isResendConfigured()) {
+        await enviarEmail({
+          para: email,
+          assunto: "Complete seu cadastro - Gabi Studio",
+          html: emailTemplates.completarPerfil(usuario.nome ?? null, completionLink),
+        })
+      } else {
+        console.log("Resend not configured. Completion link:", completionLink)
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Link para continuar o cadastro enviado!",
+      })
     }
 
     // Generate new token
@@ -49,18 +92,13 @@ export async function POST(request: Request) {
       },
     })
 
-    // Send verification email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
-
     const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
 
     if (isResendConfigured()) {
       await enviarEmail({
         para: email,
         assunto: "Verifique seu email - Gabi Studio",
-        html: emailTemplates.verificacaoEmail(usuario.nome, verificationLink),
+        html: emailTemplates.verificacaoEmail(usuario.nome ?? null, verificationLink),
       })
     } else {
       console.log("Resend not configured. Verification link:", verificationLink)
