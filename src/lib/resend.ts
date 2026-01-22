@@ -348,8 +348,11 @@ export const emailTemplates = {
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                           <tr>
                             <td align="center">
-                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; line-height: 56px;">
-                                <span style="display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; line-height: 24px; font-size: 16px; font-weight: 700;">S</span>
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block; margin: 14px auto 0 auto;" xmlns="http://www.w3.org/2000/svg">
+                                  <rect x="5" y="10" width="14" height="10" rx="2" stroke="#ffffff" stroke-width="2"></rect>
+                                  <path d="M8 10V7a4 4 0 118 0v3" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Redefinir Senha</h1>
                             </td>
