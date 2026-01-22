@@ -18,6 +18,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
         where: { id },
         select: {
             id: true,
+            usuarioId: true,
             cpf: true,
             rg: true,
             telefone: true,
@@ -41,6 +42,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
     // Transform Prisma null values to undefined for form compatibility
     const formData = {
         id: membro.id,
+        usuarioId: membro.usuarioId,
         usuario: {
             nome: membro.usuario.nome ?? undefined,
             email: membro.usuario.email ?? undefined,

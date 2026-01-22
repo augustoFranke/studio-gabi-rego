@@ -69,6 +69,7 @@ export function MemberForm({
 }: {
   initialData?: {
     id: string
+    usuarioId?: string
     usuario?: {
       nome?: string
       email?: string
@@ -85,6 +86,7 @@ export function MemberForm({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [sendingResetLink, setSendingResetLink] = useState(false)
   const [planos, setPlanos] = useState<Plano[]>([])
 
   const form = useForm<FormValues>({
@@ -198,8 +200,33 @@ export function MemberForm({
     form.setValue("telefone", formatted, { shouldValidate: true })
   }
 
-  const handleSendPasswordLink = () => {
-    toast.info("Funcionalidade em desenvolvimento: Link de redefinição de senha")
+  const handleSendPasswordLink = async () => {
+    if (!initialData?.usuarioId) {
+      toast.error("Não foi possível identificar o usuário")
+      return
+    }
+
+    setSendingResetLink(true)
+    try {
+      const response = await fetch("/api/auth/enviar-reset-senha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuarioId: initialData.usuarioId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar link")
+      }
+
+      toast.success("Link de redefinição de senha enviado para o email do aluno!")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao enviar link de redefinição"
+      toast.error(message)
+    } finally {
+      setSendingResetLink(false)
+    }
   }
 
 
@@ -255,14 +282,17 @@ export function MemberForm({
                         <FormControl>
                           <Input type="password" placeholder={mode === 'edit' ? "Deixe em branco para manter" : "******"} {...field} />
                         </FormControl>
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={handleSendPasswordLink}
-                          title="Enviar link de redefinição de senha"
-                        >
-                          Enviar Link
-                        </Button>
+                        {mode === 'edit' && initialData?.usuarioId && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleSendPasswordLink}
+                            disabled={sendingResetLink}
+                            title="Enviar link de redefinição de senha por email"
+                          >
+                            {sendingResetLink ? "Enviando..." : "Enviar Link"}
+                          </Button>
+                        )}
                       </div>
                       <FormDescription>
                         {mode === 'create' ? "Senha que o aluno usará para acessar o sistema." : "Preencha apenas se quiser alterar a senha."}
