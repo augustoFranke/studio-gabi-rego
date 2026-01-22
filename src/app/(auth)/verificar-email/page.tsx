@@ -13,6 +13,8 @@ import Image from "next/image"
 function VerificarEmailContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get("email")
+  const mode = searchParams.get("modo")
+  const isProfileCompletion = mode === "perfil"
   const [isResending, setIsResending] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
@@ -31,7 +33,10 @@ function VerificarEmailContent() {
       const response = await fetch("/api/auth/reenviar-verificacao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          modo: isProfileCompletion ? "perfil" : "verificacao",
+        }),
       })
 
       const data = await response.json()
@@ -91,13 +96,30 @@ function VerificarEmailContent() {
             </div>
             <div className="w-8 h-px bg-orange-500" />
             <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</div>
-              <span className="text-xs text-orange-500 font-medium">Verificar</span>
+              {isProfileCompletion ? (
+                <>
+                  <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-green-500 font-medium">Verificar</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</div>
+                  <span className="text-xs text-orange-500 font-medium">Verificar</span>
+                </>
+              )}
             </div>
             <div className="w-8 h-px bg-orange-500/30" />
             <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm">3</div>
-              <span className="text-xs text-muted-foreground">Perfil</span>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isProfileCompletion ? "bg-orange-500 text-white font-bold" : "bg-muted text-muted-foreground"}`}
+              >
+                3
+              </div>
+              <span className={`text-xs font-medium ${isProfileCompletion ? "text-orange-500" : "text-muted-foreground"}`}>Perfil</span>
             </div>
           </div>
 
@@ -108,10 +130,10 @@ function VerificarEmailContent() {
           </div>
 
           <CardDescription className="text-foreground font-medium text-lg">
-            Verifique seu email
+            {isProfileCompletion ? "Continue seu cadastro" : "Verifique seu email"}
           </CardDescription>
           <CardDescription className="text-muted-foreground mt-2">
-            Enviamos um link de verificação para
+            {isProfileCompletion ? "Enviamos um link para completar seu perfil para" : "Enviamos um link de verificação para"}
             {email && (
               <span className="block text-orange-500 font-medium mt-1">{email}</span>
             )}
@@ -157,11 +179,11 @@ function VerificarEmailContent() {
 
           <div className="text-center">
             <Link
-              href="/cadastro"
+              href={isProfileCompletion ? "/login" : "/cadastro"}
               className="text-sm text-muted-foreground hover:text-orange-500 transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="h-3 w-3" />
-              Voltar para o cadastro
+              {isProfileCompletion ? "Voltar para o login" : "Voltar para o cadastro"}
             </Link>
           </div>
         </CardContent>

@@ -150,6 +150,137 @@ export const emailTemplates = {
 
   verificacaoEmail: (nome: string | null, linkVerificacao: string) => `
     <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Verifique seu email - Gabi Rêgo Studio</title>
+      <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+      <![endif]-->
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <!-- Logo Section -->
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <!-- Main Card -->
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; line-height: 56px;">
+                                <span style="font-size: 28px;">&#9993;</span>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Verifique seu email</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Obrigado por se cadastrar no <strong>Gabi Rêgo Studio</strong>!
+                        </p>
+                        <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Para continuar com seu cadastro, por favor verifique seu email clicando no botão abaixo:
+                        </p>
+                        <!-- CTA Button -->
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="${linkVerificacao}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Verificar meu email
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <!-- Divider -->
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <!-- Warning Box -->
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td width="24" valign="top" style="padding-right: 12px;">
+                                    <span style="font-size: 18px;">&#9888;</span>
+                                  </td>
+                                  <td>
+                                    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
+                                      <strong>Importante:</strong> Este link é válido por 24 horas. Se você não solicitou este cadastro, pode ignorar este email com segurança.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <!-- Alternative Link -->
+                        <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
+                          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                          <a href="${linkVerificacao}" style="color: #ea580c; word-break: break-all;">${linkVerificacao}</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- Footer -->
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Gabi Rêgo Studio
+                  </p>
+                  <p style="margin: 0; font-size: 13px; color: #888888;">
+                    Seu estúdio de Pilates
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `,
+
+  completarPerfil: (nome: string | null, linkCompletar: string) => `
+    <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
@@ -168,17 +299,17 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; font-size: 24px;">Verifique seu email</h1>
+          <h1 style="margin: 0; font-size: 24px;">Complete seu cadastro</h1>
         </div>
         <div class="content">
           <p>Olá${nome ? ` <strong>${nome}</strong>` : ''}!</p>
-          <p>Obrigado por se cadastrar no <strong>Gabi Rêgo Studio</strong>!</p>
-          <p>Para continuar com seu cadastro, por favor verifique seu email clicando no botão abaixo:</p>
+          <p>Encontramos um cadastro em andamento no <strong>Gabi Rêgo Studio</strong>.</p>
+          <p>Para continuar, clique no botão abaixo e complete seu perfil:</p>
           <div style="text-align: center;">
-            <a href="${linkVerificacao}" class="button" style="color: white;">Verificar meu email</a>
+            <a href="${linkCompletar}" class="button" style="color: white;">Completar meu perfil</a>
           </div>
           <div class="warning">
-            <strong>Importante:</strong> Este link é válido por 24 horas. Se você não solicitou este cadastro, pode ignorar este email.
+            <strong>Importante:</strong> Este link é válido por 1 hora. Se você não solicitou este acesso, pode ignorar este email.
           </div>
         </div>
         <div class="footer">
@@ -222,4 +353,3 @@ export const emailTemplates = {
     </html>
   `,
 }
-

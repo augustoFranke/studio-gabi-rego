@@ -40,10 +40,74 @@ export async function POST(request: Request) {
       )
     }
 
+    const normalizedEmail = email.toLowerCase().trim()
+
     // Check if email already exists
     const existingUser = await prisma.usuario.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        nome: true,
+        emailVerificado: true,
+        onboardingCompleto: true,
+        membro: { select: { id: true } },
+      },
     })
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
+    if (existingUser?.emailVerificado) {
+      if (existingUser.membro || existingUser.onboardingCompleto) {
+        return NextResponse.json(
+          { error: "Este email já está cadastrado. Faça login." },
+          { status: 400 }
+        )
+      }
+
+      const profileToken = randomBytes(32).toString("hex")
+      const profileTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+      await prisma.usuario.update({
+        where: { id: existingUser.id },
+        data: {
+          tokenReset: profileToken,
+          tokenResetExpira: profileTokenExpiry,
+          etapaOnboarding: 2,
+          onboardingCompleto: false,
+        },
+      })
+
+      const completionLink = `${baseUrl}/completar-perfil?token=${profileToken}`
+
+      if (isResendConfigured()) {
+        const emailResult = await enviarEmail({
+          para: email,
+          assunto: "Complete seu cadastro - Gabi Studio",
+          html: emailTemplates.completarPerfil(existingUser.nome ?? null, completionLink),
+        })
+
+        if (!emailResult.success) {
+          console.error("Failed to send profile completion email:", emailResult.error)
+          return NextResponse.json(
+            { error: "Falha ao enviar email. Tente novamente." },
+            { status: 500 }
+          )
+        }
+      } else {
+        console.warn("Resend not configured - skipping email send")
+        return NextResponse.json(
+          { error: "Serviço de email não configurado. Contate o suporte." },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Já existe um cadastro em andamento. Enviamos um link para continuar.",
+        nextStep: "complete-profile",
+      })
+    }
 
     // Generate verification token (needed for both paths)
     const verificationToken = randomBytes(32).toString("hex")
@@ -53,14 +117,6 @@ export async function POST(request: Request) {
     const hashedPassword = await hash(senha, 12)
 
     if (existingUser) {
-      // VERIFIED USER: Block registration
-      if (existingUser.emailVerificado) {
-        return NextResponse.json(
-          { error: "Este email já está cadastrado" },
-          { status: 400 }
-        )
-      }
-
       // UNVERIFIED (ZOMBIE) USER: Update and resend
       await prisma.usuario.update({
         where: { id: existingUser.id },
@@ -76,7 +132,7 @@ export async function POST(request: Request) {
       // NEW USER: Create account
       await prisma.usuario.create({
         data: {
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           senha: hashedPassword,
           role: "MEMBRO",
           tokenVerificacao: verificationToken,
@@ -88,9 +144,6 @@ export async function POST(request: Request) {
     }
 
     // Send verification email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-
     const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
 
     console.log("Resend configured:", isResendConfigured())
