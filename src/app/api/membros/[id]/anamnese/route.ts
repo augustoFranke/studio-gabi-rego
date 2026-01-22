@@ -80,9 +80,13 @@ export async function POST(
 }
 
 // Helper function to determine gender
-// This could be improved by adding a sexo field to the Membro model
-function determineSexo(membro: { usuario: { nome: string } }): "Masculino" | "Feminino" {
-  const nome = membro.usuario.nome.toLowerCase()
+// Fallback heuristic when sexo is not set.
+function determineSexo(membro: { usuario: { nome: string | null } }): "Masculino" | "Feminino" {
+  const nome = membro.usuario.nome?.toLowerCase().trim()
+
+  if (!nome) {
+    return "Masculino"
+  }
 
   // Common female name endings in Portuguese
   const femaleEndings = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
