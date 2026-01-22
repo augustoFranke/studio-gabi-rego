@@ -47,7 +47,7 @@ export async function enviarEmail({
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Gabi Rêgo Studio <verificacao@studiogabirego.com>',
+        from: 'Gabi Rêgo Studio <suporte@studiogabirego.com>',
         to: para,
         subject: assunto,
         html,
@@ -99,13 +99,13 @@ export const emailTemplates = {
           <p>Olá <strong>${nome}</strong>!</p>
           <p>Este é um lembrete da sua aula agendada:</p>
           <div class="info">
-            <p>📅 <strong>Data:</strong> ${data}</p>
-            <p>⏰ <strong>Horário:</strong> ${horario}</p>
+            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Data:</strong> ${data}</p>
+            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Horário:</strong> ${horario}</p>
           </div>
-          <p>Te esperamos! 💪</p>
+          <p>Te esperamos!</p>
         </div>
         <div class="footer">
-          <p>Gabi Rêgo Studio - Seu estúdio de Pilates</p>
+          <p>Gabi Rêgo Studio</p>
         </div>
       </div>
     </body>
@@ -135,13 +135,13 @@ export const emailTemplates = {
           <p>Olá <strong>${nome}</strong>!</p>
           <p>Este é um lembrete sobre seu pagamento:</p>
           <div class="info">
-            <p>💰 <strong>Valor:</strong> ${valor}</p>
-            <p>📅 <strong>Vencimento:</strong> ${vencimento}</p>
+            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Valor:</strong> ${valor}</p>
+            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Vencimento:</strong> ${vencimento}</p>
           </div>
           <p>Qualquer dúvida, estamos à disposição!</p>
         </div>
         <div class="footer">
-          <p>Gabi Rêgo Studio - Seu estúdio de Pilates</p>
+          <p>Gabi Rêgo Studio</p>
         </div>
       </div>
     </body>
@@ -189,7 +189,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; line-height: 56px;">
-                                <span style="font-size: 28px;">&#9993;</span>
+                                <span style="display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; line-height: 24px; font-size: 16px; font-weight: 700;">@</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Verifique seu email</h1>
                             </td>
@@ -238,7 +238,7 @@ export const emailTemplates = {
                               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                                 <tr>
                                   <td width="24" valign="top" style="padding-right: 12px;">
-                                    <span style="font-size: 18px;">&#9888;</span>
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
                                   </td>
                                   <td>
                                     <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
@@ -265,9 +265,6 @@ export const emailTemplates = {
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
                     Gabi Rêgo Studio
-                  </p>
-                  <p style="margin: 0; font-size: 13px; color: #888888;">
-                    Seu estúdio de Pilates
                   </p>
                 </td>
               </tr>
@@ -313,7 +310,7 @@ export const emailTemplates = {
           </div>
         </div>
         <div class="footer">
-          <p>Gabi Rêgo Studio - Seu estúdio de Pilates</p>
+          <p>Gabi Rêgo Studio</p>
         </div>
       </div>
     </body>
@@ -352,7 +349,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; line-height: 56px;">
-                                <span style="font-size: 28px;">&#128274;</span>
+                                <span style="display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; line-height: 24px; font-size: 16px; font-weight: 700;">S</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Redefinir Senha</h1>
                             </td>
@@ -401,7 +398,7 @@ export const emailTemplates = {
                               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                                 <tr>
                                   <td width="24" valign="top" style="padding-right: 12px;">
-                                    <span style="font-size: 18px;">&#9888;</span>
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
                                   </td>
                                   <td>
                                     <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
@@ -429,9 +426,6 @@ export const emailTemplates = {
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
                     Gabi Rêgo Studio
                   </p>
-                  <p style="margin: 0; font-size: 13px; color: #888888;">
-                    Seu estúdio de Pilates
-                  </p>
                 </td>
               </tr>
             </table>
@@ -458,17 +452,17 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 Bem-vindo(a) ao Gabi Rêgo Studio!</h1>
+          <h1>Bem-vindo(a) ao Gabi Rêgo Studio!</h1>
         </div>
         <div class="content">
           <p>Olá <strong>${nome}</strong>!</p>
           <p>Seja muito bem-vindo(a) ao Gabi Rêgo Studio!</p>
           <p>Estamos muito felizes em ter você conosco. Nossa equipe está pronta para ajudá-lo(a) a alcançar seus objetivos.</p>
           <p>Qualquer dúvida, é só entrar em contato!</p>
-          <p>Vamos juntos nessa jornada! 💪</p>
+          <p>Vamos juntos nessa jornada!</p>
         </div>
         <div class="footer">
-          <p>Gabi Rêgo Studio - Seu estúdio de Pilates</p>
+          <p>Gabi Rêgo Studio</p>
         </div>
       </div>
     </body>
