@@ -29,17 +29,19 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
 
   describe('PUT (Update Status)', () => {
     it('should update payment status to PAGO', async () => {
-      vi.mocked(auth).mockResolvedValue({ user: { role: 'ADMIN' } } as any)
+      const adminSession = { user: { role: 'ADMIN' } } satisfies { user: { role: string } }
+      vi.mocked(auth).mockResolvedValue(adminSession)
       
       const req = new NextRequest('http://localhost:3000/api/pagamentos/pag-123', {
         method: 'PUT',
         body: JSON.stringify({ status: 'PAGO', formaPagamento: 'PIX' }),
       })
 
-      vi.mocked(prisma.pagamento.update).mockResolvedValue({
+      const updatedPagamento = {
         id: 'pag-123',
         status: 'PAGO',
-      } as any)
+      } satisfies { id: string; status: string }
+      vi.mocked(prisma.pagamento.update).mockResolvedValue(updatedPagamento)
 
       const res = await PUT(req, { params })
       const json = await res.json()
@@ -52,7 +54,8 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should deny access to non-admins', async () => {
-      vi.mocked(auth).mockResolvedValue({ user: { role: 'MEMBRO' } } as any)
+      const memberSession = { user: { role: 'MEMBRO' } } satisfies { user: { role: string } }
+      vi.mocked(auth).mockResolvedValue(memberSession)
       const req = new NextRequest('http://localhost:3000/api', { method: 'PUT' })
       const res = await PUT(req, { params })
       expect(res.status).toBe(401)
@@ -61,18 +64,21 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
 
   describe('DELETE (Cancel/Remove)', () => {
     it('should cancel payment if status is PAGO', async () => {
-      vi.mocked(auth).mockResolvedValue({ user: { role: 'ADMIN' } } as any)
-      vi.mocked(prisma.pagamento.findUnique).mockResolvedValue({
+      const adminSession = { user: { role: 'ADMIN' } } satisfies { user: { role: string } }
+      vi.mocked(auth).mockResolvedValue(adminSession)
+      const existingPagamento = {
         id: 'pag-123',
         status: 'PAGO',
-      } as any)
-      vi.mocked(prisma.pagamento.update).mockResolvedValue({
+      } satisfies { id: string; status: string }
+      vi.mocked(prisma.pagamento.findUnique).mockResolvedValue(existingPagamento)
+      const cancelledPagamento = {
         id: 'pag-123',
         status: 'CANCELADO',
-      } as any)
+      } satisfies { id: string; status: string }
+      vi.mocked(prisma.pagamento.update).mockResolvedValue(cancelledPagamento)
 
       const req = new NextRequest('http://localhost:3000/api', { method: 'DELETE' })
-      const res = await DELETE(req, { params })
+      await DELETE(req, { params })
       
       expect(prisma.pagamento.update).toHaveBeenCalledWith({
         where: { id: 'pag-123' },
@@ -81,14 +87,16 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should delete payment if status is PENDENTE', async () => {
-      vi.mocked(auth).mockResolvedValue({ user: { role: 'ADMIN' } } as any)
-      vi.mocked(prisma.pagamento.findUnique).mockResolvedValue({
+      const adminSession = { user: { role: 'ADMIN' } } satisfies { user: { role: string } }
+      vi.mocked(auth).mockResolvedValue(adminSession)
+      const pendingPagamento = {
         id: 'pag-123',
         status: 'PENDENTE',
-      } as any)
+      } satisfies { id: string; status: string }
+      vi.mocked(prisma.pagamento.findUnique).mockResolvedValue(pendingPagamento)
 
       const req = new NextRequest('http://localhost:3000/api', { method: 'DELETE' })
-      const res = await DELETE(req, { params })
+      await DELETE(req, { params })
       
       expect(prisma.pagamento.delete).toHaveBeenCalledWith({
         where: { id: 'pag-123' },

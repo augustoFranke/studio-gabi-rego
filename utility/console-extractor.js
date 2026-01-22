@@ -15,25 +15,6 @@
   const DEFAULT_VALUE = "Pendente";
   const DELAY_MS = 500; // Delay between API calls
   
-  // Helper to get auth token from localStorage or cookies
-  function getAuthToken() {
-    // Try to get from localStorage
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken");
-    if (token) return token;
-    
-    // Try to extract from existing requests
-    const entries = performance.getEntriesByType("resource");
-    for (const entry of entries) {
-      if (entry.name.includes("api.nextfit.com.br")) {
-        // Token is usually in the Authorization header, but we can't access it from here
-        // We'll use fetch with credentials instead
-        break;
-      }
-    }
-    
-    return null;
-  }
-  
   // Helper to make API calls
   async function fetchAPI(url) {
     const response = await fetch(url, {
@@ -144,7 +125,7 @@
               result.plano = activeContract.Modalidade.Nome || activeContract.Modalidade;
             }
           }
-        } catch (e) {
+        } catch {
           // Contract fetch failed, keep default value
         }
         
@@ -219,4 +200,3 @@
     console.error("❌ Error:", error);
   }
 })();
-

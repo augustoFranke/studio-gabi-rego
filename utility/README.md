@@ -29,6 +29,29 @@ npm run update:plans
 
 ---
 
+## Payments Sync (Local -> Supabase)
+
+Adds missing payments from the local database to Supabase without overwriting existing rows.
+
+### Usage
+
+```bash
+# Dry run (recommended first)
+SUPABASE_DATABASE_URL="postgresql://..." npx tsx utility/sync-payments-to-supabase.ts --dry-run
+
+# Live run
+SUPABASE_DATABASE_URL="postgresql://..." npx tsx utility/sync-payments-to-supabase.ts
+```
+
+### Notes
+
+- Uses `DATABASE_URL` for local DB by default (override with `LOCAL_DATABASE_URL`)
+- Use Supabase direct connection (port 5432) for best reliability
+- Skips payments that already exist remotely (by `id`)
+- Skips payments whose `membroId` or `planoId` does not exist in Supabase
+
+---
+
 ## NextFit Scraper
 
 Extracts member data from the NextFit system (`https://app.nextfit.com.br/cliente/lista`) and exports to CSV format.

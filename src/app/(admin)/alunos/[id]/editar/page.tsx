@@ -16,7 +16,15 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
 
     const membro = await prisma.membro.findUnique({
         where: { id },
-        include: {
+        select: {
+            id: true,
+            cpf: true,
+            rg: true,
+            telefone: true,
+            dataNascimento: true,
+            planoId: true,
+            precoCustomizado: true,
+            sexo: true,
             usuario: {
                 select: {
                     nome: true,

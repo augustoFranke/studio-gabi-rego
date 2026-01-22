@@ -98,7 +98,7 @@ export function useSchedule({
   // Fetch membros
   const fetchMembros = useCallback(async () => {
     try {
-      const response = await fetch('/api/membros?status=ATIVO')
+      const response = await fetch('/api/membros?status=ATIVO&fields=compact')
       if (!response.ok) throw new Error('Erro ao buscar membros')
       const data = await response.json()
       setMembros(data)

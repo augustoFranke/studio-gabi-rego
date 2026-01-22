@@ -9,16 +9,19 @@ import { prisma } from "@/lib/prisma"
 async function getTreinos() {
   const treinos = await prisma.fichaTreino.findMany({
     where: { ativo: true },
-    include: {
+    select: {
+      id: true,
+      data: true,
+      criadoEm: true,
       membro: {
-        include: {
+        select: {
           usuario: {
             select: { nome: true },
           },
         },
       },
       exercicios: {
-        orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
+        select: { sessao: true },
       },
     },
     orderBy: { criadoEm: 'desc' },

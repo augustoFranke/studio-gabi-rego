@@ -369,7 +369,7 @@ async function deleteInactiveMembers(
   return deletedCount
 }
 
-async function verifyDeletion(originalCount: number): Promise<boolean> {
+async function verifyDeletion(): Promise<boolean> {
   const remainingCount = await prisma.membro.count({
     where: { status: StatusMembro.INATIVO },
   })
@@ -467,7 +467,7 @@ async function main() {
 
     // Step 6: Verify deletion
     logHeader('VERIFICATION')
-    const verified = await verifyDeletion(inactiveMembers.length)
+    const verified = await verifyDeletion()
 
     // Step 7: Save report
     await saveReport(inactiveMembers, deletedCount, backupPath)

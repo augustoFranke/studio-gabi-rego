@@ -20,6 +20,7 @@ export default function VerificarTokenPage({
   const [status, setStatus] = useState<VerificationStatus>("loading")
   const [message, setMessage] = useState("")
   const [profileToken, setProfileToken] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -36,7 +37,11 @@ export default function VerificarTokenPage({
         if (response.ok) {
           setStatus("success")
           setMessage("Email verificado com sucesso!")
-          // Store profile token for next step
+          // Check if user is admin
+          if (data.isAdmin) {
+            setIsAdmin(true)
+          }
+          // Store profile token for next step (regular users only)
           if (data.profileToken) {
             setProfileToken(data.profileToken)
           }
@@ -47,7 +52,7 @@ export default function VerificarTokenPage({
           setStatus("error")
           setMessage(data.error || "Erro ao verificar email")
         }
-      } catch (error) {
+      } catch {
         setStatus("error")
         setMessage("Erro ao verificar email")
       }
@@ -57,7 +62,9 @@ export default function VerificarTokenPage({
   }, [resolvedParams.token])
 
   function handleContinue() {
-    if (profileToken) {
+    if (isAdmin) {
+      router.push("/admin")
+    } else if (profileToken) {
       router.push(`/completar-perfil?token=${profileToken}`)
     } else {
       router.push("/login?next=/completar-perfil")
@@ -123,7 +130,9 @@ export default function VerificarTokenPage({
 
           {status === "success" && (
             <CardDescription className="text-muted-foreground mt-2">
-              Agora vamos completar seu perfil para finalizar o cadastro.
+              {isAdmin 
+                ? "Você foi adicionado como administrador."
+                : "Agora vamos completar seu perfil para finalizar o cadastro."}
             </CardDescription>
           )}
 
@@ -141,7 +150,7 @@ export default function VerificarTokenPage({
               className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-all border-0"
             >
               <span className="flex items-center gap-2">
-                Completar perfil
+                {isAdmin ? "Acessar painel admin" : "Completar perfil"}
                 <ArrowRight className="h-4 w-4" />
               </span>
             </Button>

@@ -1,21 +1,19 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { Flame } from "lucide-react"
 import Image from "next/image"
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   // Check for registration complete message
@@ -41,7 +39,13 @@ function LoginContent() {
       })
 
       if (result?.error) {
-        toast.error("Email ou senha incorretos")
+        if (result.error.includes("USER_NOT_FOUND")) {
+          toast.error("Nenhuma conta encontrada com este email")
+        } else if (result.error.includes("WRONG_PASSWORD")) {
+          toast.error("Senha incorreta")
+        } else {
+          toast.error("Email ou senha incorretos")
+        }
         setIsLoading(false)
       } else {
         toast.success("Login realizado com sucesso!")
@@ -145,10 +149,7 @@ function LoginContent() {
                   Entrando...
                 </span>
               ) : (
-                <span className="flex items-center gap-2">
-                  Entrar
-                  <Flame className="h-4 w-4" />
-                </span>
+                "Entrar"
               )}
             </Button>
           </form>
@@ -156,7 +157,7 @@ function LoginContent() {
           {/* Decorative divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <Flame className="h-3 w-3 text-orange-500/50" />
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 

@@ -111,13 +111,6 @@ function generatePlaceholderCPF(): string {
   return base + digit1 + digit2
 }
 
-function formatDateISO(date: Date): string {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 function cleanMemberName(raw: string): string {
   let name = raw.trim()
   
@@ -212,7 +205,7 @@ function parseScheduleLine(line: string, day: DiaSemana, hour: number): Schedule
   const entries: ScheduleEntry[] = []
   
   // Remove the hour prefix if present (e.g., "5H", "10H ALMOÇO")
-  let cleanLine = line.replace(/^\s*\d+H(\s+ALMOÇO)?\s*/, '')
+  const cleanLine = line.replace(/^\s*\d+H(\s+ALMOÇO)?\s*/, '')
   
   // The format has columns separated by multiple spaces
   // Column 1: GABI entries

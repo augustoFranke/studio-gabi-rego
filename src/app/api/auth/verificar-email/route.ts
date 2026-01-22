@@ -34,7 +34,31 @@ export async function POST(request: Request) {
       )
     }
 
-    // Generate a one-time profile completion token (valid for 1 hour)
+    // Check if user is from studio domain - auto-assign as admin
+    const isStudioAdmin = usuario.email.endsWith("@studiogabirego.com")
+
+    if (isStudioAdmin) {
+      // Auto-admin: skip onboarding entirely
+      await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: {
+          emailVerificado: new Date(),
+          tokenVerificacao: null,
+          tokenVerificacaoExpira: null,
+          role: "ADMIN",
+          onboardingCompleto: true,
+          etapaOnboarding: 4,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: "Email verificado com sucesso!",
+        isAdmin: true,
+      })
+    }
+
+    // Regular member flow: generate profile completion token
     const profileToken = randomBytes(32).toString("hex")
     const profileTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
@@ -55,6 +79,7 @@ export async function POST(request: Request) {
       success: true,
       message: "Email verificado com sucesso!",
       profileToken, // Return token for profile completion
+      isAdmin: false,
     })
   } catch (error) {
     console.error("Erro ao verificar email:", error)

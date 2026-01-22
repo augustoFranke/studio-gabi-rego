@@ -14,7 +14,6 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   Calendar,
   CreditCard,
   FileText,
@@ -93,12 +92,44 @@ export default async function MembroPage({ params }: MembroPageProps) {
 
   const membro = await prisma.membro.findUnique({
     where: { id },
-    include: {
-      usuario: true,
-      plano: true,
+    select: {
+      id: true,
+      status: true,
+      criadoEm: true,
+      cpf: true,
+      rg: true,
+      dataNascimento: true,
+      telefone: true,
+      observacoes: true,
+      usuario: {
+        select: {
+          nome: true,
+          email: true,
+        },
+      },
+      plano: {
+        select: {
+          nome: true,
+          descricao: true,
+          ativo: true,
+          valor: true,
+          duracaoDias: true,
+          aulasSemanais: true,
+        },
+      },
+      precoCustomizado: true,
       pagamentos: {
-        include: {
-          plano: true,
+        select: {
+          id: true,
+          status: true,
+          valor: true,
+          dataVencimento: true,
+          dataPagamento: true,
+          plano: {
+            select: {
+              nome: true,
+            },
+          },
         },
         orderBy: {
           dataVencimento: "desc",
@@ -106,6 +137,12 @@ export default async function MembroPage({ params }: MembroPageProps) {
         take: 10,
       },
       fichasTreino: {
+        select: {
+          nome: true,
+          ativo: true,
+          objetivo: true,
+          atualizadoEm: true,
+        },
         where: { ativo: true },
         orderBy: { criadoEm: 'desc' },
         take: 1,
@@ -277,10 +314,10 @@ export default async function MembroPage({ params }: MembroPageProps) {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Valor</p>
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      {(membro as any).precoCustomizado ? (
+                      {membro.precoCustomizado ? (
                         <>
                           <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(Number((membro as any).precoCustomizado))}
+                            {formatCurrency(Number(membro.precoCustomizado))}
                           </p>
                           <p className="text-sm text-muted-foreground line-through">
                             {formatCurrency(Number(membro.plano.valor))}

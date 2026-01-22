@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -53,8 +53,7 @@ interface AnamneseData {
 }
 
 function AnamneseContent() {
-  const { data: session, status } = useSession()
-  const searchParams = useSearchParams()
+  const { status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseData>({})

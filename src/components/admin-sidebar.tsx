@@ -28,8 +28,8 @@ import {
   Dumbbell,
   ChevronUp,
   LogOut,
-  User,
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -71,7 +71,7 @@ export function AdminSidebar() {
         <div className="flex items-center justify-center">
           <Image
             src="/logo.svg"
-            alt="Studio Gabi Rêgo"
+            alt="Gabi Rêgo Studio"
             width={72}
             height={72}
           />
@@ -128,11 +128,10 @@ export function AdminSidebar() {
                 side="top"
                 className="w-[--radix-popper-anchor-width]"
               >
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4 text-primary" />
-                  <span>Minha Conta</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sair</span>
                 </DropdownMenuItem>

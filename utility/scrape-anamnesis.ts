@@ -488,7 +488,11 @@ function saveResults(result: ExtractionResult): string {
     // Create a clean version without raw HTML for the main output
     const cleanResult = {
         ...result,
-        data: result.data.map(({ rawHtml, ...rest }) => rest),
+        data: result.data.map((entry) => {
+            const { rawHtml, ...rest } = entry;
+            void rawHtml;
+            return rest;
+        }),
     };
 
     fs.writeFileSync(jsonPath, JSON.stringify(cleanResult, null, 2), "utf-8");

@@ -42,7 +42,7 @@ function VerificarEmailContent() {
       } else {
         toast.error(data.error || "Erro ao reenviar email")
       }
-    } catch (error) {
+    } catch {
       toast.error("Erro ao reenviar email")
     } finally {
       setIsResending(false)
