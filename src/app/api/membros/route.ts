@@ -53,11 +53,14 @@ export async function GET(request: NextRequest) {
       },
     } satisfies Prisma.MembroSelect
 
-    const membros = await prisma.membro.findMany({
-      where,
-      ...(fields === 'compact'
-        ? { select: compactSelect }
-        : {
+    const membros = fields === 'compact'
+      ? await prisma.membro.findMany({
+          where,
+          select: compactSelect,
+          orderBy: { criadoEm: 'desc' },
+        })
+      : await prisma.membro.findMany({
+          where,
           include: {
             usuario: {
               select: {
@@ -68,11 +71,8 @@ export async function GET(request: NextRequest) {
             },
             plano: true,
           },
-        }),
-      orderBy: {
-        criadoEm: 'desc',
-      },
-    })
+          orderBy: { criadoEm: 'desc' },
+        })
 
     return NextResponse.json(membros)
   }, { requiredRole: 'ADMIN' })

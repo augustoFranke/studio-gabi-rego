@@ -138,7 +138,7 @@ export async function PATCH(
             if (data.rg !== undefined) memberUpdateData.rg = data.rg // Permitir limpar RG? se string vazia
             if (data.telefone) memberUpdateData.telefone = data.telefone.replace(/\D/g, '')
             if (data.dataNascimento) memberUpdateData.dataNascimento = new Date(data.dataNascimento)
-            if (data.planoId) memberUpdateData.planoId = data.planoId
+            if (data.planoId) memberUpdateData.plano = { connect: { id: data.planoId } }
             if (data.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = data.precoCustomizado
             if (data.sexo) memberUpdateData.sexo = data.sexo
 
