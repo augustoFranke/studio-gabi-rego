@@ -32,6 +32,7 @@
     "extract:prices": "tsx utility/extract-plan-prices.ts",
     "import:schedule": "tsx utility/import-schedule.ts",
     "import:schedule:dry": "tsx utility/import-schedule.ts --dry-run",
+    "emails:preview": "tsx utility/preview-emails.ts",
     "cleanup:inactive:preview": "tsx utility/cleanup-inactive-members.ts --preview-only",
     "cleanup:inactive:dry": "tsx utility/cleanup-inactive-members.ts --dry-run",
     "cleanup:inactive": "tsx utility/cleanup-inactive-members.ts",

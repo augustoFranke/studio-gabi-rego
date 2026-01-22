@@ -78,72 +78,241 @@ export async function enviarEmail({
 export const emailTemplates = {
   lembreteAula: (nome: string, horario: string, data: string) => `
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #7c3aed; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
-        .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-      </style>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Lembrete de Aula - Gabi Rêgo Studio</title>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Gabi Rêgo Studio</h1>
-        </div>
-        <div class="content">
-          <p>Olá <strong>${nome}</strong>!</p>
-          <p>Este é um lembrete da sua aula agendada:</p>
-          <div class="info">
-            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Data:</strong> ${data}</p>
-            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Horário:</strong> ${horario}</p>
-          </div>
-          <p>Te esperamos!</p>
-        </div>
-        <div class="footer">
-          <p>Gabi Rêgo Studio</p>
-        </div>
-      </div>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
+                                  <rect x="3" y="5" width="18" height="16" rx="2" stroke="#ffffff" stroke-width="2"></rect>
+                                  <path d="M8 3v4M16 3v4M3 9h18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Lembrete de aula</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                        </p>
+                        <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Este é um lembrete da sua aula agendada:
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Data:</strong> ${data}</p>
+                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Horário:</strong> ${horario}</p>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 20px 0 24px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Te esperamos!
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="https://studiogabirego.com" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Acessar o site
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td width="24" valign="top" style="padding-right: 12px;">
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
+                                  </td>
+                                  <td>
+                                    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
+                                      <strong>Importante:</strong> Em caso de imprevisto, avise com antecedência para ajustarmos seu horário.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
+                          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                          <a href="https://studiogabirego.com" style="color: #ea580c; word-break: break-all;">https://studiogabirego.com</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Gabi Rêgo Studio
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `,
 
   cobranca: (nome: string, valor: string, vencimento: string) => `
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #7c3aed; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
-        .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-      </style>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Lembrete de Pagamento - Gabi Rêgo Studio</title>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Gabi Rêgo Studio</h1>
-        </div>
-        <div class="content">
-          <p>Olá <strong>${nome}</strong>!</p>
-          <p>Este é um lembrete sobre seu pagamento:</p>
-          <div class="info">
-            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Valor:</strong> ${valor}</p>
-            <p><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #7c3aed; margin-right: 8px;"></span><strong>Vencimento:</strong> ${vencimento}</p>
-          </div>
-          <p>Qualquer dúvida, estamos à disposição!</p>
-        </div>
-        <div class="footer">
-          <p>Gabi Rêgo Studio</p>
-        </div>
-      </div>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 3v18M6 7h12M6 17h12" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Lembrete de pagamento</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                        </p>
+                        <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Este é um lembrete sobre seu pagamento:
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Valor:</strong> ${valor}</p>
+                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Vencimento:</strong> ${vencimento}</p>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 20px 0 24px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Qualquer dúvida, estamos à disposição!
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="https://studiogabirego.com" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Acessar o site
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td width="24" valign="top" style="padding-right: 12px;">
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
+                                  </td>
+                                  <td>
+                                    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
+                                      <strong>Importante:</strong> Se já realizou o pagamento, desconsidere este lembrete.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
+                          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                          <a href="https://studiogabirego.com" style="color: #ea580c; word-break: break-all;">https://studiogabirego.com</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Gabi Rêgo Studio
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `,
@@ -188,8 +357,11 @@ export const emailTemplates = {
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                           <tr>
                             <td align="center">
-                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; line-height: 56px;">
-                                <span style="display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; line-height: 24px; font-size: 16px; font-weight: 700;">@</span>
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
+                                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#ffffff" stroke-width="2"></rect>
+                                  <path d="M4 7l8 6 8-6" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Verifique seu email</h1>
                             </td>
@@ -278,41 +450,112 @@ export const emailTemplates = {
 
   completarPerfil: (nome: string | null, linkCompletar: string) => `
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 30px 20px; border-radius: 0 0 8px 8px; }
-        .button { display: inline-block; background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-        .button:hover { background: linear-gradient(135deg, #c2410c, #ea580c); }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-        .warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-top: 20px; font-size: 13px; color: #92400e; }
-      </style>
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Complete seu cadastro - Gabi Rêgo Studio</title>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1 style="margin: 0; font-size: 24px;">Complete seu cadastro</h1>
-        </div>
-        <div class="content">
-          <p>Olá${nome ? ` <strong>${nome}</strong>` : ''}!</p>
-          <p>Encontramos um cadastro em andamento no <strong>Gabi Rêgo Studio</strong>.</p>
-          <p>Para continuar, clique no botão abaixo e complete seu perfil:</p>
-          <div style="text-align: center;">
-            <a href="${linkCompletar}" class="button" style="color: white;">Completar meu perfil</a>
-          </div>
-          <div class="warning">
-            <strong>Importante:</strong> Este link é válido por 1 hora. Se você não solicitou este acesso, pode ignorar este email.
-          </div>
-        </div>
-        <div class="footer">
-          <p>Gabi Rêgo Studio</p>
-        </div>
-      </div>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 3a4 4 0 100 8 4 4 0 000-8zM6 21a6 6 0 0112 0" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Complete seu cadastro</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Encontramos um cadastro em andamento no <strong>Gabi Rêgo Studio</strong>.
+                        </p>
+                        <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Para continuar, clique no botão abaixo e complete seu perfil:
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="${linkCompletar}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Completar meu perfil
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td width="24" valign="top" style="padding-right: 12px;">
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
+                                  </td>
+                                  <td>
+                                    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
+                                      <strong>Importante:</strong> Este link é válido por 1 hora. Se você não solicitou este acesso, pode ignorar este email.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
+                          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                          <a href="${linkCompletar}" style="color: #ea580c; word-break: break-all;">${linkCompletar}</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Gabi Rêgo Studio
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `,
@@ -348,8 +591,8 @@ export const emailTemplates = {
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                           <tr>
                             <td align="center">
-                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block; margin: 14px auto 0 auto;" xmlns="http://www.w3.org/2000/svg">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
                                   <rect x="5" y="10" width="14" height="10" rx="2" stroke="#ffffff" stroke-width="2"></rect>
                                   <path d="M8 10V7a4 4 0 118 0v3" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
                                 </svg>
@@ -441,33 +684,115 @@ export const emailTemplates = {
 
   boasVindas: (nome: string) => `
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #7c3aed; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-      </style>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Bem-vindo(a) - Gabi Rêgo Studio</title>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Bem-vindo(a) ao Gabi Rêgo Studio!</h1>
-        </div>
-        <div class="content">
-          <p>Olá <strong>${nome}</strong>!</p>
-          <p>Seja muito bem-vindo(a) ao Gabi Rêgo Studio!</p>
-          <p>Estamos muito felizes em ter você conosco. Nossa equipe está pronta para ajudá-lo(a) a alcançar seus objetivos.</p>
-          <p>Qualquer dúvida, é só entrar em contato!</p>
-          <p>Vamos juntos nessa jornada!</p>
-        </div>
-        <div class="footer">
-          <p>Gabi Rêgo Studio</p>
-        </div>
-      </div>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+                                </svg>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Bem-vindo(a)</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Seja muito bem-vindo(a) ao <strong>Gabi Rêgo Studio</strong>!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Estamos muito felizes em ter você conosco. Nossa equipe está pronta para ajudá-lo(a) a alcançar seus objetivos.
+                        </p>
+                        <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Qualquer dúvida, é só entrar em contato!
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="https://studiogabirego.com" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Acessar o site
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;">
+                          <tr>
+                            <td style="padding: 16px;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                  <td width="24" valign="top" style="padding-right: 12px;">
+                                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #92400e; color: #92400e; line-height: 18px; text-align: center; font-size: 12px; font-weight: 700;">!</span>
+                                  </td>
+                                  <td>
+                                    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
+                                      <strong>Importante:</strong> Se precisar de ajuda, responda este email ou fale conosco pelo site.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
+                          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                          <a href="https://studiogabirego.com" style="color: #ea580c; word-break: break-all;">https://studiogabirego.com</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Gabi Rêgo Studio
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `,
