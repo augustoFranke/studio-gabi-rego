@@ -36,7 +36,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
   const [searchValue, setSearchValue] = useState(search ?? "")
   const [statusValue, setStatusValue] = useState(status ?? "todos")
   const [planoValue, setPlanoValue] = useState(plano ?? "todos")
-  const [orderValue, setOrderValue] = useState(order ?? "nome_asc")
+  const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
 
   const groupedPlanos = useMemo(() => {
     const planosGabi = planos.filter(p => p.nome.toLowerCase().includes("gabi"))
@@ -59,7 +59,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
       params.set("plano", values.plano)
       hasFilters = true
     }
-    if (values.order && values.order !== "nome_asc") {
+    if (values.order && values.order !== "recent_desc") {
       params.set("order", values.order)
       hasFilters = true
     }
@@ -82,7 +82,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
     const currentSearch = searchParams.get("search") ?? ""
     const currentStatus = searchParams.get("status") ?? "todos"
     const currentPlano = searchParams.get("plano") ?? "todos"
-    const currentOrder = searchParams.get("order") ?? "nome_asc"
+    const currentOrder = searchParams.get("order") ?? "recent_desc"
     const nextSearch = searchValue.trim()
 
     const filtersChanged =

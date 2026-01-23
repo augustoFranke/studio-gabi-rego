@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const membroId = searchParams.get('membroId')
     const status = searchParams.get('status')
     const search = searchParams.get('search')
-    const sort = searchParams.get('sort') || 'vencimento_desc'
+    const sort = searchParams.get('sort') || 'recent_desc'
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const skip = (page - 1) * limit
