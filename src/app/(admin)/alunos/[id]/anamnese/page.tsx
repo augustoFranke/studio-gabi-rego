@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, ClipboardList, Heart, Loader2 } from "lucide-react"
+import { ArrowLeft, ClipboardList, Copy, Heart, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
@@ -64,6 +64,7 @@ export default function AnamnesePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [copying, setCopying] = useState(false)
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
   const [formData, setFormData] = useState<AnamneseData>({})
 
@@ -111,6 +112,32 @@ export default function AnamnesePage() {
     }
   }
 
+  const handleCopyLink = async () => {
+    try {
+      setCopying(true)
+      const response = await fetch(`/api/membros/${memberId}/anamnese-link`, { method: "POST" })
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        toast.error(data.error || "Erro ao gerar link")
+        return
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(data.link)
+      } else {
+        window.prompt("Copie o link abaixo:", data.link)
+      }
+
+      toast.success("Link copiado! Ele expira em 24 horas.")
+    } catch (error) {
+      console.error("Error copying link:", error)
+      toast.error("Erro ao copiar link")
+    } finally {
+      setCopying(false)
+    }
+  }
+
   const updateField = (field: keyof AnamneseData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -142,12 +169,22 @@ export default function AnamnesePage() {
             </p>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : null}
-          Salvar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleCopyLink} disabled={copying}>
+            {copying ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Copy className="mr-2 h-4 w-4" />
+            )}
+            Copiar link
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Salvar
+          </Button>
+        </div>
       </div>
 
       {/* Anamnese Form */}

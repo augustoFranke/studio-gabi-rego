@@ -123,6 +123,7 @@ export async function POST(request: Request) {
         where: { id: existingUser.id },
         data: {
           senha: hashedPassword,
+          senhaDefinida: true,
           tokenVerificacao: verificationToken,
           tokenVerificacaoExpira: tokenExpiry,
           etapaOnboarding: 1,
@@ -135,6 +136,7 @@ export async function POST(request: Request) {
         data: {
           email: normalizedEmail,
           senha: hashedPassword,
+          senhaDefinida: true,
           role: "MEMBRO",
           tokenVerificacao: verificationToken,
           tokenVerificacaoExpira: tokenExpiry,

@@ -124,7 +124,10 @@ export async function PATCH(
                 const usuarioUpdateData: { nome?: string; email?: string; senha?: string } = {}
                 if (data.nome) usuarioUpdateData.nome = data.nome
                 if (normalizedEmail) usuarioUpdateData.email = normalizedEmail
-                if (data.senha) usuarioUpdateData.senha = await hash(data.senha, 12)
+                if (data.senha) {
+                    usuarioUpdateData.senha = await hash(data.senha, 12)
+                    usuarioUpdateData.senhaDefinida = true
+                }
 
                 await tx.usuario.update({
                     where: { id: membroExistente.usuarioId },

@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { nome, email, senha, cpf, rg, telefone, dataNascimento, planoId, precoCustomizado, sexo } = validation.data
+    const senhaValue = typeof senha === "string" ? senha.trim() : ""
+    const senhaDefinida = Boolean(senhaValue)
 
     // Normalize email to lowercase
     const normalizedEmail = email ? email.toLowerCase().trim() : null
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create password hash if provided, otherwise generate a random one
-    const senhaHash = senha ? await hash(senha, 12) : await hash(Math.random().toString(36), 12)
+    const senhaHash = senhaDefinida ? await hash(senhaValue, 12) : await hash(Math.random().toString(36), 12)
 
     const membro = await prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.create({
@@ -141,6 +143,7 @@ export async function POST(request: NextRequest) {
           nome: nome || 'Sem nome',
           email: normalizedEmail || `temp_${Date.now()}@placeholder.local`,
           senha: senhaHash,
+          senhaDefinida,
           role: 'MEMBRO',
           // Skip onboarding for admin-created users
           onboardingCompleto: true,
