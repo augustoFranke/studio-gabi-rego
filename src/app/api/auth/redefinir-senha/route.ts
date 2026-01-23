@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       where: { id: usuario.id },
       data: {
         senha: senhaHash,
+        senhaDefinida: true,
         tokenReset: null,
         tokenResetExpira: null,
       },

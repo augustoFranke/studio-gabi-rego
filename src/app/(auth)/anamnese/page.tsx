@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -54,10 +54,13 @@ interface AnamneseData {
 
 function AnamneseContent() {
   const { status } = useSession()
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token")
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseData>({})
   const [sexo, setSexo] = useState<string | null>(null)
+  const [tokenError, setTokenError] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState({
     basic: true,
     medical: false,
@@ -72,7 +75,11 @@ function AnamneseContent() {
 
     async function loadData() {
       try {
-        const response = await fetch("/api/minha-anamnese")
+        setTokenError(null)
+        const endpoint = token
+          ? `/api/anamnese-token?token=${encodeURIComponent(token)}`
+          : "/api/minha-anamnese"
+        const response = await fetch(endpoint)
         if (response.ok) {
           const data = await response.json()
           if (isMounted) {
@@ -84,11 +91,21 @@ function AnamneseContent() {
             }
             setLoadingData(false)
           }
-        } else if (response.status === 404) {
-          // Profile not found - redirect to complete profile first (no toast needed, the redirect is self-explanatory)
-          router.push("/completar-perfil")
-          // Don't set loadingData to false - keep loading state during redirect
         } else {
+          const data = await response.json().catch(() => ({}))
+          if (token) {
+            if (isMounted) {
+              setTokenError(data.error || "Link inválido ou expirado.")
+              setLoadingData(false)
+            }
+            return
+          }
+          if (response.status === 404) {
+            // Profile not found - redirect to complete profile first (no toast needed, the redirect is self-explanatory)
+            router.push("/completar-perfil")
+            // Don't set loadingData to false - keep loading state during redirect
+            return
+          }
           // Other errors
           if (isMounted) {
             setLoadingData(false)
@@ -102,21 +119,21 @@ function AnamneseContent() {
       }
     }
 
-    if (status !== "loading") {
+    if (token || status !== "loading") {
       loadData()
     }
 
     return () => {
       isMounted = false
     }
-  }, [status, router])
+  }, [status, router, token])
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" && !token) {
       router.push("/login")
     }
-  }, [status, router])
+  }, [status, router, token])
 
   const updateField = (field: keyof AnamneseData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -133,7 +150,10 @@ function AnamneseContent() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/minha-anamnese", {
+      const endpoint = token
+        ? `/api/anamnese-token?token=${encodeURIComponent(token)}`
+        : "/api/minha-anamnese"
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -143,6 +163,12 @@ function AnamneseContent() {
 
       if (!response.ok) {
         toast.error(data.error || "Erro ao salvar anamnese")
+        setIsLoading(false)
+        return
+      }
+
+      if (token) {
+        toast.success("Anamnese enviada com sucesso!")
         setIsLoading(false)
         return
       }
@@ -161,6 +187,34 @@ function AnamneseContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    )
+  }
+
+  if (tokenError) {
+    return (
+      <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+          <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+        </div>
+        <div className="absolute top-4 right-4 z-20">
+          <ThemeToggleSimple />
+        </div>
+        <div className="max-w-md mx-auto relative z-10 pt-24">
+          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95 text-center">
+            <CardHeader>
+              <CardTitle>Link inválido</CardTitle>
+              <CardDescription>{tokenError}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Solicite um novo link para responder sua anamnese.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }

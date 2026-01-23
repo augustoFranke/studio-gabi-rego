@@ -1,6 +1,9 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { compare } from "bcryptjs"
+import { compare, hash } from "bcryptjs"
+
+const isStrongPassword = (value: string) =>
+  value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value)
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Required for Vercel deployment - trust the proxy headers
@@ -32,6 +35,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!usuario) {
           throw new Error("USER_NOT_FOUND")
+        }
+
+        if (!usuario.senhaDefinida) {
+          if (!isStrongPassword(password)) {
+            throw new Error("WEAK_PASSWORD")
+          }
+
+          const senhaHash = await hash(password, 12)
+          await prisma.usuario.update({
+            where: { id: usuario.id },
+            data: {
+              senha: senhaHash,
+              senhaDefinida: true,
+            },
+          })
+
+          return {
+            id: usuario.id,
+            email: usuario.email,
+            name: usuario.nome,
+            role: usuario.role,
+            membroId: usuario.membro?.id,
+          }
         }
 
         const senhaCorreta = await compare(password, usuario.senha)

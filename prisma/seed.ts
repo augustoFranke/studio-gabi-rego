@@ -14,6 +14,7 @@ async function main() {
     create: {
       email: 'admin@gabistudio.com.br',
       senha: senhaAdmin,
+      senhaDefinida: true,
       nome: 'Administrador',
       role: Role.ADMIN,
     },
@@ -141,4 +142,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
-
