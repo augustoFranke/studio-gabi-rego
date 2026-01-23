@@ -79,11 +79,27 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
   }, [buildQuery, pathname, router, searchParams])
 
   useEffect(() => {
+    const currentSearch = searchParams.get("search") ?? ""
+    const currentStatus = searchParams.get("status") ?? "todos"
+    const currentPlano = searchParams.get("plano") ?? "todos"
+    const currentOrder = searchParams.get("order") ?? "nome_asc"
+    const nextSearch = searchValue.trim()
+
+    const filtersChanged =
+      currentSearch !== nextSearch ||
+      currentStatus !== statusValue ||
+      currentPlano !== planoValue ||
+      currentOrder !== orderValue
+
+    if (!filtersChanged) {
+      return
+    }
+
     const timer = setTimeout(() => {
-      applyFilters({ search: searchValue, status: statusValue, plano: planoValue, order: orderValue })
+      applyFilters({ search: nextSearch, status: statusValue, plano: planoValue, order: orderValue })
     }, 300)
     return () => clearTimeout(timer)
-  }, [applyFilters, orderValue, planoValue, searchValue, statusValue])
+  }, [applyFilters, orderValue, planoValue, searchParams, searchValue, statusValue])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
