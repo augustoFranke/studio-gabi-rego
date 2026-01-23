@@ -150,7 +150,7 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true)
   const [searchPagamento, setSearchPagamento] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [sortPagamento, setSortPagamento] = useState<string>("vencimento_desc")
+  const [sortPagamento, setSortPagamento] = useState<string>("recent_desc")
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)

@@ -54,9 +54,9 @@ export default async function MembrosPage({
   }
 
   const orderBy: Prisma.MembroOrderByWithRelationInput =
-    order === "recent_desc"
-      ? { criadoEm: "desc" }
-      : { usuario: { nome: "asc" } }
+    order === "nome_asc"
+      ? { usuario: { nome: "asc" } }
+      : { criadoEm: "desc" }
 
   const [totalMembros, membros, planos] = await Promise.all([
     prisma.membro.count({ where }),
