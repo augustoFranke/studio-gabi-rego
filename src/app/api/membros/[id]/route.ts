@@ -121,7 +121,7 @@ export async function PATCH(
         const membroAtualizado = await prisma.$transaction(async (tx) => {
             // Atualizar usuário se necessário
             if (data.nome || normalizedEmail || data.senha) {
-                const usuarioUpdateData: { nome?: string; email?: string; senha?: string } = {}
+                const usuarioUpdateData: { nome?: string; email?: string; senha?: string; senhaDefinida?: boolean } = {}
                 if (data.nome) usuarioUpdateData.nome = data.nome
                 if (normalizedEmail) usuarioUpdateData.email = normalizedEmail
                 if (data.senha) {
