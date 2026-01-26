@@ -99,6 +99,16 @@ const TimeSlotBase = function TimeSlot({
                 </button>
               </TimeSlotPopover>
             )}
+            {isEditable && (
+              <button
+                type="button"
+                onClick={onSlotClick}
+                className="p-1 text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors flex items-center justify-center"
+                aria-label="Adicionar agendamento"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            )}
           </div>
         ) : (
           isEditable && (
@@ -151,6 +161,16 @@ const TimeSlotBase = function TimeSlot({
                 onDragEnd={handleDragEnd}
               />
             ))}
+            {isEditable && (
+              <button
+                type="button"
+                onClick={onSlotClick}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Adicionar</span>
+              </button>
+            )}
           </div>
         ) : isEditable ? (
           <button
