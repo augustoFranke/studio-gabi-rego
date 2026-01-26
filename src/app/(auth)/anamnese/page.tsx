@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import Image from "next/image"
 
@@ -179,7 +178,7 @@ function AnamneseContent() {
 
   if (status === "loading" || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     )
@@ -187,14 +186,11 @@ function AnamneseContent() {
 
   if (tokenError) {
     return (
-      <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
           <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-        </div>
-        <div className="absolute top-4 right-4 z-20">
-          <ThemeToggleSimple />
         </div>
         <div className="max-w-md mx-auto relative z-10 pt-24">
           <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95 text-center">
@@ -214,7 +210,7 @@ function AnamneseContent() {
   }
 
   return (
-    <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+    <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
@@ -223,10 +219,6 @@ function AnamneseContent() {
       </div>
 
       {/* Theme toggle */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggleSimple />
-      </div>
-
       <div className="max-w-2xl mx-auto relative z-10 space-y-6 pb-20">
         {/* Header */}
         <div className="text-center pt-6 pb-4">
@@ -677,7 +669,7 @@ function AnamneseContent() {
 export default function AnamnesePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
