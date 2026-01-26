@@ -22,37 +22,33 @@ interface Session {
 
 type RequireAuthOptions = ApiOptions & { requireAuth?: true }
 type OptionalAuthOptions = { requireAuth: false; requiredRole?: never }
+type AuthOptions = RequireAuthOptions | OptionalAuthOptions
 
-export function withApiAuth(
-  handler: (session: Session) => Promise<NextResponse>,
-  options?: RequireAuthOptions
-): Promise<NextResponse>
-export function withApiAuth(
-  handler: (session: Session | null) => Promise<NextResponse>,
-  options: OptionalAuthOptions
-): Promise<NextResponse>
-export async function withApiAuth(
-  handler: (session: Session | null) => Promise<NextResponse>,
-  options: ApiOptions = { requireAuth: true }
+export async function withApiAuth<T extends AuthOptions = RequireAuthOptions>(
+  handler: (
+    session: T extends OptionalAuthOptions ? Session | null : Session
+  ) => Promise<NextResponse>,
+  options?: T
 ) {
+  const resolvedOptions: ApiOptions = options ?? { requireAuth: true }
   try {
     const session = await auth()
 
     if (!session) {
-      if (options.requireAuth !== false || options.requiredRole) {
+      if (resolvedOptions.requireAuth !== false || resolvedOptions.requiredRole) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
       }
 
-      return await handler(null)
+      return await (handler as (session: Session | null) => Promise<NextResponse>)(null)
     }
 
     const sessionData = session as Session
 
-    if (options.requiredRole && sessionData.user.role !== options.requiredRole) {
+    if (resolvedOptions.requiredRole && sessionData.user.role !== resolvedOptions.requiredRole) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
-    return await handler(sessionData)
+    return await (handler as (session: Session) => Promise<NextResponse>)(sessionData)
   } catch (error) {
     console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })

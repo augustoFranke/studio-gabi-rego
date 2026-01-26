@@ -11,7 +11,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma migrate resolve --rolled-back 20250309120000_init || true && prisma migrate deploy && npm run test:run && next build",
+    "vercel-build": "prisma generate && (if [ \"$VERCEL\" = \"1\" ]; then prisma migrate resolve --rolled-back 20250309120000_init || true; fi) && prisma migrate deploy && npm run test:run && next build",
     "pre-commit": "npm run test:run",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

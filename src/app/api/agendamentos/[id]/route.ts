@@ -124,7 +124,7 @@ export async function PATCH(
         )
       }
 
-      if (horarioId) updateData.horarioId = horarioId
+      if (horarioId) updateData.horario = { connect: { id: horarioId } }
       if (data) updateData.data = newData
     }
 
