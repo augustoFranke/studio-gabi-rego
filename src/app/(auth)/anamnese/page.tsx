@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { Flame, ArrowRight, ClipboardList, Heart, Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import Image from "next/image"
 
 interface AnamneseData {
@@ -167,15 +167,9 @@ function AnamneseContent() {
         return
       }
 
-      if (token) {
-        toast.success("Anamnese enviada com sucesso!")
-        setIsLoading(false)
-        return
-      }
-
-      toast.success("Cadastro concluído!")
-      // Redirect to login with success message
-      router.push("/login?cadastro=completo")
+      toast.success(token ? "Anamnese enviada com sucesso!" : "Cadastro concluído!")
+      setIsLoading(false)
+      router.push("/inicio")
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar")
       console.error(error)
@@ -247,27 +241,8 @@ function AnamneseContent() {
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="flex items-center gap-1">
-              <div className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">
-                <Check className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="w-6 h-px bg-green-500" />
-            <div className="flex items-center gap-1">
-              <div className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">
-                <Check className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="w-6 h-px bg-green-500" />
-            <div className="flex items-center gap-1">
-              <div className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">
-                <Check className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="w-6 h-px bg-orange-500" />
-            <div className="flex items-center gap-1">
-              <div className="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">4</div>
-            </div>
+            <div className="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">4</div>
+            <span className="text-xs text-orange-500 font-medium">Anamnese</span>
           </div>
 
           <h1 className="text-2xl font-bold text-foreground">Anamnese</h1>
@@ -692,7 +667,6 @@ function AnamneseContent() {
         {/* Divider */}
         <div className="flex items-center gap-3 pb-16 md:pb-0">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-          <Flame className="h-3 w-3 text-orange-500/50" />
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
         </div>
       </div>
