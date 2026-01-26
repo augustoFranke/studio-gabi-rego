@@ -147,6 +147,14 @@ export async function POST(request: NextRequest) {
       update: anamneseData,
     })
 
+    await prisma.usuario.update({
+      where: { id: membro.usuarioId },
+      data: {
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
+      },
+    })
+
     return NextResponse.json({
       success: true,
       message: "Anamnese salva com sucesso!",

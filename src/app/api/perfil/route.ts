@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { validarCPF } from "@/lib/validators"
@@ -91,6 +92,10 @@ export async function POST(request: Request) {
       )
     }
 
+    const isTokenFlow = Boolean(token)
+    const anamneseToken = isTokenFlow ? randomBytes(32).toString("hex") : null
+    const anamneseTokenExpiry = isTokenFlow ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null
+
     // Check if user already has a member profile
     const existingMembro = await prisma.membro.findUnique({
       where: { usuarioId: userId },
@@ -106,6 +111,12 @@ export async function POST(request: Request) {
           telefone,
           dataNascimento: new Date(dataNascimento),
           sexo: sexo as "MASCULINO" | "FEMININO",
+          ...(isTokenFlow
+            ? {
+                anamneseToken,
+                anamneseTokenExpira: anamneseTokenExpiry,
+              }
+            : {}),
         },
       })
     } else {
@@ -119,6 +130,12 @@ export async function POST(request: Request) {
           dataNascimento: new Date(dataNascimento),
           sexo: sexo as "MASCULINO" | "FEMININO",
           status: "PENDENTE",
+          ...(isTokenFlow
+            ? {
+                anamneseToken,
+                anamneseTokenExpira: anamneseTokenExpiry,
+              }
+            : {}),
         },
       })
     }
@@ -137,6 +154,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "Perfil salvo com sucesso!",
+      ...(isTokenFlow ? { anamneseToken } : {}),
     })
   } catch (error) {
     console.error("Erro ao salvar perfil:", error)

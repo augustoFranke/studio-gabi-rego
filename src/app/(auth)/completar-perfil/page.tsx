@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { Flame, ArrowRight, User, Check } from "lucide-react"
+import { ArrowRight, User, Check } from "lucide-react"
 import Image from "next/image"
 
 function CompletarPerfilContent() {
@@ -125,7 +125,10 @@ function CompletarPerfilContent() {
       }
 
       toast.success("Perfil salvo com sucesso!")
-      router.push("/anamnese")
+      const anamneseUrl = profileToken && data.anamneseToken
+        ? `/anamnese?token=${encodeURIComponent(data.anamneseToken)}`
+        : "/anamnese"
+      router.push(anamneseUrl)
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar o perfil")
       console.error(error)
@@ -339,7 +342,6 @@ function CompletarPerfilContent() {
           {/* Divider */}
           <div className="flex items-center gap-3 mt-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <Flame className="h-3 w-3 text-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 
