@@ -178,7 +178,7 @@ function AnamneseContent() {
 
   if (status === "loading" || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-white">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     )
@@ -186,7 +186,7 @@ function AnamneseContent() {
 
   if (tokenError) {
     return (
-      <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen p-4 relative overflow-hidden bg-white dark:bg-white">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
           <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
@@ -210,7 +210,7 @@ function AnamneseContent() {
   }
 
   return (
-    <div className="min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+    <div className="min-h-screen p-4 relative overflow-hidden bg-white dark:bg-white">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
@@ -669,7 +669,7 @@ function AnamneseContent() {
 export default function AnamnesePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-white">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
