@@ -65,7 +65,7 @@ export function AlunoSidebar() {
         <div className="flex items-center justify-center">
           <Image
             src="/logo.svg"
-            alt="Gabi Rêgo Studio"
+            alt="Studio Gabi Rego"
             width={72}
             height={72}
           />

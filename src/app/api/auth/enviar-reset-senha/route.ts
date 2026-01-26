@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     if (isResendConfigured()) {
       const result = await enviarEmail({
         para: usuario.email,
-        assunto: "Redefinir Senha - Gabi Rêgo Studio",
+        assunto: "Redefinir Senha - Studio Gabi Rego",
         html: emailTemplates.redefinirSenha(usuario.nome, resetLink),
       })
 

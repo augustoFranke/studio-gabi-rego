@@ -1,5 +1,5 @@
 #!/bin/bash
-# ==================== Gabi Rêgo Studio - Database Backup Script ====================
+# ==================== Studio Gabi Rego - Database Backup Script ====================
 # Este script cria um backup do banco de dados PostgreSQL
 
 set -e
@@ -16,7 +16,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo "💾 Backup do Banco de Dados - Gabi Rêgo Studio"
+echo "💾 Backup do Banco de Dados - Studio Gabi Rego"
 echo "=================================="
 
 # Criar diretório de backup se não existir

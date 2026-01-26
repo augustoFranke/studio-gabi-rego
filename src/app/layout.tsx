@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gabi Rêgo Studio - Sistema de Gestão",
-  description: "Sistema de gestão para estúdio de Pilates",
+  title: "Studio Gabi Rego",
+  description: "Estúdio de Pilates",
 };
 
 export default function RootLayout({

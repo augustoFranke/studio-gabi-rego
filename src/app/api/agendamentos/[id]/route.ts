@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { withApiAuth } from '@/lib/api'
+import { parseLocalDate } from '@/lib/schedule'
 import { Prisma } from '@prisma/client'
-
-// Helper to parse date string as local date (not UTC)
-function parseLocalDate(dateStr: string): Date {
-  // If it's just a date (yyyy-MM-dd), parse as local midnight
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    const [year, month, day] = dateStr.split('-').map(Number)
-    return new Date(year, month - 1, day, 12, 0, 0) // noon to avoid timezone edge cases
-  }
-  // Otherwise parse as-is (ISO string with time)
-  return new Date(dateStr)
-}
 
 const agendamentoSelect = {
   id: true,
@@ -41,55 +31,38 @@ const agendamentoSelect = {
   },
 } satisfies Prisma.AgendamentoSelect
 
-// GET /api/agendamentos/[id] - Obter agendamento especifico
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  const { id } = await params
+  return withApiAuth(async (session) => {
+    const { id } = await params
+    const agendamento = await prisma.agendamento.findUnique({
+      where: { id },
+      select: agendamentoSelect,
+    })
 
-  if (!session) {
-    return NextResponse.json({ error: 'Nao autorizado' }, { status: 401 })
-  }
+    if (!agendamento) {
+      return NextResponse.json({ error: 'Agendamento nao encontrado' }, { status: 404 })
+    }
 
-  const agendamento = await prisma.agendamento.findUnique({
-    where: { id },
-    select: agendamentoSelect,
+    if (session.user.role === 'MEMBRO' && agendamento.membroId !== session.user.membroId) {
+      return NextResponse.json({ error: 'Nao autorizado' }, { status: 403 })
+    }
+
+    return NextResponse.json(agendamento)
   })
-
-  if (!agendamento) {
-    return NextResponse.json({ error: 'Agendamento nao encontrado' }, { status: 404 })
-  }
-
-  // Se for membro, so pode ver seus proprios agendamentos
-  if (
-    session.user.role === 'MEMBRO' &&
-    agendamento.membroId !== session.user.membroId
-  ) {
-    return NextResponse.json({ error: 'Nao autorizado' }, { status: 403 })
-  }
-
-  return NextResponse.json(agendamento)
 }
 
-// PATCH /api/agendamentos/[id] - Atualizar agendamento
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  const { id } = await params
-
-  if (!session || session.user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Nao autorizado' }, { status: 401 })
-  }
-
-  try {
+  return withApiAuth(async () => {
+    const { id } = await params
     const body = await request.json()
     const { presente, observacao, horarioId, data } = body
 
-    // Verificar se o agendamento existe
     const agendamento = await prisma.agendamento.findUnique({
       where: { id },
     })
@@ -98,8 +71,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Agendamento nao encontrado' }, { status: 404 })
     }
 
-    // Preparar dados para atualizacao
-    const updateData: Record<string, unknown> = {}
+    const updateData: Prisma.AgendamentoUpdateInput = {}
 
     if (presente !== undefined) {
       updateData.presente = presente
@@ -109,12 +81,10 @@ export async function PATCH(
       updateData.observacao = observacao
     }
 
-    // Se estiver mudando horario ou data, verificar disponibilidade
     if (horarioId || data) {
       const newHorarioId = horarioId || agendamento.horarioId
       const newData = data ? parseLocalDate(data) : agendamento.data
 
-      // Verificar se ja existe agendamento neste horario/data
       const existente = await prisma.agendamento.findFirst({
         where: {
           membroId: agendamento.membroId,
@@ -131,7 +101,6 @@ export async function PATCH(
         )
       }
 
-      // Verificar vagas disponiveis
       const horario = await prisma.horarioDisponivel.findUnique({
         where: { id: newHorarioId },
       })
@@ -166,26 +135,15 @@ export async function PATCH(
     })
 
     return NextResponse.json(agendamentoAtualizado)
-  } catch (error) {
-    console.error('Erro ao atualizar agendamento:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
-  }
+  }, { requiredRole: 'ADMIN' })
 }
 
-// DELETE /api/agendamentos/[id] - Remover agendamento
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  const { id } = await params
-
-  if (!session || session.user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Nao autorizado' }, { status: 401 })
-  }
-
-  try {
-    // Verificar se o agendamento existe
+  return withApiAuth(async () => {
+    const { id } = await params
     const agendamento = await prisma.agendamento.findUnique({
       where: { id },
     })
@@ -199,8 +157,5 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Erro ao remover agendamento:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
-  }
+  }, { requiredRole: 'ADMIN' })
 }

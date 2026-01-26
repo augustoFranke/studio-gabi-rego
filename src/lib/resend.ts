@@ -47,7 +47,7 @@ export async function enviarEmail({
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Gabi Rêgo Studio <suporte@studiogabirego.com>',
+        from: 'Studio Gabi Rego <suporte@studiogabirego.com>',
         to: para,
         subject: assunto,
         html,
@@ -84,7 +84,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Lembrete de Aula - Gabi Rêgo Studio</title>
+      <title>Lembrete de Aula - Studio Gabi Rego</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
@@ -93,7 +93,7 @@ export const emailTemplates = {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <tr>
@@ -185,7 +185,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>
@@ -205,7 +205,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Lembrete de Pagamento - Gabi Rêgo Studio</title>
+      <title>Lembrete de Pagamento - Studio Gabi Rego</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
@@ -214,7 +214,7 @@ export const emailTemplates = {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <tr>
@@ -305,7 +305,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>
@@ -325,7 +325,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Verifique seu email - Gabi Rêgo Studio</title>
+      <title>Verifique seu email - Studio Gabi Rego</title>
       <!--[if mso]>
       <noscript>
         <xml>
@@ -344,7 +344,7 @@ export const emailTemplates = {
               <!-- Logo Section -->
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <!-- Main Card -->
@@ -376,7 +376,7 @@ export const emailTemplates = {
                           Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
-                          Obrigado por se cadastrar no <strong>Gabi Rêgo Studio</strong>!
+                          Obrigado por se cadastrar no <strong>Studio Gabi Rego</strong>!
                         </p>
                         <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Para continuar com seu cadastro, por favor verifique seu email clicando no botão abaixo:
@@ -436,7 +436,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>
@@ -456,7 +456,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Complete seu cadastro - Gabi Rêgo Studio</title>
+      <title>Complete seu cadastro - Studio Gabi Rego</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
@@ -465,7 +465,7 @@ export const emailTemplates = {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <tr>
@@ -493,7 +493,7 @@ export const emailTemplates = {
                           Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
-                          Encontramos um cadastro em andamento no <strong>Gabi Rêgo Studio</strong>.
+                          Encontramos um cadastro em andamento no <strong>Studio Gabi Rego</strong>.
                         </p>
                         <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Para continuar, clique no botão abaixo e complete seu perfil:
@@ -548,7 +548,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>
@@ -568,7 +568,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Redefinir Senha - Gabi Rêgo Studio</title>
+      <title>Redefinir Senha - Studio Gabi Rego</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
@@ -578,7 +578,7 @@ export const emailTemplates = {
               <!-- Logo Section -->
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <!-- Main Card -->
@@ -610,7 +610,7 @@ export const emailTemplates = {
                           Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
-                          Recebemos uma solicitação para redefinir sua senha no <strong>Gabi Rêgo Studio</strong>.
+                          Recebemos uma solicitação para redefinir sua senha no <strong>Studio Gabi Rego</strong>.
                         </p>
                         <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Para criar uma nova senha, clique no botão abaixo:
@@ -670,7 +670,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>
@@ -690,7 +690,7 @@ export const emailTemplates = {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="color-scheme" content="light">
       <meta name="supported-color-schemes" content="light">
-      <title>Bem-vindo(a) - Gabi Rêgo Studio</title>
+      <title>Bem-vindo(a) - Studio Gabi Rego</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
@@ -699,7 +699,7 @@ export const emailTemplates = {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Gabi Rêgo Studio" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <tr>
@@ -727,7 +727,7 @@ export const emailTemplates = {
                           Olá <strong style="color: #ea580c;">${nome}</strong>!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
-                          Seja muito bem-vindo(a) ao <strong>Gabi Rêgo Studio</strong>!
+                          Seja muito bem-vindo(a) ao <strong>Studio Gabi Rego</strong>!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Estamos muito felizes em ter você conosco. Nossa equipe está pronta para ajudá-lo(a) a alcançar seus objetivos.
@@ -785,7 +785,7 @@ export const emailTemplates = {
               <tr>
                 <td style="padding: 32px 20px; text-align: center;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
-                    Gabi Rêgo Studio
+                    Studio Gabi Rego
                   </p>
                 </td>
               </tr>

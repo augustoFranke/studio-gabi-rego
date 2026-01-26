@@ -33,19 +33,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes handled individually or via withApiAuth)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - login (login page)
-         * - cadastro (signup page)
-         * - verificar-email (email verification pages)
-         * - completar-perfil (profile completion page)
-         * - anamnese (anamnesis form page - auth route)
-         * - public asset extensions (.png, .svg, .jpg, .jpeg, .gif, .ico, .webp)
-         */
-        "/((?!api|_next/static|_next/image|favicon.ico|login|cadastro|verificar-email|completar-perfil|.*\\.(?:png|svg|jpg|jpeg|gif|ico|webp)$).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|login|cadastro|verificar-email|completar-perfil|anamnese|redefinir-senha|.*\\.(?:png|svg|jpg|jpeg|gif|ico|webp)$).*)",
     ],
 }

@@ -1,4 +1,4 @@
-// Schema do Sistema de Gestão - Gabi Rêgo Studio
+// Schema do Studio Gabi Rego
 // Documentação: https://pris.ly/d/prisma-schema
 
 generator client {
