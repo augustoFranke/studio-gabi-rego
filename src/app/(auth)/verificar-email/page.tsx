@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { Mail, Flame, RefreshCw, ArrowLeft } from "lucide-react"
+import { Mail, RefreshCw, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 
 function VerificarEmailContent() {
@@ -86,41 +86,12 @@ function VerificarEmailContent() {
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="text-xs text-green-500 font-medium">Cadastro</span>
+            <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">
+              {isProfileCompletion ? "3" : "2"}
             </div>
-            <div className="w-8 h-px bg-orange-500" />
-            <div className="flex items-center gap-1">
-              {isProfileCompletion ? (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-xs text-green-500 font-medium">Verificar</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</div>
-                  <span className="text-xs text-orange-500 font-medium">Verificar</span>
-                </>
-              )}
-            </div>
-            <div className="w-8 h-px bg-orange-500/30" />
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isProfileCompletion ? "bg-orange-500 text-white font-bold" : "bg-muted text-muted-foreground"}`}
-              >
-                3
-              </div>
-              <span className={`text-xs font-medium ${isProfileCompletion ? "text-orange-500" : "text-muted-foreground"}`}>Perfil</span>
-            </div>
+            <span className="text-xs text-orange-500 font-medium">
+              {isProfileCompletion ? "Perfil" : "Verificar"}
+            </span>
           </div>
 
           <div className="flex justify-center mb-4">
@@ -173,7 +144,6 @@ function VerificarEmailContent() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <Flame className="h-3 w-3 text-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 

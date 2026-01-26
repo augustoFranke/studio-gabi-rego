@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
-import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { Flame, Eye, EyeOff, ArrowRight, Check, X } from "lucide-react"
+import { Eye, EyeOff, ArrowRight, Check, X } from "lucide-react"
 import Image from "next/image"
 
 export default function CadastroPage() {
@@ -79,7 +78,7 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       {/* Animated background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
@@ -87,11 +86,6 @@ export default function CadastroPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
-      </div>
-
-      {/* Theme toggle */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggleSimple />
       </div>
 
       {/* Floating decorative elements */}
@@ -117,20 +111,8 @@ export default function CadastroPage() {
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">1</div>
-              <span className="text-xs text-orange-500 font-medium">Cadastro</span>
-            </div>
-            <div className="w-8 h-px bg-orange-500/30" />
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm">2</div>
-              <span className="text-xs text-muted-foreground">Verificar</span>
-            </div>
-            <div className="w-8 h-px bg-orange-500/30" />
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm">3</div>
-              <span className="text-xs text-muted-foreground">Perfil</span>
-            </div>
+            <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">1</div>
+            <span className="text-xs text-orange-500 font-medium">Cadastro</span>
           </div>
 
           <CardDescription className="text-muted-foreground mt-1">
@@ -266,7 +248,6 @@ export default function CadastroPage() {
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <Flame className="h-3 w-3 text-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 

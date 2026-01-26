@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
-import { ArrowRight, User, Check } from "lucide-react"
+import { ArrowRight, User } from "lucide-react"
 import Image from "next/image"
 
 function CompletarPerfilContent() {
@@ -177,24 +177,8 @@ function CompletarPerfilContent() {
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm">
-                <Check className="w-4 h-4" />
-              </div>
-              <span className="text-xs text-green-500 font-medium">Cadastro</span>
-            </div>
-            <div className="w-8 h-px bg-green-500" />
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm">
-                <Check className="w-4 h-4" />
-              </div>
-              <span className="text-xs text-green-500 font-medium">Verificar</span>
-            </div>
-            <div className="w-8 h-px bg-orange-500" />
-            <div className="flex items-center gap-1">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">3</div>
-              <span className="text-xs text-orange-500 font-medium">Perfil</span>
-            </div>
+            <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">3</div>
+            <span className="text-xs text-orange-500 font-medium">Perfil</span>
           </div>
 
           <div className="flex justify-center mb-2">
