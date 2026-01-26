@@ -16,7 +16,6 @@ import {
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-// Constants
 export const SCHEDULE_START_HOUR = 5
 export const SCHEDULE_END_HOUR = 20
 export const MAX_CAPACITY_PER_SLOT = 10
@@ -26,7 +25,6 @@ export const HOURS = Array.from(
   (_, i) => SCHEDULE_START_HOUR + i
 )
 
-// Day of week mapping
 export const DiaSemanaMap: Record<DiaSemana, number> = {
   DOMINGO: 0,
   SEGUNDA: 1,
@@ -71,7 +69,6 @@ export function getDiaSemanaFromDay(dayNumber: number): DiaSemana {
   return map[dayNumber]
 }
 
-// Types
 export interface TimeSlot {
   hour: number
   label: string
@@ -95,7 +92,6 @@ export interface DaySchedule {
   slots: Map<number, ScheduleEvent[]>
 }
 
-// Helper functions
 export function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
 }
@@ -205,19 +201,10 @@ export function formatMonthYear(date: Date): string {
   return format(date, 'MMMM yyyy', { locale: ptBR })
 }
 
-export function isSameDayCheck(date1: Date, date2: Date): boolean {
-  return isSameDay(date1, date2)
-}
-
 export function isToday(date: Date): boolean {
   return isSameDay(date, new Date())
 }
 
-export function getDayOfWeek(date: Date): number {
-  return getDay(date)
-}
-
-// Navigation helpers
 export function navigateDay(date: Date, direction: 'prev' | 'next'): Date {
   return direction === 'next' ? addDays(date, 1) : addDays(date, -1)
 }
@@ -230,7 +217,6 @@ export function navigateMonth(date: Date, direction: 'prev' | 'next'): Date {
   return direction === 'next' ? addMonths(date, 1) : subMonths(date, 1)
 }
 
-// Group events by hour
 export function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
   const grouped = new Map<number, ScheduleEvent[]>()
 
@@ -245,7 +231,6 @@ export function groupEventsByHour(events: ScheduleEvent[]): Map<number, Schedule
   return grouped
 }
 
-// Group events by date and hour
 export function groupEventsByDateAndHour(
   events: ScheduleEvent[]
 ): Map<string, Map<number, ScheduleEvent[]>> {
@@ -268,7 +253,6 @@ export function groupEventsByDateAndHour(
   return grouped
 }
 
-// Count events by date (for monthly view)
 export function countEventsByDate(events: ScheduleEvent[]): Map<string, number> {
   const counts = new Map<string, number>()
 
@@ -280,12 +264,10 @@ export function countEventsByDate(events: ScheduleEvent[]): Map<string, number> 
   return counts
 }
 
-// Check if slot has capacity
 export function hasCapacity(currentCount: number): boolean {
   return currentCount < MAX_CAPACITY_PER_SLOT
 }
 
-// Get slot capacity info
 export function getSlotCapacityInfo(currentCount: number): {
   available: number
   total: number

@@ -14,7 +14,7 @@ LOCAL_DB=${POSTGRES_DB:-gabi_studio}
 LOCAL_PORT=5432
 LOCAL_HOST=localhost
 
-echo "=== Gabi Rêgo Studio Database Migration Tool ==="
+echo "=== Studio Gabi Rego Database Migration Tool ==="
 echo "Local DB: $LOCAL_DB (User: $LOCAL_USER)"
 
 # Check for password

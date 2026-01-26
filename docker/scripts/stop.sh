@@ -1,10 +1,10 @@
 #!/bin/bash
-# ==================== Gabi Rêgo Studio - Docker Stop Script ====================
-# Este script para todos os serviços do Gabi Rêgo Studio
+# ==================== Studio Gabi Rego - Docker Stop Script ====================
+# Este script para todos os serviços do Studio Gabi Rego
 
 set -e
 
-echo "🛑 Parando Gabi Rêgo Studio..."
+echo "🛑 Parando Studio Gabi Rego..."
 echo "=================================="
 
 # Cores para output
@@ -18,7 +18,7 @@ echo -e "${YELLOW}🐳 Parando containers Docker...${NC}"
 docker compose down
 
 echo ""
-echo -e "${GREEN}✅ Gabi Rêgo Studio foi parado com sucesso!${NC}"
+echo -e "${GREEN}✅ Studio Gabi Rego foi parado com sucesso!${NC}"
 echo ""
 echo "📋 Para remover volumes (APAGA DADOS):"
 echo "   docker compose down -v"

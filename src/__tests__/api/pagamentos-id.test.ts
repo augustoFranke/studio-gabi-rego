@@ -58,7 +58,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
       vi.mocked(auth).mockResolvedValue(memberSession)
       const req = new NextRequest('http://localhost:3000/api', { method: 'PUT' })
       const res = await PUT(req, { params })
-      expect(res.status).toBe(401)
+      expect(res.status).toBe(403)
     })
   })
 

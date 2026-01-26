@@ -4,31 +4,57 @@ import { auth } from '@/lib/auth'
 type Role = 'ADMIN' | 'MEMBRO'
 
 interface ApiOptions {
-    requireAuth?: boolean
-    requiredRole?: Role
+  requireAuth?: boolean
+  requiredRole?: Role
 }
 
-/**
- * Wrapper for API routes to handle common patterns (auth, error handling)
- */
+interface SessionUser {
+  id: string
+  role: Role
+  email?: string | null
+  name?: string | null
+  membroId?: string
+}
+
+interface Session {
+  user: SessionUser
+}
+
+type RequireAuthOptions = ApiOptions & { requireAuth?: true }
+type OptionalAuthOptions = { requireAuth: false; requiredRole?: never }
+
+export function withApiAuth(
+  handler: (session: Session) => Promise<NextResponse>,
+  options?: RequireAuthOptions
+): Promise<NextResponse>
+export function withApiAuth(
+  handler: (session: Session | null) => Promise<NextResponse>,
+  options: OptionalAuthOptions
+): Promise<NextResponse>
 export async function withApiAuth(
-    handler: (session: { user: { id: string; role: string; email?: string | null; name?: string | null; membroId?: string } }) => Promise<NextResponse>,
-    options: ApiOptions = { requireAuth: true }
+  handler: (session: Session | null) => Promise<NextResponse>,
+  options: ApiOptions = { requireAuth: true }
 ) {
-    try {
-        const session = await auth()
+  try {
+    const session = await auth()
 
-        if (!session && options.requireAuth) {
-            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-        }
+    if (!session) {
+      if (options.requireAuth !== false || options.requiredRole) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      }
 
-        // We can safely cast here because we checked for session if auth is required
-        return await handler(session as { user: { id: string; role: string; email?: string | null; name?: string | null; membroId?: string } })
-    } catch (error) {
-        console.error('API Error:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+      return await handler(null)
     }
+
+    const sessionData = session as Session
+
+    if (options.requiredRole && sessionData.user.role !== options.requiredRole) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+    }
+
+    return await handler(sessionData)
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+  }
 }

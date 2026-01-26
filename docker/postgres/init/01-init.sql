@@ -1,4 +1,4 @@
--- ==================== Gabi Rêgo Studio - Database Initialization ====================
+-- ==================== Studio Gabi Rego - Database Initialization ====================
 -- Este script é executado automaticamente na primeira inicialização do container PostgreSQL
 
 -- Criar extensões úteis
@@ -18,7 +18,7 @@ ALTER SYSTEM SET effective_io_concurrency = 200;
 -- Log de inicialização
 DO $$
 BEGIN
-    RAISE NOTICE 'Gabi Rêgo Studio database initialized successfully!';
+    RAISE NOTICE 'Studio Gabi Rego database initialized successfully!';
     RAISE NOTICE 'Timestamp: %', NOW();
 END $$;
 

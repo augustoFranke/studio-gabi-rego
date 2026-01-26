@@ -43,7 +43,7 @@ export function ThemeToggle() {
 }
 
 export function ThemeToggleSimple() {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -58,14 +58,16 @@ export function ThemeToggleSimple() {
     )
   }
 
+  const currentTheme = resolvedTheme ?? "light"
+
   return (
     <Button
       variant="ghost"
       size="icon"
       className="h-8 w-8"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
     >
-      {theme === "dark" ? (
+      {currentTheme === "dark" ? (
         <Sun className="h-4 w-4 text-primary transition-transform hover:rotate-45" />
       ) : (
         <Moon className="h-4 w-4 text-primary transition-transform hover:-rotate-12" />
@@ -74,4 +76,3 @@ export function ThemeToggleSimple() {
     </Button>
   )
 }
-
