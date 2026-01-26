@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { enviarMensagemWhatsApp, templates } from '@/lib/evolution'
 
 export async function toggleMembroStatus(id: string, currentStatus: string) {
   try {
@@ -44,30 +43,3 @@ export async function deleteMembro(id: string) {
     return { success: false, error: 'Falha ao excluir membro' }
   }
 }
-
-export async function enviarLembreteBoasVindas(id: string) {
-  try {
-    const membro = await prisma.membro.findUnique({
-      where: { id },
-      include: { usuario: true }
-    })
-
-    if (!membro) return { error: 'Membro não encontrado' }
-    if (!membro.telefone) return { error: 'Membro não possui telefone cadastrado' }
-
-    const result = await enviarMensagemWhatsApp({
-      telefone: membro.telefone,
-      mensagem: templates.boasVindas(membro.usuario.nome || 'Aluno(a)')
-    })
-
-    if (result.success) {
-      return { success: true }
-    } else {
-      return { error: result.error || 'Erro ao enviar WhatsApp' }
-    }
-  } catch (error) {
-    console.error('Erro ao enviar lembrete:', error)
-    return { error: 'Falha ao enviar lembrete' }
-  }
-}
-

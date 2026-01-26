@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
@@ -44,7 +45,7 @@ async function findMemberByToken(token: string) {
       anamneseTokenExpira: { gt: new Date() },
     },
     include: {
-      usuario: { select: { nome: true } },
+      usuario: { select: { nome: true, email: true, onboardingCompleto: true } },
       anamnese: true,
     },
   })
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
       parq6: body.parq6 || null,
       parq7: body.parq7 || null,
     }
+    const shouldSendWelcome = !membro.usuario.onboardingCompleto
 
     await prisma.anamnese.upsert({
       where: { membroId: membro.id },
@@ -154,6 +156,22 @@ export async function POST(request: NextRequest) {
         onboardingCompleto: true,
       },
     })
+
+    if (shouldSendWelcome && membro.usuario.email) {
+      if (isResendConfigured()) {
+        const emailResult = await enviarEmail({
+          para: membro.usuario.email,
+          assunto: "Bem-vindo(a) ao Studio Gabi Rego",
+          html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
+        })
+
+        if (!emailResult.success) {
+          console.error("Failed to send welcome email:", emailResult.error)
+        }
+      } else {
+        console.warn("Resend not configured - skipping welcome email send")
+      }
+    }
 
     return NextResponse.json({
       success: true,

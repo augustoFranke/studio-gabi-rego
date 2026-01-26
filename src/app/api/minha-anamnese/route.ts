@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { withApiAuth } from "@/lib/api"
 
 const ANAMNESE_FIELDS = [
@@ -88,6 +89,15 @@ export async function POST(request: Request) {
       const body = await request.json()
       const membro = await prisma.membro.findUnique({
         where: { usuarioId: session.user.id },
+        include: {
+          usuario: {
+            select: {
+              email: true,
+              nome: true,
+              onboardingCompleto: true,
+            },
+          },
+        },
       })
 
       if (!membro) {
@@ -98,6 +108,7 @@ export async function POST(request: Request) {
       }
 
       const anamneseData = buildAnamneseData(body)
+      const shouldSendWelcome = !membro.usuario.onboardingCompleto
 
       await prisma.anamnese.upsert({
         where: { membroId: membro.id },
@@ -115,6 +126,22 @@ export async function POST(request: Request) {
           onboardingCompleto: true,
         },
       })
+
+      if (shouldSendWelcome && membro.usuario.email) {
+        if (isResendConfigured()) {
+          const emailResult = await enviarEmail({
+            para: membro.usuario.email,
+            assunto: "Bem-vindo(a) ao Studio Gabi Rego",
+            html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
+          })
+
+          if (!emailResult.success) {
+            console.error("Failed to send welcome email:", emailResult.error)
+          }
+        } else {
+          console.warn("Resend not configured - skipping welcome email send")
+        }
+      }
 
       return NextResponse.json({
         success: true,
