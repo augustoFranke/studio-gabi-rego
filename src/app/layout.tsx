@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Studio Gabi Rego",
-  description: "Estúdio de Pilates",
+  description: "Estúdio",
 };
 
 export default function RootLayout({
