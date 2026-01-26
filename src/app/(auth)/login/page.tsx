@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
-import { ThemeToggleSimple } from "@/components/theme-toggle"
 import Image from "next/image"
 
 function LoginContent() {
@@ -63,7 +62,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       {/* Animated background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Large orange glow - top right */}
@@ -76,11 +75,6 @@ function LoginContent() {
         {/* Decorative lines */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
-      </div>
-
-      {/* Theme toggle in corner */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggleSimple />
       </div>
 
       {/* Floating decorative elements */}
@@ -183,7 +177,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>

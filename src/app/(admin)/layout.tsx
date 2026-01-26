@@ -30,13 +30,13 @@ export default async function AdminLayout({
       <SidebarProvider defaultOpen={defaultOpen}>
         <AdminSidebar />
         <main className="flex-1 overflow-auto">
-          <header className="flex h-14 items-center gap-4 border-b bg-card/50 backdrop-blur-sm px-6 sticky top-0 z-10">
+          <header className="flex h-14 items-center gap-4 border-b bg-card/50 backdrop-blur-sm px-4 sm:px-6 sticky top-0 z-10">
             <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-primary transition-colors" />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex-1" />
             <ThemeToggleSimple />
           </header>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {children}
           </div>
         </main>
