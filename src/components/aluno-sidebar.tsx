@@ -61,7 +61,7 @@ export function AlunoSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="border-b px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-center">
           <Image
             src="/logo.svg"
