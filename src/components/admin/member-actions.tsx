@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, Send, Trash2 } from "lucide-react"
-import { toggleMembroStatus, enviarLembreteBoasVindas, deleteMembro } from "@/app/actions/membros"
+import { ShieldCheck, Trash2 } from "lucide-react"
+import { toggleMembroStatus, deleteMembro } from "@/app/actions/membros"
 import { toast } from "sonner"
 
 interface MemberActionsProps {
@@ -107,26 +107,3 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
     </>
   )
 }
-
-export function SendMemberReminder({ id }: { id: string }) {
-  const [isPending, startTransition] = useTransition()
-
-  const handleSend = () => {
-    startTransition(async () => {
-      const result = await enviarLembreteBoasVindas(id)
-      if (result.success) {
-        toast.success("Boas-vindas enviada com sucesso!")
-      } else {
-        toast.error(result.error || "Erro ao enviar lembrete")
-      }
-    })
-  }
-
-  return (
-    <DropdownMenuItem onClick={handleSend} disabled={isPending}>
-      <Send className="mr-2 h-4 w-4" />
-      Enviar Boas-vindas
-    </DropdownMenuItem>
-  )
-}
-

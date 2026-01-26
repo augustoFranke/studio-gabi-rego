@@ -16,11 +16,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { MemberStatusToggle, SendMemberReminder } from "@/components/admin/member-actions"
+import { MemberStatusToggle } from "@/components/admin/member-actions"
 import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
@@ -205,8 +204,6 @@ export default async function MembrosPage({
                                 Ver Detalhes
                               </Link>
                             </DropdownMenuItem>
-                            <SendMemberReminder id={membro.id} />
-                            <DropdownMenuSeparator />
                             <MemberStatusToggle id={membro.id} status={membro.status} nome={membro.usuario.nome || undefined} />
                           </DropdownMenuContent>
                         </DropdownMenu>

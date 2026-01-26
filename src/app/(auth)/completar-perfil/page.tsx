@@ -214,7 +214,7 @@ function CompletarPerfilContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cpf" className="text-sm font-medium flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-orange-500" />
@@ -271,7 +271,7 @@ function CompletarPerfilContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="dataNascimento" className="text-sm font-medium flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-orange-500" />
