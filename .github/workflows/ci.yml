@@ -1,4 +1,12 @@
+name: CI
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
   db:
     runs-on: ubuntu-latest
 
@@ -28,15 +36,23 @@
           node-version: "20"
           cache: "npm"
 
-      - run: npm ci --legacy-peer-deps
-      - run: npx prisma generate
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
 
-      # Validates your committed migrations apply cleanly to a fresh DB
-      - run: npx prisma migrate deploy
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      # Optional: useful debug signal
-      - run: npx prisma migrate status
+      - name: Apply Migrations
+        run: npx prisma migrate deploy
 
-      # If you have DB/integration tests, run them here
-      - run: npm run test:run
-       run: npm run build
+      - name: Check Migration Status
+        run: npx prisma migrate status
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
