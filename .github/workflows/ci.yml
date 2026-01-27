@@ -63,14 +63,9 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-    env:
-      # Used by Prisma + any DB-hitting tests
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
-
-      # Optional: some Next.js builds/tests require these; set to safe dummies if needed.
-      # NEXTAUTH_URL: http://localhost:3000
-      # NEXTAUTH_SECRET: dummy_secret_for_ci_only
-
+  env:
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
+    DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
