@@ -2,28 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
 import { hash } from 'bcryptjs'
-import { z } from 'zod'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { Prisma } from '@prisma/client'
-
-const updateMembroSchema = z.object({
-    nome: z.string().optional(),
-    email: z.string().email('Email inválido').optional().or(z.literal('')),
-    senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional().or(z.literal('')),
-    cpf: z.string().optional(),
-    rg: z.string().optional(),
-    telefone: z.string().optional(),
-    dataNascimento: z.string().optional(),
-    planoId: z.string().optional(),
-    precoCustomizado: z.union([z.number(), z.string(), z.null()]).optional().transform(val => {
-        if (val === '' || val === null) return null;
-        return Number(val);
-    }),
-    sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
-        if (val === '') return undefined;
-        return val;
-    }),
-})
+import { membroUpdateSchema } from '@/schemas/membro.schema'
 
 interface Params {
     params: Promise<{
@@ -69,7 +50,7 @@ export async function PATCH(
     return withApiAuth(async () => {
         const { id } = await params
         const body = await request.json()
-        const validation = updateMembroSchema.safeParse(body)
+        const validation = membroUpdateSchema.safeParse(body)
 
         if (!validation.success) {
             return NextResponse.json(

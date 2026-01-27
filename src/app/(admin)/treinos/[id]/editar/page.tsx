@@ -25,7 +25,7 @@ import {
     type ExerciseField,
     loadExerciseHistory,
     removeExercise as removeExerciseEditor,
-    removeSession as removeSessionEditor,
+    reindexSessions as reindexSessionsEditor,
     saveExerciseHistory,
     updateExercise as updateExerciseEditor,
 } from '@/lib/treino/editor';
@@ -172,7 +172,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const removeSession = (sessionId: string) => {
         const newSessions = sessions.filter((s) => s.id !== sessionId);
         // Re-index names (keep descriptions)
-        const reindexed = removeSessionEditor(newSessions);
+        const reindexed = reindexSessionsEditor(newSessions);
         setSessions(reindexed);
     };
 

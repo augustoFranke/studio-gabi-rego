@@ -30,7 +30,7 @@ export function addSession(name: string): Session {
   return { id: crypto.randomUUID(), name, description: '', exercises: [] }
 }
 
-export function removeSession(sessions: Session[]): Session[] {
+export function reindexSessions(sessions: Session[]): Session[] {
   return sessions.map((s, idx) => ({ ...s, name: String.fromCharCode(65 + idx) }))
 }
 

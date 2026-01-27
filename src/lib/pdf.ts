@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import path from 'path'
 import { FREE_STYLE_SCRIPT_TTF_BASE64 } from '@/lib/fonts/FreeStyleScript.base64'
+import type { TrainingPDFData, TrainingPDFExercise } from '@/domain/treino'
 
 // A4 Dimensions (PDFKit defaults to 72 DPI, but can accept other units or we convert)
 // PDFKit default is points. 1 cm = 28.3465 points
@@ -23,23 +24,6 @@ const SCRIPT_FONT_NAME = 'FreeStyleScript'
 
 const EXTRA_ROWS = 3
 
-interface Exercise {
-  name: string
-  sets: string
-  reps: string
-}
-
-interface Session {
-  name: string
-  exercises: Exercise[]
-}
-
-interface PDFData {
-  aluno: string
-  date: string
-  observacoes?: string
-  sessions: Session[]
-}
 
 function getLogoPath(): string | null {
   const possiblePaths = [
@@ -67,7 +51,7 @@ function drawPageBorder(doc: PDFKit.PDFDocument): void {
   doc.restore()
 }
 
-export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
+export async function generateTrainingPDF(data: TrainingPDFData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
@@ -196,7 +180,7 @@ export async function generateTrainingPDF(data: PDFData): Promise<Buffer> {
       return rowHeight
     }
 
-    const drawTable = (title: string, sessions: Exercise[]) => {
+    const drawTable = (title: string, sessions: TrainingPDFExercise[]) => {
       // Check for page break
       if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
         doc.addPage()

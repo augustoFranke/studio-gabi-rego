@@ -1,37 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { z } from 'zod'
-
-const exercicioSchema = z.object({
-  sessao: z.string().default('A'),
-  nome: z.string().optional(),
-  grupoMuscular: z.string().optional(),
-  series: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
-  repeticoes: z.string().optional(),
-  descanso: z.string().optional(),
-  observacoes: z.string().optional(),
-})
-
-const templateSchema = z.object({
-  nome: z.string().min(1),
-  objetivo: z.string().optional(),
-  observacoes: z.string().optional(),
-  fichaId: z.string().optional(),
-  exercicios: z.array(exercicioSchema).optional(),
-})
+import { treinoTemplateSchema } from '@/schemas/treino.schema'
+import {
+  createTreinoTemplate,
+  getFichaTreinoWithDetails,
+  listTreinoTemplates,
+} from '@/services/treino.service'
 
 // GET /api/treinos/templates - Listar templates de treino
 export async function GET() {
   return withApiAuth(async () => {
-    const templates = await prisma.treinoTemplate.findMany({
-      include: {
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
-      orderBy: { criadoEm: 'desc' },
-    })
+    const templates = await listTreinoTemplates()
 
     return NextResponse.json(templates)
   }, { requiredRole: 'ADMIN' })
@@ -41,7 +20,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     const body = await request.json()
-    const validation = templateSchema.safeParse(body)
+    const validation = treinoTemplateSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -57,14 +36,7 @@ export async function POST(request: NextRequest) {
     let sourceObservacoes = observacoes
 
     if (fichaId) {
-      const ficha = await prisma.fichaTreino.findUnique({
-        where: { id: fichaId },
-        include: {
-          exercicios: {
-            orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-          },
-        },
-      })
+      const ficha = await getFichaTreinoWithDetails(fichaId)
 
       if (!ficha) {
         return NextResponse.json({ error: 'Treino não encontrado' }, { status: 404 })
@@ -95,29 +67,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const template = await prisma.treinoTemplate.create({
-      data: {
-        nome,
-        objetivo: sourceObjetivo,
-        observacoes: sourceObservacoes,
-        exercicios: {
-          create: sourceExercises.map((ex, index) => ({
-            sessao: ex.sessao,
-            nome: ex.nome || 'Exercício',
-            grupoMuscular: ex.grupoMuscular,
-            series: ex.series || '3',
-            repeticoes: ex.repeticoes || '10',
-            descanso: ex.descanso,
-            observacoes: ex.observacoes,
-            ordem: index,
-          })),
-        },
-      },
-      include: {
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
+    const template = await createTreinoTemplate({
+      nome,
+      objetivo: sourceObjetivo,
+      observacoes: sourceObservacoes,
+      exercicios: sourceExercises,
     })
 
     return NextResponse.json(template, { status: 201 })

@@ -55,64 +55,8 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { toast } from "sonner"
-
-// Types
-interface Plano {
-  id: string
-  nome: string
-  descricao: string | null
-  valor: string | number
-  duracaoDias: number
-  aulasSemanais: number
-  ativo: boolean
-  _count?: {
-    membros: number
-    pagamentos: number
-  }
-}
-
-interface Membro {
-  id: string
-  usuario: {
-    nome: string
-    email?: string
-  }
-  planoId?: string | null
-  precoCustomizado?: string | number | null
-  plano?: {
-    id: string
-    nome: string
-    valor: string | number
-    ativo: boolean
-  } | null
-}
-
-interface Pagamento {
-  id: string
-  membroId: string
-  planoId: string
-  valor: string | number
-  dataVencimento: string
-  dataPagamento: string | null
-  status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADO"
-  formaPagamento: string | null
-  observacao: string | null
-  membro: {
-    usuario: {
-      nome: string
-    }
-  }
-  plano: {
-    nome: string
-  }
-}
-
-interface FinanceiroStats {
-  totalPlanos: number
-  pagamentosPendentes: number
-  pagamentosAtrasados: number
-  receitaMes: number
-}
+import type { FinanceiroStats, Pagamento, Plano } from '@/domain/financeiro'
+import type { Membro } from '@/domain/membro'
 
 // Helper functions
 function formatCurrency(value: string | number): string {
