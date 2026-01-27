@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
-
-interface Exercise {
-  name: string
-  sets: string | number
-  reps: string | number
-}
-
-interface Session {
-  name: string
-  exercises: Exercise[]
-}
-
-interface TrainingPDFData {
-  aluno: string
-  date: string
-  observacoes?: string
-  sessions: Session[]
-}
+import type { TrainingPDFData } from '@/domain/treino'
 
 /**
  * POST /api/treinos/gerar-pdf
