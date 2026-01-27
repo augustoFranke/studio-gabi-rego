@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   fast:
-    name: Fast (lint, test, build)
+    name: test-lint-build 
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -45,7 +45,7 @@ jobs:
         run: npm run build
 
   db:
-    name: DB (migrations + tests)
+    name: db
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
