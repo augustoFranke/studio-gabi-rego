@@ -67,6 +67,7 @@ jobs:
     env:
       # Used by Prisma + any DB-hitting tests
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
 
       # Optional: some Next.js builds/tests require these; set to safe dummies if needed.
       # NEXTAUTH_URL: http://localhost:3000
