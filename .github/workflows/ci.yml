@@ -1,5 +1,3 @@
-
-
 name: CI
 
 on:
@@ -16,7 +14,7 @@ permissions:
 
 jobs:
   fast:
-    name: test-lint-build 
+    name: test-lint-build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -101,4 +99,3 @@ jobs:
       # If you later split tests, replace with: npm run test:integration
       - name: Tests (with DB available)
         run: npm run test:run
-       run: npm run build
