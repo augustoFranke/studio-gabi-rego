@@ -9,6 +9,8 @@ import { format, startOfWeek, endOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 
+export const dynamic = "force-dynamic"
+
 export default async function MemberDashboard() {
   const session = await auth()
 

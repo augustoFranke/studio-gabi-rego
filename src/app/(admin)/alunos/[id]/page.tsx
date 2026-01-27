@@ -31,6 +31,8 @@ import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
+export const dynamic = "force-dynamic"
+
 interface MembroPageProps {
   params: Promise<{
     id: string

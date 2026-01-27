@@ -8,6 +8,8 @@ import { ArrowLeft, Calendar, Dumbbell, Edit, Printer, User } from 'lucide-react
 import Link from 'next/link'
 import { TreinoTemplateButton } from '@/components/admin/treino-template-button'
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{
     id: string

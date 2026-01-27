@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 
+export const dynamic = "force-dynamic"
+
 interface EditarMembroPageProps {
     params: Promise<{
         id: string

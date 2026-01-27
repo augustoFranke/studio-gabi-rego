@@ -24,6 +24,8 @@ import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
 
+export const dynamic = "force-dynamic"
+
 export default async function MembrosPage({
   searchParams,
 }: {
