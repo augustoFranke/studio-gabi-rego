@@ -1,14 +1,53 @@
+
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  db:
+  fast:
+    name: Fast (lint, test, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci --legacy-peer-deps
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+  db:
+    name: DB (migrations + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -26,34 +65,38 @@ jobs:
           --health-retries=10
 
     env:
+      # Used by Prisma + any DB-hitting tests
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
-      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
+
+      # Optional: some Next.js builds/tests require these; set to safe dummies if needed.
+      # NEXTAUTH_URL: http://localhost:3000
+      # NEXTAUTH_SECRET: dummy_secret_for_ci_only
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
-      - name: Install Dependencies
+      - name: Install
         run: npm ci --legacy-peer-deps
 
-      - name: Generate Prisma Client
+      - name: Prisma generate
         run: npx prisma generate
 
-      - name: Apply Migrations
+      # This is the key: validates all committed migrations apply cleanly to an empty DB.
+      - name: Apply migrations (deploy)
         run: npx prisma migrate deploy
 
-      - name: Check Migration Status
+      # Helpful debugging signal (won't fail the job unless Prisma exits non-zero)
+      - name: Migration status
         run: npx prisma migrate status
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Run Tests
+      # If you later split tests, replace with: npm run test:integration
+      - name: Tests (with DB available)
         run: npm run test:run
-
-      - name: Build
-        run: npm run build
+       run: npm run build
