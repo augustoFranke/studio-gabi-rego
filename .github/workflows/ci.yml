@@ -1,40 +1,42 @@
-name: CI
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  test-lint-build:
+  db:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+      - run: npm ci --legacy-peer-deps
+      - run: npx prisma generate
 
-      - name: Generate Prisma client
-        run: npx prisma generate
+      # Validates your committed migrations apply cleanly to a fresh DB
+      - run: npx prisma migrate deploy
 
-      - name: Lint
-        run: npm run lint
+      # Optional: useful debug signal
+      - run: npx prisma migrate status
 
-      - name: Tests
-        run: npm run test:run
-
-      - name: Build
-        run: npm run build
+      # If you have DB/integration tests, run them here
+      - run: npm run test:run
+       run: npm run build
