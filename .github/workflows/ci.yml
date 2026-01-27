@@ -15,7 +15,7 @@ permissions:
 jobs:
   fast:
     name: test-lint-build
-
+    
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
