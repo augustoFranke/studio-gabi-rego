@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic"
+
 async function getTreinos() {
   const treinos = await prisma.fichaTreino.findMany({
     where: { ativo: true },
