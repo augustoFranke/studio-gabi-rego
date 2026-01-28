@@ -19,6 +19,16 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+    addExercise as addExerciseEditor,
+    addSession as addSessionEditor,
+    type ExerciseField,
+    loadExerciseHistory,
+    removeExercise as removeExerciseEditor,
+    reindexSessions as reindexSessionsEditor,
+    saveExerciseHistory,
+    updateExercise as updateExerciseEditor,
+} from '@/lib/treino/editor';
 
 type Exercise = {
     id: string;
@@ -143,13 +153,11 @@ export default function EditarTreinoPage({ params }: PageProps) {
         fetchTreino();
 
         // Load exercise history
-        const stored = localStorage.getItem('gabi-studio-exercise-history');
-        if (stored) {
-            try {
-                setExerciseHistory(JSON.parse(stored));
-            } catch (e) {
-                console.error('Failed to parse exercise history', e);
-            }
+        const { history, stored, parsed } = loadExerciseHistory(localStorage, (error) => {
+            console.error('Failed to parse exercise history', error);
+        });
+        if (stored && parsed) {
+            setExerciseHistory(history);
         }
     }, [id, router]);
 
@@ -157,17 +165,14 @@ export default function EditarTreinoPage({ params }: PageProps) {
         const nextLetter = String.fromCharCode(65 + sessions.length);
         setSessions([
             ...sessions,
-            { id: crypto.randomUUID(), name: nextLetter, description: '', exercises: [] },
+            addSessionEditor(nextLetter),
         ]);
     };
 
     const removeSession = (sessionId: string) => {
         const newSessions = sessions.filter((s) => s.id !== sessionId);
         // Re-index names (keep descriptions)
-        const reindexed = newSessions.map((s, idx) => ({
-            ...s,
-            name: String.fromCharCode(65 + idx),
-        }));
+        const reindexed = reindexSessionsEditor(newSessions);
         setSessions(reindexed);
     };
 
@@ -197,7 +202,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         ...s,
                         exercises: [
                             ...s.exercises,
-                            { id: crypto.randomUUID(), name: '', sets: '', reps: '' },
+                            addExerciseEditor(),
                         ],
                     };
                 }
@@ -209,7 +214,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const updateExercise = (
         sessionId: string,
         exerciseId: string,
-        field: keyof Exercise,
+        field: ExerciseField,
         value: string
     ) => {
         setSessions(
@@ -219,7 +224,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         ...s,
                         exercises: s.exercises.map((e) => {
                             if (e.id === exerciseId) {
-                                return { ...e, [field]: value };
+                                return updateExerciseEditor(e, field, value);
                             }
                             return e;
                         }),
@@ -236,7 +241,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 if (s.id === sessionId) {
                     return {
                         ...s,
-                        exercises: s.exercises.filter((e) => e.id !== exerciseId),
+                        exercises: removeExerciseEditor(s.exercises, exerciseId),
                     };
                 }
                 return s;
@@ -260,7 +265,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
         if (changed) {
             newHistory.sort();
             setExerciseHistory(newHistory);
-            localStorage.setItem('gabi-studio-exercise-history', JSON.stringify(newHistory));
+            saveExerciseHistory(localStorage, newHistory);
         }
     };
 

@@ -1,27 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { z } from 'zod'
 import { Prisma } from '@prisma/client'
-
-const exercicioSchema = z.object({
-  sessao: z.string().default('A'),
-  nome: z.string().optional(),
-  grupoMuscular: z.string().optional(),
-  series: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
-  repeticoes: z.string().optional(),
-  descanso: z.string().optional(),
-  observacoes: z.string().optional(),
-})
-
-const fichaSchema = z.object({
-  membroId: z.string().optional(),
-  nome: z.string().optional(),
-  data: z.string().optional(),
-  objetivo: z.string().optional(),
-  observacoes: z.string().optional(),
-  exercicios: z.array(exercicioSchema).optional(),
-})
+import { fichaCreateSchema } from '@/schemas/treino.schema'
+import {
+  createFichaTreino,
+  deactivateActiveFichas,
+  listFichasTreino,
+} from '@/services/treino.service'
 
 // GET /api/treinos - Listar fichas de treino
 export async function GET(request: NextRequest) {
@@ -43,22 +28,7 @@ export async function GET(request: NextRequest) {
       where.ativo = true
     }
 
-    const fichas = await prisma.fichaTreino.findMany({
-      where,
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
-      orderBy: { criadoEm: 'desc' },
-    })
+    const fichas = await listFichasTreino(where)
 
     return NextResponse.json(fichas)
   })
@@ -68,7 +38,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     const body = await request.json()
-    const validation = fichaSchema.safeParse(body)
+    const validation = fichaCreateSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -81,48 +51,16 @@ export async function POST(request: NextRequest) {
 
     // Desativar fichas anteriores do membro (only if membroId provided)
     if (membroId) {
-      await prisma.fichaTreino.updateMany({
-        where: { membroId, ativo: true },
-        data: { ativo: false },
-      })
+      await deactivateActiveFichas(membroId)
     }
 
-    const ficha = await prisma.fichaTreino.create({
-      data: {
-        membroId: membroId || '',
-        nome: nome || 'Treino',
-        data,
-        objetivo,
-        observacoes,
-        exercicios: exercicios
-          ? {
-            create: exercicios.map(
-              (ex, index: number) => ({
-                sessao: ex.sessao,
-                nome: ex.nome || 'Exercício',
-                grupoMuscular: ex.grupoMuscular,
-                series: ex.series || '3',
-                repeticoes: ex.repeticoes || '10',
-                descanso: ex.descanso,
-                observacoes: ex.observacoes,
-                ordem: index,
-              })
-            ),
-          }
-          : undefined,
-      },
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        exercicios: {
-          orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-        },
-      },
+    const ficha = await createFichaTreino({
+      membroId: membroId || '',
+      nome,
+      data,
+      objetivo,
+      observacoes,
+      exercicios,
     })
 
     return NextResponse.json(ficha, { status: 201 })

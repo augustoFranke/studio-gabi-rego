@@ -3,28 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
 import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
-import { z } from 'zod'
 import { Prisma, StatusMembro } from '@prisma/client'
-
-const membroSchema = z.object({
-  nome: z.string().optional(),
-  email: z.string().email('Por favor, forneça um email válido.').optional().or(z.literal('')),
-  senha: z.string().optional(),
-  cpf: z.string().nullable().optional().or(z.literal('')),
-  rg: z.string().optional(),
-  telefone: z.string().optional(),
-  dataNascimento: z.string().optional(),
-  planoId: z.string().optional(),
-  precoCustomizado: z.union([z.string(), z.number(), z.null()]).optional().transform(val => {
-     if (val === '') return null;
-     if (typeof val === 'string') return Number(val);
-     return val;
-  }),
-  sexo: z.union([z.enum(['MASCULINO', 'FEMININO']), z.literal('')]).optional().transform(val => {
-    if (val === '') return undefined;
-    return val;
-  }),
-})
+import { membroCreateSchema } from '@/schemas/membro.schema'
 
 // GET /api/membros - Listar todos os membros
 export async function GET(request: NextRequest) {
@@ -88,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados inválidos enviados. Verifique o formulário." }, { status: 400 })
     }
 
-    const validation = membroSchema.safeParse(body)
+    const validation = membroCreateSchema.safeParse(body)
 
     if (!validation.success) {
       const errorMessage = validation.error.issues[0].message;
