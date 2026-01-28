@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,7 @@ interface AgendamentoModalProps {
     membroId?: string
     horarioId?: string
     data?: string
+    hour?: number
     observacao?: string
   }) => void
   onDelete?: () => void
@@ -60,12 +61,17 @@ export function AgendamentoModal({
   )
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
 
+  useEffect(() => {
+    if (mode !== 'create') return
+    setSelectedHourValue(selectedHour !== undefined ? selectedHour.toString() : '')
+  }, [mode, selectedHour])
 
   const handleSave = () => {
     if (mode === 'create') {
       onSave?.({
         membroId: selectedMembro,
         data: selectedDate?.toISOString(),
+        hour: selectedHourValue ? Number(selectedHourValue) : undefined,
       })
     } else {
       onSave?.({
