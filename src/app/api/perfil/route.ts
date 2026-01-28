@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const normalizedCpf = cpf ? cpf.replace(/\D/g, "") : null
     const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
     const normalizedRg = rg && rg.trim() !== "" ? rg : null
-    const normalizedSexo = sexo && sexo !== "" ? sexo : null
+    const normalizedSexo = sexo ? sexo : null
     const normalizedDataNascimento =
       dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
     const isDataNascimentoInvalid =
