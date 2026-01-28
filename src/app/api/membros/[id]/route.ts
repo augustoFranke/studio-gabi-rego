@@ -85,7 +85,7 @@ export async function PATCH(
             }
         }
 
-        if (data.cpf) {
+        if (typeof data.cpf === 'string' && data.cpf) {
             const cpfLimpo = data.cpf.replace(/\D/g, '')
             if (cpfLimpo !== membroExistente.cpf) {
                 if (!validarCPF(data.cpf)) {
@@ -118,7 +118,11 @@ export async function PATCH(
 
             // Preparar dados de atualização do membro
             const memberUpdateData: Prisma.MembroUpdateInput = {}
-            if (data.cpf) memberUpdateData.cpf = data.cpf.replace(/\D/g, '')
+            if (data.cpf === null) {
+                memberUpdateData.cpf = null
+            } else if (data.cpf) {
+                memberUpdateData.cpf = data.cpf.replace(/\D/g, '')
+            }
             if (data.rg !== undefined) memberUpdateData.rg = data.rg // Permitir limpar RG? se string vazia
             if (data.telefone) memberUpdateData.telefone = data.telefone.replace(/\D/g, '')
             if (data.dataNascimento) memberUpdateData.dataNascimento = new Date(data.dataNascimento)
