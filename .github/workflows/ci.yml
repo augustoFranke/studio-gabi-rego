@@ -64,9 +64,9 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-  env:
-    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
-    DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
 
     steps:
       - name: Checkout
