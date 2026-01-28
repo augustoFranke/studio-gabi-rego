@@ -26,6 +26,10 @@ import { AlunosFilters } from "@/components/admin/alunos-filters"
 
 export const dynamic = "force-dynamic"
 
+function isPlaceholderEmail(email?: string | null) {
+  return !email || email.endsWith("@placeholder.local")
+}
+
 export default async function MembrosPage({
   searchParams,
 }: {
@@ -155,18 +159,20 @@ export default async function MembrosPage({
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{membro.usuario.nome}</span>
-                          <span className="text-xs text-muted-foreground">{membro.cpf}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {membro.cpf ? membro.cpf : "Não informado"}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center text-xs">
                             <Phone className="mr-1.5 h-3 w-3 text-primary" />
-                            {membro.telefone}
+                            {membro.telefone ? membro.telefone : "Não informado"}
                           </div>
                           <div className="flex items-center text-xs">
                             <Mail className="mr-1.5 h-3 w-3 text-primary" />
-                            {membro.usuario.email}
+                            {isPlaceholderEmail(membro.usuario.email) ? "Não informado" : membro.usuario.email}
                           </div>
                         </div>
                       </TableCell>
