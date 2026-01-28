@@ -30,6 +30,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { MemberDeactivateButton } from "@/components/admin/member-actions"
 
 export const dynamic = "force-dynamic"
 
@@ -205,6 +206,12 @@ export default async function MembroPage({ params }: MembroPageProps) {
               Anamnese
             </Link>
           </Button>
+          {session.user.role === "ADMIN" && membro.status !== "PENDENTE" && (
+            <MemberDeactivateButton
+              id={id}
+              nome={membro.usuario.nome ?? undefined}
+            />
+          )}
           <Button asChild>
             <Link href={`/alunos/${id}/editar`}>
               <Pencil className="mr-2 h-4 w-4" />
