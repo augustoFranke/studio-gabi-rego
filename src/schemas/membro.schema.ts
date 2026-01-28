@@ -30,7 +30,7 @@ export const membroUpdateSchema = z.object({
   nome: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional().or(z.literal('')),
-  cpf: z.string().optional(),
+  cpf: z.string().nullable().optional().or(z.literal('')),
   rg: z.string().optional(),
   telefone: z.string().optional(),
   dataNascimento: z.string().optional(),

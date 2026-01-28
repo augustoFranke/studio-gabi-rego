@@ -41,13 +41,19 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
         notFound()
     }
 
+    const usuario = membro.usuario ?? { nome: null, email: null }
+    const usuarioEmail =
+        usuario.email && !usuario.email.endsWith("@placeholder.local")
+            ? usuario.email
+            : undefined
+
     // Transform Prisma null values to undefined for form compatibility
     const formData = {
         id: membro.id,
         usuarioId: membro.usuarioId,
         usuario: {
-            nome: membro.usuario.nome ?? undefined,
-            email: membro.usuario.email ?? undefined,
+            nome: usuario.nome ?? undefined,
+            email: usuarioEmail,
         },
         cpf: membro.cpf ?? undefined,
         rg: membro.rg ?? undefined,
@@ -69,7 +75,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Editar Aluno</h1>
                     <p className="text-muted-foreground">
-                        {membro.usuario.nome}
+                        {usuario.nome ?? ""}
                     </p>
                 </div>
             </div>

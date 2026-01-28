@@ -274,9 +274,23 @@ export default function FinanceiroPage() {
   const validatePlanoForm = (): boolean => {
     const errors: Record<string, string> = {}
 
-    // Only validate that valor is positive if provided
-    if (planoForm.valor && parseFloat(planoForm.valor) < 0) {
-      errors.valor = "Valor não pode ser negativo"
+    if (!planoForm.nome.trim()) {
+      errors.nome = "Informe o nome do plano"
+    }
+
+    const valor = parseFloat(planoForm.valor)
+    if (!planoForm.valor || Number.isNaN(valor)) {
+      errors.valor = "Informe o valor do plano"
+    } else if (valor <= 0) {
+      errors.valor = "Valor deve ser maior que zero"
+    }
+
+    if (!planoForm.duracaoDias) {
+      errors.duracaoDias = "Selecione a duração do plano"
+    }
+
+    if (!planoForm.aulasSemanais) {
+      errors.aulasSemanais = "Selecione a quantidade de aulas"
     }
 
     setPlanoErrors(errors)
@@ -285,7 +299,7 @@ export default function FinanceiroPage() {
 
   const handleSavePlano = async () => {
     if (!validatePlanoForm()) {
-      toast.error("Verifique os campos do formulário")
+      toast.error("Verifique os campos destacados")
       return
     }
 
@@ -407,9 +421,27 @@ export default function FinanceiroPage() {
   const validatePagamentoForm = (): boolean => {
     const errors: Record<string, string> = {}
 
-    // Only validate that valor is positive if provided
-    if (pagamentoForm.valor && parseFloat(pagamentoForm.valor) < 0) {
-      errors.valor = "Valor não pode ser negativo"
+    if (!pagamentoForm.membroId) {
+      errors.membroId = "Selecione um aluno"
+    }
+
+    if (!pagamentoForm.planoId) {
+      errors.planoId = "Selecione um plano"
+    }
+
+    const valor = parseFloat(pagamentoForm.valor)
+    if (!pagamentoForm.valor || Number.isNaN(valor)) {
+      errors.valor = "Informe o valor do pagamento"
+    } else if (valor <= 0) {
+      errors.valor = "Valor deve ser maior que zero"
+    }
+
+    if (!pagamentoForm.dataVencimento) {
+      errors.dataVencimento = "Informe a data de vencimento"
+    }
+
+    if (!pagamentoForm.formaPagamento) {
+      errors.formaPagamento = "Selecione a forma de pagamento"
     }
 
     setPagamentoErrors(errors)
@@ -418,7 +450,7 @@ export default function FinanceiroPage() {
 
   const handleSavePagamento = async () => {
     if (!validatePagamentoForm()) {
-      toast.error("Verifique os campos do formulário")
+      toast.error("Verifique os campos destacados")
       return
     }
 
@@ -429,7 +461,7 @@ export default function FinanceiroPage() {
 
       const body = editingPagamento
         ? {
-          formaPagamento: pagamentoForm.formaPagamento || null,
+          formaPagamento: pagamentoForm.formaPagamento,
           observacao: pagamentoForm.observacao || null,
         }
         : {
@@ -437,7 +469,7 @@ export default function FinanceiroPage() {
           planoId: pagamentoForm.planoId,
           valor: parseFloat(pagamentoForm.valor),
           dataVencimento: pagamentoForm.dataVencimento,
-          formaPagamento: pagamentoForm.formaPagamento || null,
+          formaPagamento: pagamentoForm.formaPagamento,
           observacao: pagamentoForm.observacao || null,
         }
 
@@ -800,13 +832,23 @@ export default function FinanceiroPage() {
                         </div>
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="formaPagamento">Forma de Pagamento</Label>
+                        <Label
+                          htmlFor="formaPagamento"
+                          className={pagamentoErrors.formaPagamento ? "text-destructive" : ""}
+                        >
+                          Forma de Pagamento
+                        </Label>
                         <Select
                           value={pagamentoForm.formaPagamento}
-                          onValueChange={(v) => setPagamentoForm({ ...pagamentoForm, formaPagamento: v })}
+                          onValueChange={(v) => {
+                            setPagamentoForm({ ...pagamentoForm, formaPagamento: v })
+                            if (pagamentoErrors.formaPagamento) {
+                              setPagamentoErrors({ ...pagamentoErrors, formaPagamento: "" })
+                            }
+                          }}
                         >
-                          <SelectTrigger className="border-input/50">
-                            <SelectValue placeholder="Selecione (opcional)" />
+                          <SelectTrigger className={pagamentoErrors.formaPagamento ? "border-destructive" : "border-input/50"}>
+                            <SelectValue placeholder="Selecione a forma de pagamento" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="PIX">PIX</SelectItem>
@@ -816,6 +858,9 @@ export default function FinanceiroPage() {
                             <SelectItem value="TRANSFERENCIA">Transferência</SelectItem>
                           </SelectContent>
                         </Select>
+                        {pagamentoErrors.formaPagamento && (
+                          <p className="text-xs text-destructive">{pagamentoErrors.formaPagamento}</p>
+                        )}
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="observacao">Observação</Label>
