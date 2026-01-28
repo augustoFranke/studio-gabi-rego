@@ -61,8 +61,12 @@ export async function PATCH(
 
         const data = validation.data
 
-        // Normalize email to lowercase
-        const normalizedEmail = data.email ? data.email.toLowerCase().trim() : undefined
+        const shouldClearEmail = data.email === ''
+        const normalizedEmail = shouldClearEmail
+            ? `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}@placeholder.local`
+            : data.email
+                ? data.email.toLowerCase().trim()
+                : undefined
 
         // Verificar se membro existe
         const membroExistente = await prisma.membro.findUnique({
@@ -118,14 +122,24 @@ export async function PATCH(
 
             // Preparar dados de atualização do membro
             const memberUpdateData: Prisma.MembroUpdateInput = {}
-            if (data.cpf === null) {
+            if (data.cpf === null || data.cpf === '') {
                 memberUpdateData.cpf = null
             } else if (data.cpf) {
                 memberUpdateData.cpf = data.cpf.replace(/\D/g, '')
             }
-            if (data.rg !== undefined) memberUpdateData.rg = data.rg // Permitir limpar RG? se string vazia
-            if (data.telefone) memberUpdateData.telefone = data.telefone.replace(/\D/g, '')
-            if (data.dataNascimento) memberUpdateData.dataNascimento = new Date(data.dataNascimento)
+            if (data.rg !== undefined) {
+                memberUpdateData.rg = data.rg && data.rg.trim() !== '' ? data.rg : null
+            }
+            if (data.telefone !== undefined) {
+                memberUpdateData.telefone = data.telefone
+                    ? data.telefone.replace(/\D/g, '')
+                    : null
+            }
+            if (data.dataNascimento !== undefined) {
+                memberUpdateData.dataNascimento = data.dataNascimento
+                    ? new Date(data.dataNascimento)
+                    : null
+            }
             if (data.planoId) memberUpdateData.plano = { connect: { id: data.planoId } }
             if (data.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = data.precoCustomizado
             if (data.sexo) memberUpdateData.sexo = data.sexo

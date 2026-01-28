@@ -3,11 +3,31 @@ import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { validarCPF } from "@/lib/validators"
+import { z } from "zod"
+
+const perfilSchema = z.object({
+  token: z.string().optional().nullable(),
+  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  cpf: z.string().optional().nullable().or(z.literal("")),
+  rg: z.string().optional().nullable().or(z.literal("")),
+  telefone: z.string().optional().nullable().or(z.literal("")),
+  dataNascimento: z.string().optional().nullable().or(z.literal("")),
+  sexo: z.enum(["MASCULINO", "FEMININO"]).optional().or(z.literal("")),
+})
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { token, nome, cpf, rg, telefone, dataNascimento, sexo } = body
+    const validation = perfilSchema.safeParse(body)
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0]?.message || "Dados inválidos" },
+        { status: 400 }
+      )
+    }
+
+    const { token, nome, cpf, rg, telefone, dataNascimento, sexo } = validation.data
 
     let userId: string | null = null
 
@@ -44,52 +64,49 @@ export async function POST(request: Request) {
       userId = session.user.id
     }
 
-    // Validate required fields
-    if (!nome || nome.length < 3) {
+    const hasCpf = cpf !== undefined
+    const hasRg = rg !== undefined
+    const hasTelefone = telefone !== undefined
+    const hasDataNascimento = dataNascimento !== undefined
+    const hasSexo = sexo !== undefined
+
+    const normalizedCpf = cpf ? cpf.replace(/\D/g, "") : null
+    const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
+    const normalizedRg = rg && rg.trim() !== "" ? rg : null
+    const normalizedSexo = sexo && sexo !== "" ? sexo : null
+    const normalizedDataNascimento =
+      dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
+    const isDataNascimentoInvalid =
+      Boolean(dataNascimento) &&
+      normalizedDataNascimento !== null &&
+      Number.isNaN(normalizedDataNascimento.getTime())
+
+    if (normalizedCpf && !validarCPF(normalizedCpf)) {
+      return NextResponse.json({ error: "CPF inválido" }, { status: 400 })
+    }
+
+    if (normalizedTelefone && normalizedTelefone.length < 10) {
+      return NextResponse.json({ error: "Telefone inválido" }, { status: 400 })
+    }
+
+    if (isDataNascimentoInvalid) {
       return NextResponse.json(
-        { error: "Nome deve ter pelo menos 3 caracteres" },
+        { error: "Data de nascimento inválida" },
         { status: 400 }
       )
     }
 
-    if (!cpf || !validarCPF(cpf)) {
-      return NextResponse.json(
-        { error: "CPF inválido" },
-        { status: 400 }
-      )
-    }
+    if (normalizedCpf) {
+      const existingCpf = await prisma.membro.findUnique({
+        where: { cpf: normalizedCpf },
+      })
 
-    if (!telefone || telefone.length < 10) {
-      return NextResponse.json(
-        { error: "Telefone inválido" },
-        { status: 400 }
-      )
-    }
-
-    if (!dataNascimento) {
-      return NextResponse.json(
-        { error: "Data de nascimento é obrigatória" },
-        { status: 400 }
-      )
-    }
-
-    if (!sexo || !["MASCULINO", "FEMININO"].includes(sexo)) {
-      return NextResponse.json(
-        { error: "Sexo é obrigatório" },
-        { status: 400 }
-      )
-    }
-
-    // Check if CPF already exists
-    const existingCpf = await prisma.membro.findUnique({
-      where: { cpf },
-    })
-
-    if (existingCpf) {
-      return NextResponse.json(
-        { error: "Este CPF já está cadastrado" },
-        { status: 400 }
-      )
+      if (existingCpf && existingCpf.usuarioId !== userId) {
+        return NextResponse.json(
+          { error: "Este CPF já está cadastrado" },
+          { status: 400 }
+        )
+      }
     }
 
     const isTokenFlow = Boolean(token)
@@ -106,11 +123,11 @@ export async function POST(request: Request) {
       await prisma.membro.update({
         where: { usuarioId: userId },
         data: {
-          cpf,
-          rg: rg || null,
-          telefone,
-          dataNascimento: new Date(dataNascimento),
-          sexo: sexo as "MASCULINO" | "FEMININO",
+          ...(hasCpf ? { cpf: normalizedCpf } : {}),
+          ...(hasRg ? { rg: normalizedRg } : {}),
+          ...(hasTelefone ? { telefone: normalizedTelefone } : {}),
+          ...(hasDataNascimento ? { dataNascimento: normalizedDataNascimento } : {}),
+          ...(hasSexo ? { sexo: normalizedSexo as "MASCULINO" | "FEMININO" | null } : {}),
           ...(isTokenFlow
             ? {
                 anamneseToken,
@@ -124,11 +141,11 @@ export async function POST(request: Request) {
       await prisma.membro.create({
         data: {
           usuarioId: userId,
-          cpf,
-          rg: rg || null,
-          telefone,
-          dataNascimento: new Date(dataNascimento),
-          sexo: sexo as "MASCULINO" | "FEMININO",
+          cpf: normalizedCpf,
+          rg: normalizedRg,
+          telefone: normalizedTelefone,
+          dataNascimento: normalizedDataNascimento,
+          sexo: normalizedSexo as "MASCULINO" | "FEMININO" | null,
           status: "PENDENTE",
           ...(isTokenFlow
             ? {
