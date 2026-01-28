@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -60,11 +60,6 @@ export function AgendamentoModal({
     agendamento?.horario.horaInicio.split(':')[0] || selectedHour?.toString() || ''
   )
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
-
-  useEffect(() => {
-    if (mode !== 'create') return
-    setSelectedHourValue(selectedHour !== undefined ? selectedHour.toString() : '')
-  }, [mode, selectedHour])
 
   const handleSave = () => {
     if (mode === 'create') {
@@ -270,9 +265,13 @@ export function AgendamentoModal({
     )
   }
 
+  const dialogKey = mode === 'create'
+    ? `create-${selectedDate?.toISOString() ?? 'no-date'}-${selectedHour ?? 'no-hour'}`
+    : agendamento?.id || 'view'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent key={agendamento?.id || 'new'}>
+      <DialogContent key={dialogKey}>
         {mode === 'view' && renderViewMode()}
         {mode === 'edit' && renderEditMode()}
         {mode === 'create' && renderCreateMode()}
