@@ -90,12 +90,14 @@ export default function AgendaPage() {
   const handleModalSave = useCallback(async (data: {
     membroId?: string
     data?: string
+    hour?: number
     observacao?: string
   }) => {
     setIsSaving(true)
     try {
-      if (modalMode === 'create' && data.membroId && selectedDate && selectedHour !== undefined) {
-        const success = await createAgendamento(data.membroId, selectedDate, selectedHour)
+      const hour = data.hour ?? selectedHour
+      if (modalMode === 'create' && data.membroId && selectedDate && hour !== undefined) {
+        const success = await createAgendamento(data.membroId, selectedDate, hour)
         if (success) setModalOpen(false)
       } else if (modalMode === 'edit' && selectedAgendamento) {
         const success = await updateAgendamento(selectedAgendamento.id, {
