@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { toggleMembroStatus, deleteMembro } from '@/app/actions/membros'
+import { toggleMembroStatus, deleteMembro, deactivateMembro } from '@/app/actions/membros'
 import { prisma } from '@/lib/prisma'
 import type { Membro } from '@prisma/client'
 
@@ -101,6 +101,31 @@ describe('Membros Server Actions', () => {
         const result = await deleteMembro('123')
         expect(result).toEqual({ success: false, error: 'Falha ao excluir membro' })
         consoleSpy.mockRestore()
+    })
+  })
+
+  describe('deactivateMembro', () => {
+    it('should set status to PENDENTE and revalidate /alunos', async () => {
+      const { revalidatePath } = await import('next/cache')
+
+      const result = await deactivateMembro('m-1')
+
+      expect(prisma.membro.update).toHaveBeenCalledWith({
+        where: { id: 'm-1' },
+        data: { status: 'PENDENTE' },
+      })
+      expect(revalidatePath).toHaveBeenCalledWith('/alunos')
+      expect(result).toEqual({ success: true })
+    })
+
+    it('should handle errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.mocked(prisma.membro.update).mockRejectedValueOnce(new Error('DB Error'))
+
+      const result = await deactivateMembro('m-1')
+
+      expect(result).toEqual({ success: false, error: 'Falha ao desativar membro' })
+      consoleSpy.mockRestore()
     })
   })
 })

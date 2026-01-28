@@ -84,6 +84,10 @@ function getMemberStatusBadge(status: "ATIVO" | "INATIVO" | "PENDENTE") {
   return <Badge variant={variants[status]}>{status}</Badge>
 }
 
+function isPlaceholderEmail(email?: string | null) {
+  return !email || email.endsWith("@placeholder.local")
+}
+
 export default async function MembroPage({ params }: MembroPageProps) {
   const session = await auth()
 
@@ -238,14 +242,24 @@ export default async function MembroPage({ params }: MembroPageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">CPF</p>
-                <p className="text-sm">{membro.cpf ? formatCPF(membro.cpf) : '-'}</p>
+                <p className="text-sm">
+                  {membro.cpf ? (
+                    formatCPF(membro.cpf)
+                  ) : (
+                    <span className="text-muted-foreground">Não informado</span>
+                  )}
+                </p>
               </div>
-              {membro.rg && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">RG</p>
-                  <p className="text-sm">{membro.rg}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">RG</p>
+                <p className="text-sm">
+                  {membro.rg ? (
+                    membro.rg
+                  ) : (
+                    <span className="text-muted-foreground">Não informado</span>
+                  )}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -273,7 +287,13 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 <Phone className="h-3 w-3" />
                 Telefone
               </p>
-              <p className="text-sm">{membro.telefone ? formatPhone(membro.telefone) : <span className="text-muted-foreground">Não informado</span>}</p>
+              <p className="text-sm">
+                {membro.telefone ? (
+                  formatPhone(membro.telefone)
+                ) : (
+                  <span className="text-muted-foreground">Não informado</span>
+                )}
+              </p>
             </div>
 
             <div>
@@ -281,15 +301,25 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 <Mail className="h-3 w-3" />
                 Email
               </p>
-              <p className="text-sm">{membro.usuario.email}</p>
+              <p className="text-sm">
+                {isPlaceholderEmail(membro.usuario.email) ? (
+                  <span className="text-muted-foreground">Não informado</span>
+                ) : (
+                  membro.usuario.email
+                )}
+              </p>
             </div>
 
-            {membro.observacoes && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Observações</p>
-                <p className="text-sm text-muted-foreground">{membro.observacoes}</p>
-              </div>
-            )}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Observações</p>
+              <p className="text-sm text-muted-foreground">
+                {membro.observacoes ? (
+                  membro.observacoes
+                ) : (
+                  <span className="text-muted-foreground">Não informado</span>
+                )}
+              </p>
+            </div>
           </CardContent>
         </Card>
 

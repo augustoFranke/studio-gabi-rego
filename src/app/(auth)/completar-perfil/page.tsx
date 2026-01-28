@@ -67,13 +67,13 @@ function CompletarPerfilContent() {
 
     const formData = new FormData(event.currentTarget)
     const nome = formData.get("nome") as string
-    const sexo = formData.get("sexo") as string
-    const dataNascimento = formData.get("dataNascimento") as string
-    const rg = formData.get("rg") as string
+    const sexo = (formData.get("sexo") as string) || ""
+    const dataNascimento = (formData.get("dataNascimento") as string) || ""
+    const rg = (formData.get("rg") as string) || ""
 
     // Validate CPF format (basic check)
     const cpfNumbers = cpf.replace(/\D/g, "")
-    if (cpfNumbers.length !== 11) {
+    if (cpfNumbers.length > 0 && cpfNumbers.length !== 11) {
       toast.error("CPF inválido")
       setIsLoading(false)
       return
@@ -81,24 +81,32 @@ function CompletarPerfilContent() {
 
     // Validate phone
     const telefoneNumbers = telefone.replace(/\D/g, "")
-    if (telefoneNumbers.length < 10) {
+    if (telefoneNumbers.length > 0 && telefoneNumbers.length < 10) {
       toast.error("Telefone inválido")
       setIsLoading(false)
       return
     }
 
-    // Validate age (minimum 16 years)
-    const birthDate = new Date(dataNascimento)
-    const today = new Date()
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
-    }
-    if (age < 16) {
-      toast.error("Você precisa ter pelo menos 16 anos")
-      setIsLoading(false)
-      return
+    if (dataNascimento) {
+      const birthDate = new Date(dataNascimento)
+      if (Number.isNaN(birthDate.getTime())) {
+        toast.error("Data de nascimento inválida")
+        setIsLoading(false)
+        return
+      }
+
+      // Validate age (minimum 16 years) only when provided
+      const today = new Date()
+      let age = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--
+      }
+      if (age < 16) {
+        toast.error("Você precisa ter pelo menos 16 anos")
+        setIsLoading(false)
+        return
+      }
     }
 
     try {
@@ -108,11 +116,11 @@ function CompletarPerfilContent() {
         body: JSON.stringify({
           token: profileToken, // Pass profile token for unauthenticated flow
           nome,
-          cpf: cpfNumbers,
-          rg: rg || null,
-          telefone: telefoneNumbers,
-          dataNascimento,
-          sexo,
+          cpf: cpfNumbers.length > 0 ? cpfNumbers : null,
+          rg: rg.trim() !== "" ? rg : null,
+          telefone: telefoneNumbers.length > 0 ? telefoneNumbers : null,
+          dataNascimento: dataNascimento.trim() !== "" ? dataNascimento : null,
+          sexo: sexo.trim() !== "" ? sexo : null,
         }),
       })
 
@@ -217,8 +225,8 @@ function CompletarPerfilContent() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cpf" className="text-sm font-medium flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-orange-500" />
-                  CPF *
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                  CPF
                 </Label>
                 <Input
                   id="cpf"
@@ -226,7 +234,6 @@ function CompletarPerfilContent() {
                   type="text"
                   inputMode="numeric"
                   placeholder="000.000.000-00"
-                  required
                   disabled={isLoading}
                   value={cpf}
                   onChange={(e) => handleCpfChange(e.target.value)}
@@ -252,36 +259,34 @@ function CompletarPerfilContent() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="telefone" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
-                Telefone / WhatsApp *
-              </Label>
+                <Label htmlFor="telefone" className="text-sm font-medium flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                  Telefone / WhatsApp
+                </Label>
               <Input
                 id="telefone"
                 name="telefone"
                 type="tel"
                 inputMode="tel"
                 placeholder="(00) 00000-0000"
-                required
-                disabled={isLoading}
-                value={telefone}
-                onChange={(e) => handleTelefoneChange(e.target.value)}
-                maxLength={15}
-                className="h-12 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
+                  disabled={isLoading}
+                  value={telefone}
+                  onChange={(e) => handleTelefoneChange(e.target.value)}
+                  maxLength={15}
+                  className="h-12 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
               />
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="dataNascimento" className="text-sm font-medium flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-orange-500" />
-                  Data de nascimento *
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                  Data de nascimento
                 </Label>
                 <Input
                   id="dataNascimento"
                   name="dataNascimento"
                   type="date"
-                  required
                   disabled={isLoading}
                   className="h-12 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
                 />
@@ -289,10 +294,10 @@ function CompletarPerfilContent() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="sexo" className="text-sm font-medium flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-orange-500" />
-                  Sexo *
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                  Sexo
                 </Label>
-                <Select name="sexo" required disabled={isLoading}>
+                <Select name="sexo" disabled={isLoading}>
                   <SelectTrigger className="h-12 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
