@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, Trash2 } from "lucide-react"
-import { toggleMembroStatus, deleteMembro } from "@/app/actions/membros"
+import { ShieldCheck, Trash2, UserMinus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { deactivateMembro, deleteMembro, toggleMembroStatus } from "@/app/actions/membros"
 import { toast } from "sonner"
 
 interface MemberActionsProps {
@@ -27,6 +28,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
   const [isPending, startTransition] = useTransition()
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const isActive = status === 'ATIVO'
+  const router = useRouter()
 
   const handleSelect = (e: Event) => {
     if (isActive) {
@@ -42,6 +44,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       const result = await toggleMembroStatus(id, status)
       if (result.success) {
         toast.success("Aluno ativado")
+        router.refresh()
       } else {
         toast.error(result.error || "Erro ao alterar status")
       }
@@ -54,6 +57,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       if (result.success) {
         toast.success("Aluno excluído permanentemente")
         setShowConfirmDialog(false)
+        router.refresh()
       } else {
         toast.error(result.error || "Erro ao excluir aluno")
       }
@@ -105,5 +109,46 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+export function MemberDeactivateButton({
+  id,
+  nome,
+  disabled = false,
+}: {
+  id: string
+  nome?: string
+  disabled?: boolean
+}) {
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  const handleDeactivate = () => {
+    const label = nome ? `o aluno "${nome}"` : "este aluno"
+    if (!window.confirm(`Deseja desativar ${label}?`)) {
+      return
+    }
+
+    startTransition(async () => {
+      const result = await deactivateMembro(id)
+      if (result.success) {
+        toast.success("Aluno desativado")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Erro ao desativar aluno")
+      }
+    })
+  }
+
+  return (
+    <Button
+      variant="outline"
+      onClick={handleDeactivate}
+      disabled={disabled || isPending}
+    >
+      <UserMinus className="mr-2 h-4 w-4" />
+      {isPending ? "Desativando..." : "Desativar"}
+    </Button>
   )
 }
