@@ -28,6 +28,12 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
             planoId: true,
             precoCustomizado: true,
             sexo: true,
+            horariosFixos: {
+                select: {
+                    diaSemana: true,
+                    hora: true,
+                },
+            },
             usuario: {
                 select: {
                     nome: true,
@@ -62,6 +68,10 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
         planoId: membro.planoId ?? undefined,
         precoCustomizado: membro.precoCustomizado ? String(membro.precoCustomizado) : undefined,
         sexo: membro.sexo ?? undefined,
+        horariosFixos: membro.horariosFixos.map((horario) => ({
+            diaSemana: horario.diaSemana,
+            hora: horario.hora,
+        })),
     }
 
     return (

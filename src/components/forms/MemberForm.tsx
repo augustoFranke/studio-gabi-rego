@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { validarCPF, formatarCPF, formatarTelefone } from "@/lib/validators"
+import { DiaSemanaLabel, HOURS, formatHour } from "@/lib/schedule"
 
 const formSchema = z.object({
   nome: z.string().optional(),
@@ -53,6 +54,10 @@ const formSchema = z.object({
   sexo: z.enum(["MASCULINO", "FEMININO"], {
     message: "Por favor, selecione uma opção de sexo.",
   }).optional(),
+  horariosFixos: z.array(z.object({
+    diaSemana: z.enum(["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"]),
+    hora: z.string().min(1),
+  })).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -62,6 +67,8 @@ interface Plano {
   nome: string
   valor: number
 }
+
+const DIAS_SEMANA = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"] as const
 
 export function MemberForm({
   initialData,
@@ -81,6 +88,10 @@ export function MemberForm({
     planoId?: string
     precoCustomizado?: string | number | null
     sexo?: 'MASCULINO' | 'FEMININO' | null
+    horariosFixos?: {
+      diaSemana: typeof DIAS_SEMANA[number]
+      hora: string
+    }[]
   },
   mode?: 'create' | 'edit'
 }) {
@@ -102,7 +113,13 @@ export function MemberForm({
       planoId: initialData?.planoId || "",
       precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
       sexo: initialData?.sexo || undefined,
+      horariosFixos: initialData?.horariosFixos ?? [],
     },
+  })
+
+  const horariosFixosFieldArray = useFieldArray({
+    control: form.control,
+    name: "horariosFixos",
   })
 
   // Remover validação obrigatória de senha na edição
@@ -491,6 +508,91 @@ export function MemberForm({
               />
             </div>
 
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Dias de Treino Fixo</h3>
+                <p className="text-sm text-muted-foreground">
+                  Defina os dias e horários que o aluno treina regularmente.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {horariosFixosFieldArray.fields.map((item, index) => (
+                  <div key={item.id} className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-end">
+                    <FormField
+                      control={form.control}
+                      name={`horariosFixos.${index}.diaSemana`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Dia da Semana</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o dia" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {DIAS_SEMANA.map((dia) => (
+                                <SelectItem key={dia} value={dia}>
+                                  {DiaSemanaLabel[dia]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`horariosFixos.${index}.hora`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Horário</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o horário" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {HOURS.map((hour) => {
+                                const label = formatHour(hour)
+                                return (
+                                  <SelectItem key={label} value={label}>
+                                    {label}
+                                  </SelectItem>
+                                )
+                              })}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => horariosFixosFieldArray.remove(index)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => horariosFixosFieldArray.append({
+                    diaSemana: "SEGUNDA",
+                    hora: formatHour(HOURS[0]),
+                  })}
+                >
+                  Adicionar horário fixo
+                </Button>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
@@ -510,4 +612,3 @@ export function MemberForm({
     </Card>
   )
 }
-
