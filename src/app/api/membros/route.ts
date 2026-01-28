@@ -79,7 +79,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { nome, email, senha, cpf, rg, telefone, dataNascimento, planoId, precoCustomizado, sexo } = validation.data
+    const {
+      nome,
+      email,
+      senha,
+      cpf,
+      rg,
+      telefone,
+      dataNascimento,
+      planoId,
+      precoCustomizado,
+      sexo,
+      horariosFixos,
+    } = validation.data
     const senhaValue = typeof senha === "string" ? senha.trim() : ""
     const senhaDefinida = Boolean(senhaValue)
 
@@ -142,6 +154,14 @@ export async function POST(request: NextRequest) {
           precoCustomizado,
           sexo,
           status: 'ATIVO',
+          horariosFixos: horariosFixos?.length
+            ? {
+                create: horariosFixos.map((horario) => ({
+                  diaSemana: horario.diaSemana,
+                  hora: horario.hora,
+                })),
+              }
+            : undefined,
         },
         include: {
           usuario: {
