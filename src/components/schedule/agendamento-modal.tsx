@@ -36,6 +36,7 @@ interface AgendamentoModalProps {
     membroId?: string
     horarioId?: string
     data?: string
+    hour?: number
     observacao?: string
   }) => void
   onDelete?: () => void
@@ -60,12 +61,12 @@ export function AgendamentoModal({
   )
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
 
-
   const handleSave = () => {
     if (mode === 'create') {
       onSave?.({
         membroId: selectedMembro,
         data: selectedDate?.toISOString(),
+        hour: selectedHourValue ? Number(selectedHourValue) : undefined,
       })
     } else {
       onSave?.({
@@ -264,9 +265,13 @@ export function AgendamentoModal({
     )
   }
 
+  const dialogKey = mode === 'create'
+    ? `create-${selectedDate?.toISOString() ?? 'no-date'}-${selectedHour ?? 'no-hour'}`
+    : agendamento?.id || 'view'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent key={agendamento?.id || 'new'}>
+      <DialogContent key={dialogKey}>
         {mode === 'view' && renderViewMode()}
         {mode === 'edit' && renderEditMode()}
         {mode === 'create' && renderCreateMode()}
