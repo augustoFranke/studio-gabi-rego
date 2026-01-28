@@ -5,12 +5,20 @@ import { parseLocalDate } from '@/lib/schedule'
 import { z } from 'zod'
 import { Prisma, StatusPagamento } from '@prisma/client'
 
+const requiredString = (message: string) =>
+  z.string({ required_error: message, invalid_type_error: message }).min(1, message)
+
 const pagamentoSchema = z.object({
-  membroId: z.string().optional(),
-  planoId: z.string().optional(),
-  valor: z.number().optional(),
-  dataVencimento: z.string().optional(),
-  formaPagamento: z.string().optional(),
+  membroId: requiredString('Selecione um aluno'),
+  planoId: requiredString('Selecione um plano'),
+  valor: z
+    .number({
+      required_error: 'Informe o valor do pagamento',
+      invalid_type_error: 'Informe o valor do pagamento',
+    })
+    .positive('Valor deve ser maior que zero'),
+  dataVencimento: requiredString('Informe a data de vencimento'),
+  formaPagamento: requiredString('Selecione a forma de pagamento'),
   observacao: z.string().optional(),
 })
 
@@ -109,10 +117,10 @@ export async function POST(request: NextRequest) {
 
     const pagamento = await prisma.pagamento.create({
       data: {
-        membroId: membroId || '',
-        planoId: planoId || '',
-        valor: valor || 0,
-        dataVencimento: dataVencimento ? parseLocalDate(dataVencimento) : new Date(),
+        membroId,
+        planoId,
+        valor,
+        dataVencimento: parseLocalDate(dataVencimento),
         formaPagamento,
         observacao,
       },
