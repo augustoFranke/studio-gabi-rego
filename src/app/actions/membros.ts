@@ -43,3 +43,18 @@ export async function deleteMembro(id: string) {
     return { success: false, error: 'Falha ao excluir membro' }
   }
 }
+
+export async function deactivateMembro(id: string) {
+  try {
+    await prisma.membro.update({
+      where: { id },
+      data: { status: 'PENDENTE' },
+    })
+
+    revalidatePath('/alunos')
+    return { success: true }
+  } catch (error) {
+    console.error('Erro ao desativar membro:', error)
+    return { success: false, error: 'Falha ao desativar membro' }
+  }
+}
