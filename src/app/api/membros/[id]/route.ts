@@ -129,6 +129,15 @@ export async function PATCH(
             if (data.planoId) memberUpdateData.plano = { connect: { id: data.planoId } }
             if (data.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = data.precoCustomizado
             if (data.sexo) memberUpdateData.sexo = data.sexo
+            if (data.horariosFixos) {
+                memberUpdateData.horariosFixos = {
+                    deleteMany: {},
+                    create: data.horariosFixos.map((horario) => ({
+                        diaSemana: horario.diaSemana,
+                        hora: horario.hora,
+                    })),
+                }
+            }
 
             return tx.membro.update({
                 where: { id },

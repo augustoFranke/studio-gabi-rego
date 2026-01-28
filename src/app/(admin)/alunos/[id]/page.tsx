@@ -31,6 +31,7 @@ import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { MemberDeactivateButton } from "@/components/admin/member-actions"
+import { DiaSemanaLabel, DiaSemanaMap } from "@/lib/schedule"
 
 export const dynamic = "force-dynamic"
 
@@ -150,6 +151,12 @@ export default async function MembroPage({ params }: MembroPageProps) {
         orderBy: { criadoEm: 'desc' },
         take: 1,
       },
+      horariosFixos: {
+        select: {
+          diaSemana: true,
+          hora: true,
+        },
+      },
     },
   })
 
@@ -178,6 +185,11 @@ export default async function MembroPage({ params }: MembroPageProps) {
   const pagamentosPagos = membro.pagamentos.filter(p => p.status === "PAGO").length
   const pagamentosPendentes = membro.pagamentos.filter(p => p.status === "PENDENTE").length
   const pagamentosAtrasados = membro.pagamentos.filter(p => p.status === "ATRASADO").length
+  const horariosFixosOrdenados = [...membro.horariosFixos].sort((a, b) => {
+    const dayDiff = DiaSemanaMap[a.diaSemana] - DiaSemanaMap[b.diaSemana]
+    if (dayDiff !== 0) return dayDiff
+    return a.hora.localeCompare(b.hora)
+  })
 
   return (
     <div className="space-y-6">
@@ -387,6 +399,37 @@ export default async function MembroPage({ params }: MembroPageProps) {
                   <Link href={`/alunos/${id}/editar`}>Atribuir Plano</Link>
                 </Button>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fixed Schedule Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Horários Fixos
+            </CardTitle>
+            <CardDescription>
+              Dias e horários fixos de treino do aluno
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {horariosFixosOrdenados.length > 0 ? (
+              <div className="space-y-3">
+                {horariosFixosOrdenados.map((horario, index) => (
+                  <div key={`${horario.diaSemana}-${horario.hora}-${index}`} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{DiaSemanaLabel[horario.diaSemana]}</Badge>
+                      <span className="text-sm text-muted-foreground">{horario.hora}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhum horário fixo definido.
+              </p>
             )}
           </CardContent>
         </Card>
