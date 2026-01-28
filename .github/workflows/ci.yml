@@ -15,6 +15,7 @@ permissions:
 jobs:
   fast:
     name: test-lint-build
+    
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -64,13 +65,8 @@ jobs:
           --health-retries=10
 
     env:
-      # Used by Prisma + any DB-hitting tests
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app_test
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/app_test
-
-      # Optional: some Next.js builds/tests require these; set to safe dummies if needed.
-      # NEXTAUTH_URL: http://localhost:3000
-      # NEXTAUTH_SECRET: dummy_secret_for_ci_only
 
     steps:
       - name: Checkout
@@ -99,3 +95,6 @@ jobs:
       # If you later split tests, replace with: npm run test:integration
       - name: Tests (with DB available)
         run: npm run test:run
+
+      - name: Build
+        run: npm run build

@@ -1,20 +1,6 @@
-export interface Exercise {
-  name: string
-  sets: string
-  reps: string
-}
+import type { TrainingPDFData } from '@/domain/treino'
 
-export interface Session {
-  name: string
-  exercises: Exercise[]
-}
-
-export interface PDFData {
-  aluno: string
-  date: string
-  observacoes?: string
-  sessions: Session[]
-}
+export type PDFData = TrainingPDFData
 
 export const testPDFData: PDFData = {
   aluno: 'Maria Silva',

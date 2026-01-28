@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { z } from 'zod'
-import { Prisma } from '@prisma/client'
+import { fichaUpdateSchema } from '@/schemas/treino.schema'
+import {
+  deleteFichaTreino,
+  getFichaTreinoById,
+  replaceFichaExercicios,
+  updateFichaTreino,
+} from '@/services/treino.service'
 
 interface RouteParams {
   params: Promise<{
@@ -10,61 +14,13 @@ interface RouteParams {
   }>
 }
 
-const exercicioSchema = z.object({
-  id: z.string().optional(),
-  sessao: z.string().default('A'),
-  nome: z.string().optional(),
-  grupoMuscular: z.string().optional(),
-  series: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
-  repeticoes: z.string().optional(),
-  descanso: z.string().optional(),
-  observacoes: z.string().optional(),
-})
-
-const updateFichaSchema = z.object({
-  nome: z.string().optional(),
-  data: z.string().optional(),
-  objetivo: z.string().optional(),
-  observacoes: z.string().optional(),
-  exercicios: z.array(exercicioSchema).optional(),
-})
-
-const fichaSelect = {
-  id: true,
-  nome: true,
-  data: true,
-  objetivo: true,
-  observacoes: true,
-  membroId: true,
-  membro: {
-    select: {
-      id: true,
-      usuario: {
-        select: { nome: true },
-      },
-    },
-  },
-  exercicios: {
-    select: {
-      id: true,
-      sessao: true,
-      nome: true,
-      series: true,
-      repeticoes: true,
-    },
-    orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
-  },
-} satisfies Prisma.FichaTreinoSelect
 
 // GET /api/treinos/[id] - Get a single training plan
 export async function GET(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async (session) => {
     const { id } = await params
 
-    const ficha = await prisma.fichaTreino.findUnique({
-      where: { id },
-      select: fichaSelect,
-    })
+    const ficha = await getFichaTreinoById(id)
 
     if (!ficha) {
       return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
@@ -84,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async () => {
     const { id } = await params
     const body = await request.json()
-    const validation = updateFichaSchema.safeParse(body)
+    const validation = fichaUpdateSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -96,9 +52,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { nome, data, objetivo, observacoes, exercicios } = validation.data
 
     // Check if training exists
-    const existingFicha = await prisma.fichaTreino.findUnique({
-      where: { id },
-    })
+    const existingFicha = await getFichaTreinoById(id)
 
     if (!existingFicha) {
       return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
@@ -119,30 +73,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // If exercises are provided, delete old ones and create new
     if (exercicios !== undefined) {
-      await prisma.exercicio.deleteMany({
-        where: { fichaId: id },
-      })
-
-      await prisma.exercicio.createMany({
-        data: exercicios.map((ex, index) => ({
-          fichaId: id,
-          sessao: ex.sessao,
-          nome: ex.nome || 'Exercício',
-          grupoMuscular: ex.grupoMuscular,
-          series: ex.series || '3',
-          repeticoes: ex.repeticoes || '10',
-          descanso: ex.descanso,
-          observacoes: ex.observacoes,
-          ordem: index,
-        })),
-      })
+      await replaceFichaExercicios(id, exercicios)
     }
 
-    const ficha = await prisma.fichaTreino.update({
-      where: { id },
-      data: updateData,
-      select: fichaSelect,
-    })
+    const ficha = await updateFichaTreino(id, updateData)
 
     return NextResponse.json(ficha)
   }, { requiredRole: 'ADMIN' })
@@ -154,17 +88,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     // Check if training exists
-    const existingFicha = await prisma.fichaTreino.findUnique({
-      where: { id },
-    })
+    const existingFicha = await getFichaTreinoById(id)
 
     if (!existingFicha) {
       return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
     }
 
-    await prisma.fichaTreino.delete({
-      where: { id },
-    })
+    await deleteFichaTreino(id)
 
     return NextResponse.json({ success: true })
   }, { requiredRole: 'ADMIN' })
