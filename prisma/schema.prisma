@@ -110,6 +110,7 @@ model Membro {
   fichasTreino    FichaTreino[]
   notificacoes    Notificacao[]
   anamnese        Anamnese?
+  horariosFixos   HorarioFixo[]
 
   @@map("membros")
 }
@@ -164,6 +165,19 @@ model Agendamento {
 
   @@unique([membroId, horarioId, data])
   @@map("agendamentos")
+}
+
+model HorarioFixo {
+  id         String    @id @default(cuid())
+  membroId   String    @map("membro_id")
+  diaSemana  DiaSemana @map("dia_semana")
+  hora       String    @map("hora") // "08:00"
+  criadoEm   DateTime  @default(now()) @map("criado_em")
+
+  membro     Membro    @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@unique([membroId, diaSemana, hora])
+  @@map("horarios_fixos")
 }
 
 model Pagamento {

@@ -1,5 +1,20 @@
 import { z } from 'zod'
 
+const diaSemanaSchema = z.enum([
+  'SEGUNDA',
+  'TERCA',
+  'QUARTA',
+  'QUINTA',
+  'SEXTA',
+  'SABADO',
+  'DOMINGO',
+])
+
+const horarioFixoSchema = z.object({
+  diaSemana: diaSemanaSchema,
+  hora: z.string().regex(/^\d{2}:\d{2}$/, 'Horário inválido'),
+})
+
 export const membroCreateSchema = z.object({
   nome: z.string().optional(),
   email: z.string().email('Por favor, forneça um email válido.').optional().or(z.literal('')),
@@ -24,6 +39,7 @@ export const membroCreateSchema = z.object({
       if (val === '') return undefined
       return val
     }),
+  horariosFixos: z.array(horarioFixoSchema).optional(),
 })
 
 export const membroUpdateSchema = z.object({
@@ -49,6 +65,7 @@ export const membroUpdateSchema = z.object({
       if (val === '') return undefined
       return val
     }),
+  horariosFixos: z.array(horarioFixoSchema).optional(),
 })
 
 export type MembroCreateInput = z.infer<typeof membroCreateSchema>
