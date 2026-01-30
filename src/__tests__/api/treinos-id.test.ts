@@ -1,42 +1,71 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { DELETE, GET, PUT } from '@/app/api/treinos/[id]/route'
+import type { MockValidationOptions, MockValidationSchema } from '@/__tests__/test-utils'
 
-const { prismaMock, sessionRef } = vi.hoisted(() => ({
-  prismaMock: {
-    fichaTreino: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    exercicio: {
-      deleteMany: vi.fn(),
-      createMany: vi.fn(),
-    },
-  },
-  sessionRef: {
+const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const sessionRef = {
     current: { user: { role: 'ADMIN' as const, membroId: 'm-admin' } },
-  } as {
-    current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } }
-  },
-}))
+  } as { current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } } }
+
+  return {
+    prismaMock: {
+      fichaTreino: {
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      exercicio: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
+      },
+    },
+    sessionRef,
+    withApiAuthMock: vi.fn(
+      async (
+        handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
+        options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
+      ) => {
+        if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
+          return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+        }
+        return handler(sessionRef.current)
+      }
+    ),
+    validateRequestMock: vi.fn(async (request: NextRequest, schema: MockValidationSchema, options?: MockValidationOptions) => {
+      let body: unknown
+      try {
+        body = await request.json()
+      } catch {
+        return {
+          error: NextResponse.json(
+            { error: options?.invalidJsonMessage ?? 'Dados inválidos enviados. Verifique o formulário.' },
+            { status: 400 }
+          ),
+        }
+      }
+
+      const validation = schema.safeParse(body)
+      if (!validation.success) {
+        const message =
+          options?.errorMessage?.(validation.error) ??
+          validation.error.issues[0]?.message ??
+          'Dados inválidos enviados. Verifique o formulário.'
+        return { error: NextResponse.json({ error: message }, { status: 400 }) }
+      }
+
+      return { data: validation.data }
+    }),
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => {
-      if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-      return handler(sessionRef.current)
-    }
-  ),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Treinos API - /api/treinos/[id]', () => {

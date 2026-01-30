@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { Prisma } from '@prisma/client'
@@ -49,14 +49,10 @@ export async function PATCH(
 ) {
     return withApiAuth(async () => {
         const { id } = await params
-        const body = await request.json()
-        const validation = membroUpdateSchema.safeParse(body)
+        const validation = await validateRequest(request, membroUpdateSchema)
 
-        if (!validation.success) {
-            return NextResponse.json(
-                { error: validation.error.issues[0].message },
-                { status: 400 }
-            )
+        if ('error' in validation) {
+            return validation.error
         }
 
         const data = validation.data
@@ -71,7 +67,13 @@ export async function PATCH(
         // Verificar se membro existe
         const membroExistente = await prisma.membro.findUnique({
             where: { id },
-            include: { usuario: true }
+            select: {
+                id: true,
+                usuarioId: true,
+                cpf: true,
+                planoId: true,
+                usuario: true,
+            },
         })
 
         if (!membroExistente) {
@@ -98,6 +100,33 @@ export async function PATCH(
                 const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
                 if (cpfExiste) {
                     return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
+                }
+            }
+        }
+
+        if (data.horariosFixos && data.horariosFixos.length) {
+            const planoIdParaValidar = data.planoId ?? membroExistente.planoId
+
+            if (planoIdParaValidar) {
+                const plano = await prisma.plano.findUnique({
+                    where: { id: planoIdParaValidar },
+                    select: { aulasSemanais: true },
+                })
+
+                if (plano && plano.aulasSemanais !== 7) {
+                    const uniqueSlots = new Set(
+                        data.horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
+                    )
+                    const totalSlots = uniqueSlots.size
+
+                    if (totalSlots > plano.aulasSemanais) {
+                        return NextResponse.json(
+                            {
+                                error: `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
+                            },
+                            { status: 400 }
+                        )
+                    }
                 }
             }
         }

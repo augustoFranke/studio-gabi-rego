@@ -3,6 +3,15 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
 import {
   ScheduleHeader,
@@ -39,6 +48,14 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedHour, setSelectedHour] = useState<number | undefined>()
   const [isSaving, setIsSaving] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [confirmMoveOpen, setConfirmMoveOpen] = useState(false)
+  const [pendingMove, setPendingMove] = useState<{
+    agendamentoId: string
+    date: Date
+    hour: number
+  } | null>(null)
 
   // Handle slot click (create new agendamento)
   const handleSlotClick = useCallback((date: Date, hour: number) => {
@@ -77,14 +94,16 @@ export default function AgendaPage() {
   // Handle drop
   const handleDrop = useCallback(async (date: Date, hour: number, agendamentoId: string) => {
     setDraggingId(null)
-    await moveAgendamento(agendamentoId, date, hour)
-  }, [setDraggingId, moveAgendamento])
+    setPendingMove({ agendamentoId, date, hour })
+    setConfirmMoveOpen(true)
+  }, [setDraggingId])
 
   // Handle drop for daily view (same date, different hour)
   const handleDailyDrop = useCallback(async (hour: number, agendamentoId: string) => {
     setDraggingId(null)
-    await moveAgendamento(agendamentoId, currentDate, hour)
-  }, [setDraggingId, moveAgendamento, currentDate])
+    setPendingMove({ agendamentoId, date: currentDate, hour })
+    setConfirmMoveOpen(true)
+  }, [setDraggingId, currentDate])
 
   // Handle modal save
   const handleModalSave = useCallback(async (data: {
@@ -92,12 +111,18 @@ export default function AgendaPage() {
     data?: string
     hour?: number
     observacao?: string
+    scope?: 'single' | 'weekly'
   }) => {
     setIsSaving(true)
     try {
       const hour = data.hour ?? selectedHour
       if (modalMode === 'create' && data.membroId && selectedDate && hour !== undefined) {
-        const success = await createAgendamento(data.membroId, selectedDate, hour)
+        const success = await createAgendamento(
+          data.membroId,
+          selectedDate,
+          hour,
+          data.scope
+        )
         if (success) setModalOpen(false)
       } else if (modalMode === 'edit' && selectedAgendamento) {
         const success = await updateAgendamento(selectedAgendamento.id, {
@@ -111,16 +136,45 @@ export default function AgendaPage() {
   }, [modalMode, selectedDate, selectedHour, selectedAgendamento, createAgendamento, updateAgendamento])
 
   // Handle modal delete
-  const handleModalDelete = useCallback(async () => {
+  const handleModalDelete = useCallback(() => {
     if (!selectedAgendamento) return
+    setPendingDeleteId(selectedAgendamento.id)
+    setConfirmDeleteOpen(true)
+  }, [selectedAgendamento])
+
+  const handleConfirmDelete = useCallback(async (scope: 'single' | 'future') => {
+    if (!pendingDeleteId) return
     setIsSaving(true)
     try {
-      const success = await deleteAgendamento(selectedAgendamento.id)
-      if (success) setModalOpen(false)
+      const success = await deleteAgendamento(pendingDeleteId, scope)
+      if (success) {
+        setConfirmDeleteOpen(false)
+        setModalOpen(false)
+      }
     } finally {
       setIsSaving(false)
+      setPendingDeleteId(null)
     }
-  }, [selectedAgendamento, deleteAgendamento])
+  }, [pendingDeleteId, deleteAgendamento])
+
+  const handleConfirmMove = useCallback(async (scope: 'single' | 'future') => {
+    if (!pendingMove) return
+    setIsSaving(true)
+    try {
+      const success = await moveAgendamento(
+        pendingMove.agendamentoId,
+        pendingMove.date,
+        pendingMove.hour,
+        scope
+      )
+      if (success) {
+        setConfirmMoveOpen(false)
+      }
+    } finally {
+      setIsSaving(false)
+      setPendingMove(null)
+    }
+  }, [pendingMove, moveAgendamento])
 
   // Handle today click
   const handleTodayClick = useCallback(() => {
@@ -305,6 +359,85 @@ export default function AgendaPage() {
         onDelete={handleModalDelete}
         isLoading={isSaving}
       />
+
+      <Dialog
+        open={confirmDeleteOpen}
+        onOpenChange={(open) => {
+          setConfirmDeleteOpen(open)
+          if (!open) setPendingDeleteId(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover agendamento</DialogTitle>
+            <DialogDescription>
+              Deseja remover apenas este agendamento ou todas as ocorrências futuras?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteOpen(false)}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleConfirmDelete('single')}
+              disabled={isSaving}
+            >
+              Remover apenas este
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleConfirmDelete('future')}
+              disabled={isSaving}
+            >
+              Remover futuros
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={confirmMoveOpen}
+        onOpenChange={(open) => {
+          setConfirmMoveOpen(open)
+          if (!open) setPendingMove(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover agendamento</DialogTitle>
+            <DialogDescription>
+              Deseja mover apenas este agendamento ou também as próximas ocorrências?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmMoveOpen(false)}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleConfirmMove('single')}
+              disabled={isSaving}
+            >
+              Mover apenas este
+            </Button>
+            <Button
+              onClick={() => handleConfirmMove('future')}
+              disabled={isSaving}
+            >
+              Mover futuros
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

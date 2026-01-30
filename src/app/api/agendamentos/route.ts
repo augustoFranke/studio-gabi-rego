@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { parseLocalDate } from '@/lib/schedule'
+import { syncAgendamentosRecorrentes, validateHorarioFixoLimit } from '@/services/agendamento.service'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 
@@ -9,6 +10,7 @@ const agendamentoSchema = z.object({
   membroId: z.string().optional(),
   horarioId: z.string().optional(),
   data: z.string().optional(),
+  scope: z.enum(['single', 'weekly']).optional(),
 })
 
 const agendamentoSelect = {
@@ -56,9 +58,26 @@ export async function GET(request: NextRequest) {
     }
 
     if (dataInicio && dataFim) {
+      const inicio = parseLocalDate(dataInicio)
+      const fim = parseLocalDate(dataFim)
+      const hoje = new Date()
+      hoje.setHours(12, 0, 0, 0)
+
+      if (fim >= hoje) {
+        const inicioSync = inicio > hoje ? inicio : hoje
+        const membroScope =
+          session.user.role === 'MEMBRO' ? session.user.membroId : membroId ?? undefined
+
+        await syncAgendamentosRecorrentes({
+          startDate: inicioSync,
+          endDate: fim,
+          membroId: membroScope,
+        })
+      }
+
       where.data = {
-        gte: parseLocalDate(dataInicio),
-        lte: parseLocalDate(dataFim),
+        gte: inicio,
+        lte: fim,
       }
     }
 
@@ -75,17 +94,15 @@ export async function GET(request: NextRequest) {
 // POST /api/agendamentos - Criar novo agendamento
 export async function POST(request: NextRequest) {
   return withApiAuth(async (session) => {
-    const body = await request.json()
-    const validation = agendamentoSchema.safeParse(body)
+    const validation = await validateRequest(request, agendamentoSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
-    const { membroId, horarioId, data } = validation.data
+    const { membroId, horarioId, data, scope } = validation.data
+    const recurrenceScope =
+      session.user.role === 'ADMIN' ? scope ?? 'single' : 'single'
 
     // Se for membro, só pode agendar para si mesmo
     const membroIdFinal =
@@ -136,6 +153,37 @@ export async function POST(request: NextRequest) {
 
     if (jaAgendado) {
       return NextResponse.json({ error: 'Você já tem um agendamento neste horário' }, { status: 400 })
+    }
+
+    if (recurrenceScope === 'weekly') {
+      const limitCheck = await validateHorarioFixoLimit({
+        membroId: membroIdFinal,
+        diaSemana: horario.diaSemana,
+        hora: horario.horaInicio,
+      })
+
+      if (!limitCheck.ok) {
+        return NextResponse.json({ error: limitCheck.error }, { status: 400 })
+      }
+
+      const horarioFixoExistente = await prisma.horarioFixo.findFirst({
+        where: {
+          membroId: membroIdFinal,
+          diaSemana: horario.diaSemana,
+          hora: horario.horaInicio,
+        },
+        select: { id: true },
+      })
+
+      if (!horarioFixoExistente) {
+        await prisma.horarioFixo.create({
+          data: {
+            membroId: membroIdFinal,
+            diaSemana: horario.diaSemana,
+            hora: horario.horaInicio,
+          },
+        })
+      }
     }
 
     const agendamento = await prisma.agendamento.create({

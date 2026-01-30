@@ -38,6 +38,7 @@ interface AgendamentoModalProps {
     data?: string
     hour?: number
     observacao?: string
+    scope?: 'single' | 'weekly'
   }) => void
   onDelete?: () => void
   isLoading?: boolean
@@ -60,6 +61,7 @@ export function AgendamentoModal({
     agendamento?.horario.horaInicio.split(':')[0] || selectedHour?.toString() || ''
   )
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
+  const [recurrenceScope, setRecurrenceScope] = useState<'single' | 'weekly'>('weekly')
 
   const handleSave = () => {
     if (mode === 'create') {
@@ -67,6 +69,7 @@ export function AgendamentoModal({
         membroId: selectedMembro,
         data: selectedDate?.toISOString(),
         hour: selectedHourValue ? Number(selectedHourValue) : undefined,
+        scope: recurrenceScope,
       })
     } else {
       onSave?.({
@@ -238,6 +241,23 @@ export function AgendamentoModal({
                     {formatHour(hour)}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Recurrence selection */}
+          <div className="space-y-2">
+            <Label htmlFor="recorrencia">Frequência</Label>
+            <Select
+              value={recurrenceScope}
+              onValueChange={(value) => setRecurrenceScope(value as 'single' | 'weekly')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a frequência" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Repetir semanalmente</SelectItem>
+                <SelectItem value="single">Apenas esta aula</SelectItem>
               </SelectContent>
             </Select>
           </div>
