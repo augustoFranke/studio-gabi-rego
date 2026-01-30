@@ -1,7 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo } from "react"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { groupPlansByCategory } from "@/lib/planos"
+import { useUrlFilters } from "@/hooks/use-url-filters"
 
 interface PlanoOption {
   id: string
@@ -43,87 +43,22 @@ const DEFAULT_FILTERS: FilterValues = {
   order: "recent_desc",
 }
 
-function useUrlSyncFilters(initial: FilterValues) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [filters, setFilters] = useState(initial)
-
-  const buildQuery = useCallback((values: FilterValues) => {
-    const params = new URLSearchParams()
-    let hasFilters = false
-    if (values.search.trim()) params.set("search", values.search.trim())
-    if (values.search.trim()) hasFilters = true
-    if (values.status && values.status !== "todos") {
-      params.set("status", values.status)
-      hasFilters = true
-    }
-    if (values.plano && values.plano !== "todos") {
-      params.set("plano", values.plano)
-      hasFilters = true
-    }
-    if (values.order && values.order !== "recent_desc") {
-      params.set("order", values.order)
-      hasFilters = true
-    }
-    if (hasFilters) {
-      params.set("page", "1")
-    }
-    return params.toString()
-  }, [])
-
-  const applyFilters = useCallback((values: FilterValues) => {
-    const nextQuery = buildQuery(values)
-    const currentQuery = searchParams.toString()
-    if (nextQuery === currentQuery) {
-      return
-    }
-    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
-  }, [buildQuery, pathname, router, searchParams])
-
-  useEffect(() => {
-    const currentSearch = searchParams.get("search") ?? ""
-    const currentStatus = searchParams.get("status") ?? "todos"
-    const currentPlano = searchParams.get("plano") ?? "todos"
-    const currentOrder = searchParams.get("order") ?? "recent_desc"
-    const nextSearch = filters.search.trim()
-
-    const filtersChanged =
-      currentSearch !== nextSearch ||
-      currentStatus !== filters.status ||
-      currentPlano !== filters.plano ||
-      currentOrder !== filters.order
-
-    if (!filtersChanged) {
-      return
-    }
-
-    const timer = setTimeout(() => {
-      applyFilters({
-        search: nextSearch,
-        status: filters.status,
-        plano: filters.plano,
-        order: filters.order,
-      })
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [applyFilters, filters, searchParams])
-
-  const clearFilters = useCallback(() => {
-    router.push(pathname)
-  }, [pathname, router])
-
-  return { filters, setFilters, applyFilters, clearFilters }
-}
-
 export function AlunosFilters({ search, status, plano, order, planos }: AlunosFiltersProps) {
-  const { filters, setFilters, applyFilters, clearFilters } = useUrlSyncFilters({
-    ...DEFAULT_FILTERS,
-    search: search ?? DEFAULT_FILTERS.search,
-    status: status ?? DEFAULT_FILTERS.status,
-    plano: plano ?? DEFAULT_FILTERS.plano,
-    order: order ?? DEFAULT_FILTERS.order,
-  })
+  const { filters, setFilters, applyFilters, clearFilters } = useUrlFilters(
+    {
+      ...DEFAULT_FILTERS,
+      search: search ?? DEFAULT_FILTERS.search,
+      status: status ?? DEFAULT_FILTERS.status,
+      plano: plano ?? DEFAULT_FILTERS.plano,
+      order: order ?? DEFAULT_FILTERS.order,
+    },
+    {
+      defaults: DEFAULT_FILTERS,
+      normalize: {
+        search: (value) => value.trim(),
+      },
+    }
+  )
 
   const groupedPlanos = useMemo(() => groupPlansByCategory(planos), [planos])
 
