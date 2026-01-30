@@ -29,6 +29,21 @@ vi.mock('@/lib/api', () => ({
       _options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
     ) => handler(sessionRef.current)
   ),
+  ensureOwnerOrAdmin: vi.fn(
+    (
+      session: typeof sessionRef.current,
+      ownerId?: string | null,
+      options?: { status?: number; error?: string }
+    ) => {
+      if (session.user.role === 'MEMBRO' && ownerId !== session.user.membroId) {
+        return NextResponse.json(
+          { error: options?.error ?? 'Não autorizado' },
+          { status: options?.status ?? 403 }
+        )
+      }
+      return null
+    }
+  ),
 }))
 
 describe('Treinos PDF by ID API', () => {

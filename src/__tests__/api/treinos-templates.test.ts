@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
+import type { ZodSchema } from 'zod'
 import { GET, POST } from '@/app/api/treinos/templates/route'
 
 const { sessionRef, listTreinoTemplatesMock, createTreinoTemplateMock, getFichaTreinoWithDetailsMock } =
@@ -30,6 +31,31 @@ vi.mock('@/lib/api', () => ({
       return handler(sessionRef.current)
     }
   ),
+  validateRequest: async <T>(request: NextRequest, schema: ZodSchema<T>) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return {
+        error: NextResponse.json(
+          { error: 'Dados inválidos enviados. Verifique o formulário.' },
+          { status: 400 }
+        ),
+      }
+    }
+
+    const validation = schema.safeParse(body)
+    if (!validation.success) {
+      return {
+        error: NextResponse.json(
+          { error: validation.error.issues[0]?.message ?? 'Dados inválidos enviados. Verifique o formulário.' },
+          { status: 400 }
+        ),
+      }
+    }
+
+    return { data: validation.data }
+  },
 }))
 
 describe('Treinos Templates API', () => {

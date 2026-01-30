@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
 import { Prisma } from '@prisma/client'
 
 // GET /api/pagamentos/[id] - Obter um pagamento específico
@@ -28,8 +28,9 @@ export async function GET(
       return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 })
     }
 
-    if (session.user.role === 'MEMBRO' && pagamento.membroId !== session.user.membroId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+    const authError = ensureOwnerOrAdmin(session, pagamento.membroId)
+    if (authError) {
+      return authError
     }
 
     return NextResponse.json(pagamento)
