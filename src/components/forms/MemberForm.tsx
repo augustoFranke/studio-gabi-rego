@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -29,6 +29,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { validarCPF, formatarCPF, formatarTelefone } from "@/lib/validators"
 import { DiaSemanaLabel, HOURS, formatHour } from "@/lib/schedule"
+import { groupPlansByCategory } from "@/lib/planos"
 
 const formSchema = z.object({
   nome: z.string().optional(),
@@ -99,6 +100,10 @@ export function MemberForm({
   const [loading, setLoading] = useState(false)
   const [sendingResetLink, setSendingResetLink] = useState(false)
   const [planos, setPlanos] = useState<Plano[]>([])
+  const { planosGabi, planosEstagiarios, planosOutros } = useMemo(
+    () => groupPlansByCategory(planos),
+    [planos]
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -410,10 +415,6 @@ export function MemberForm({
                 control={form.control}
                 name="planoId"
                 render={({ field }) => {
-                  const planosGabi = planos.filter(p => p.nome.toLowerCase().includes('gabi'))
-                  const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
-                  const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-
                   return (
                     <FormItem>
                       <FormLabel>Plano</FormLabel>

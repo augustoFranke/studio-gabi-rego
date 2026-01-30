@@ -30,8 +30,8 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { MemberDeactivateButton } from "@/components/admin/member-actions"
 import { DiaSemanaLabel, DiaSemanaMap } from "@/lib/schedule"
+import { normalizeEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -83,10 +83,6 @@ function getMemberStatusBadge(status: "ATIVO" | "INATIVO" | "PENDENTE") {
     PENDENTE: "secondary",
   }
   return <Badge variant={variants[status]}>{status}</Badge>
-}
-
-function isPlaceholderEmail(email?: string | null) {
-  return !email || email.endsWith("@placeholder.local")
 }
 
 export default async function MembroPage({ params }: MembroPageProps) {
@@ -194,6 +190,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
     if (dayDiff !== 0) return dayDiff
     return a.hora.localeCompare(b.hora)
   })
+  const email = normalizeEmail(membro.usuario.email)
 
   return (
     <div className="space-y-6">
@@ -222,12 +219,6 @@ export default async function MembroPage({ params }: MembroPageProps) {
               Anamnese
             </Link>
           </Button>
-          {session.user.role === "ADMIN" && membro.status !== "PENDENTE" && (
-            <MemberDeactivateButton
-              id={id}
-              nome={membro.usuario.nome ?? undefined}
-            />
-          )}
           <Button asChild>
             <Link href={`/alunos/${id}/editar`}>
               <Pencil className="mr-2 h-4 w-4" />
@@ -314,11 +305,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
                 Email
               </p>
               <p className="text-sm">
-                {isPlaceholderEmail(membro.usuario.email) ? (
-                  <span className="text-muted-foreground">Não informado</span>
-                ) : (
-                  membro.usuario.email
-                )}
+                {email ? email : <span className="text-muted-foreground">Não informado</span>}
               </p>
             </div>
 

@@ -12,7 +12,9 @@ export type Plano = {
   }
 }
 
-export type PagamentoStatus = 'PENDENTE' | 'PAGO' | 'ATRASADO' | 'CANCELADO'
+import type { StatusPagamento } from '@prisma/client'
+
+export type PagamentoStatus = StatusPagamento
 
 export type Pagamento = {
   id: string

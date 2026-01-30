@@ -682,6 +682,101 @@ export const emailTemplates = {
     </html>
   `,
 
+  aniversario: (nome: string) => `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <title>Feliz Aniversario - Studio Gabi Rego</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #faf5f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf5f0;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
+              <tr>
+                <td align="center" style="padding-bottom: 24px;">
+                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(234, 88, 12, 0.08); overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 32px 40px; text-align: center;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 28px;">🎂</span>
+                              </div>
+                              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Feliz Aniversario!</h1>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px;">
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
+                          Querido(a) <strong style="color: #ea580c;">${nome}</strong>!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Hoje e um dia muito especial e toda a equipe do <strong>Studio Gabi Rego</strong> quer desejar a voce um feliz aniversario!
+                        </p>
+                        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Que este novo ciclo seja repleto de saude, conquistas e muita energia para continuar sua jornada conosco.
+                        </p>
+                        <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #444444;">
+                          Um grande abraco e parabens!
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center">
+                              <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
+                                    <a href="https://studiogabirego.com" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                      Acessar o site
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                          <tr>
+                            <td style="border-top: 1px solid #f0e6dd;"></td>
+                          </tr>
+                        </table>
+                        <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #444444; text-align: center;">
+                          Com carinho,<br>
+                          <strong style="color: #ea580c;">Equipe Studio Gabi Rego</strong>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 20px; text-align: center;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #ea580c;">
+                    Studio Gabi Rego
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `,
+
   boasVindas: (nome: string) => `
     <!DOCTYPE html>
     <html lang="pt-BR">

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { fichaUpdateSchema } from '@/schemas/treino.schema'
 import {
   deleteFichaTreino,
@@ -39,14 +39,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async () => {
     const { id } = await params
-    const body = await request.json()
-    const validation = fichaUpdateSchema.safeParse(body)
+    const validation = await validateRequest(request, fichaUpdateSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const { nome, data, objetivo, observacoes, exercicios } = validation.data

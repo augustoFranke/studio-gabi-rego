@@ -1,9 +1,55 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextResponse, type NextRequest } from 'next/server'
 import { PATCH } from '@/app/api/membros/[id]/route'
 import { prisma } from '@/lib/prisma'
-import { NextRequest } from 'next/server'
+import { createJsonRequest } from '@/__tests__/test-utils'
+import type { MockValidationOptions, MockValidationSchema } from '@/__tests__/test-utils'
 
 // Mocks
+const { withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const sessionRef = {
+    current: { user: { role: 'ADMIN' as const } },
+  } as { current: { user: { role: 'ADMIN' | 'MEMBRO' } } }
+
+  return {
+    withApiAuthMock: vi.fn(
+      async (
+        handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
+        options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
+      ) => {
+        if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
+          return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+        }
+        return handler(sessionRef.current)
+      }
+    ),
+    validateRequestMock: vi.fn(async (request: NextRequest, schema: MockValidationSchema, options?: MockValidationOptions) => {
+      let body: unknown
+      try {
+        body = await request.json()
+      } catch {
+        return {
+          error: NextResponse.json(
+            { error: options?.invalidJsonMessage ?? 'Dados inválidos enviados. Verifique o formulário.' },
+            { status: 400 }
+          ),
+        }
+      }
+
+      const validation = schema.safeParse(body)
+      if (!validation.success) {
+        const message =
+          options?.errorMessage?.(validation.error) ??
+          validation.error.issues[0]?.message ??
+          'Dados inválidos enviados. Verifique o formulário.'
+        return { error: NextResponse.json({ error: message }, { status: 400 }) }
+      }
+
+      return { data: validation.data }
+    }),
+  }
+})
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     membro: {
@@ -19,7 +65,8 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn((handler) => handler({ user: { role: 'ADMIN' } })),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 vi.mock('@/lib/validators', () => ({
@@ -32,12 +79,8 @@ describe('Membros API - PATCH /api/membros/[id]', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: Record<string, unknown>) => {
-    return new NextRequest('http://localhost:3000/api/membros/123', {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    })
-  }
+  const createRequest = (body: Record<string, unknown>) =>
+    createJsonRequest('http://localhost:3000/api/membros/123', body, 'PATCH')
 
   const params = Promise.resolve({ id: '123' })
 

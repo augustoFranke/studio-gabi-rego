@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { Prisma } from '@prisma/client'
 import { fichaCreateSchema } from '@/schemas/treino.schema'
 import {
@@ -37,14 +37,10 @@ export async function GET(request: NextRequest) {
 // POST /api/treinos - Criar nova ficha de treino (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    const body = await request.json()
-    const validation = fichaCreateSchema.safeParse(body)
+    const validation = await validateRequest(request, fichaCreateSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const { membroId, nome, data, objetivo, observacoes, exercicios } = validation.data

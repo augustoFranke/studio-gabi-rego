@@ -1,5 +1,7 @@
-export type MembroStatus = 'ATIVO' | 'INATIVO' | 'PENDENTE'
-export type Sexo = 'MASCULINO' | 'FEMININO'
+import type { Sexo as PrismaSexo, StatusMembro } from '@prisma/client'
+
+export type MembroStatus = StatusMembro
+export type Sexo = PrismaSexo
 
 export type UsuarioBasic = {
   id: string
