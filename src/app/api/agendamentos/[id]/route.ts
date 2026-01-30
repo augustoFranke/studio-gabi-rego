@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
 import { parseLocalDate } from '@/lib/schedule'
 import { validateHorarioFixoLimit } from '@/services/agendamento.service'
 import { Prisma } from '@prisma/client'
@@ -60,8 +60,9 @@ export async function GET(
       return NextResponse.json({ error: 'Agendamento nao encontrado' }, { status: 404 })
     }
 
-    if (session.user.role === 'MEMBRO' && agendamento.membroId !== session.user.membroId) {
-      return NextResponse.json({ error: 'Nao autorizado' }, { status: 403 })
+    const authError = ensureOwnerOrAdmin(session, agendamento.membroId, { error: 'Nao autorizado' })
+    if (authError) {
+      return authError
     }
 
     return NextResponse.json(agendamento)
