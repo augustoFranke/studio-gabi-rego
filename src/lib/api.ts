@@ -63,6 +63,26 @@ type ValidationOptions<T> = {
   errorMessage?: (error: ZodError<T>) => string
 }
 
+type OwnerCheckOptions = {
+  status?: number
+  error?: string
+}
+
+export function ensureOwnerOrAdmin(
+  session: { user: { role: Role; membroId?: string | null } },
+  ownerId?: string | null,
+  options?: OwnerCheckOptions
+) {
+  if (session.user.role === 'MEMBRO' && ownerId !== session.user.membroId) {
+    return NextResponse.json(
+      { error: options?.error ?? 'Não autorizado' },
+      { status: options?.status ?? 403 }
+    )
+  }
+
+  return null
+}
+
 export async function validateRequest<T>(
   request: NextRequest,
   schema: ZodSchema<T>,

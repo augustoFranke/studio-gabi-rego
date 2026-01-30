@@ -16,3 +16,4 @@
 - After any DB restore/sync, rotate the DB password and update Vercel env vars (Production + Preview), then redeploy.
 - Do not commit secrets: `.env.production` stays untracked; keep `.env.production.example` updated to reflect the intended production split.
 - Prefer `pg_dump` over `pg_dumpall` for data syncs to avoid overwriting role passwords.
+- When prompted about a problem in a ready implementation, switch to the `fixes` branch before making changes.

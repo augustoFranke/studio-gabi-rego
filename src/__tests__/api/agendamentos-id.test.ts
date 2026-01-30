@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { DELETE, GET, PATCH } from '@/app/api/agendamentos/[id]/route'
 import type { MockValidationOptions, MockValidationSchema } from '@/__tests__/test-utils'
 
-const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock, ensureOwnerOrAdminMock } = vi.hoisted(() => {
   const sessionRef = {
     current: { user: { role: 'ADMIN' as const, membroId: 'm-admin' } },
   } as { current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } } }
@@ -57,6 +57,21 @@ const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hois
 
       return { data: validation.data }
     }),
+    ensureOwnerOrAdminMock: vi.fn(
+      (
+        session: typeof sessionRef.current,
+        ownerId?: string | null,
+        options?: { status?: number; error?: string }
+      ) => {
+        if (session.user.role === 'MEMBRO' && ownerId !== session.user.membroId) {
+          return NextResponse.json(
+            { error: options?.error ?? 'Não autorizado' },
+            { status: options?.status ?? 403 }
+          )
+        }
+        return null
+      }
+    ),
   }
 })
 
@@ -67,6 +82,7 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/api', () => ({
   withApiAuth: withApiAuthMock,
   validateRequest: validateRequestMock,
+  ensureOwnerOrAdmin: ensureOwnerOrAdminMock,
 }))
 
 describe('Agendamentos API - /api/agendamentos/[id]', () => {

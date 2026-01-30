@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -21,8 +21,7 @@ import {
   AgendamentoModal,
 } from '@/components/schedule'
 import { useSchedule } from '@/hooks/use-schedule'
-import { parseDateFromAPI } from '@/lib/schedule'
-import type { Agendamento } from '@/types/schedule'
+import { useAgendaInteractions } from '@/hooks/use-agenda-interactions'
 
 export default function AgendaPage() {
   const {
@@ -41,150 +40,43 @@ export default function AgendaPage() {
     moveAgendamento,
   } = useSchedule()
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view')
-  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [selectedHour, setSelectedHour] = useState<number | undefined>()
-  const [isSaving, setIsSaving] = useState(false)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const [confirmMoveOpen, setConfirmMoveOpen] = useState(false)
-  const [pendingMove, setPendingMove] = useState<{
-    agendamentoId: string
-    date: Date
-    hour: number
-  } | null>(null)
-
-  // Handle slot click (create new agendamento)
-  const handleSlotClick = useCallback((date: Date, hour: number) => {
-    setSelectedDate(date)
-    setSelectedHour(hour)
-    setSelectedAgendamento(null)
-    setModalMode('create')
-    setModalOpen(true)
-  }, [])
-
-  // Handle member click (view/edit agendamento)
-  const handleMemberClick = useCallback((agendamento: Agendamento) => {
-    setSelectedAgendamento(agendamento)
-    setSelectedDate(parseDateFromAPI(agendamento.data))
-    setSelectedHour(parseInt(agendamento.horario.horaInicio.split(':')[0], 10))
-    setModalMode('edit')
-    setModalOpen(true)
-  }, [])
-
-  // Handle day click in monthly view
-  const handleDayClick = useCallback((date: Date) => {
-    setCurrentDate(date)
-    setView('daily')
-  }, [setCurrentDate, setView])
-
-  // Handle drag start
-  const handleDragStart = useCallback((agendamento: Agendamento) => {
-    setDraggingId(agendamento.id)
-  }, [setDraggingId])
-
-  // Handle drag end
-  const handleDragEnd = useCallback(() => {
-    setDraggingId(null)
-  }, [setDraggingId])
-
-  // Handle drop
-  const handleDrop = useCallback(async (date: Date, hour: number, agendamentoId: string) => {
-    setDraggingId(null)
-    setPendingMove({ agendamentoId, date, hour })
-    setConfirmMoveOpen(true)
-  }, [setDraggingId])
-
-  // Handle drop for daily view (same date, different hour)
-  const handleDailyDrop = useCallback(async (hour: number, agendamentoId: string) => {
-    setDraggingId(null)
-    setPendingMove({ agendamentoId, date: currentDate, hour })
-    setConfirmMoveOpen(true)
-  }, [setDraggingId, currentDate])
-
-  // Handle modal save
-  const handleModalSave = useCallback(async (data: {
-    membroId?: string
-    data?: string
-    hour?: number
-    observacao?: string
-    scope?: 'single' | 'weekly'
-  }) => {
-    setIsSaving(true)
-    try {
-      const hour = data.hour ?? selectedHour
-      if (modalMode === 'create' && data.membroId && selectedDate && hour !== undefined) {
-        const success = await createAgendamento(
-          data.membroId,
-          selectedDate,
-          hour,
-          data.scope
-        )
-        if (success) setModalOpen(false)
-      } else if (modalMode === 'edit' && selectedAgendamento) {
-        const success = await updateAgendamento(selectedAgendamento.id, {
-          observacao: data.observacao,
-        })
-        if (success) setModalOpen(false)
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }, [modalMode, selectedDate, selectedHour, selectedAgendamento, createAgendamento, updateAgendamento])
-
-  // Handle modal delete
-  const handleModalDelete = useCallback(() => {
-    if (!selectedAgendamento) return
-    setPendingDeleteId(selectedAgendamento.id)
-    setConfirmDeleteOpen(true)
-  }, [selectedAgendamento])
-
-  const handleConfirmDelete = useCallback(async (scope: 'single' | 'future') => {
-    if (!pendingDeleteId) return
-    setIsSaving(true)
-    try {
-      const success = await deleteAgendamento(pendingDeleteId, scope)
-      if (success) {
-        setConfirmDeleteOpen(false)
-        setModalOpen(false)
-      }
-    } finally {
-      setIsSaving(false)
-      setPendingDeleteId(null)
-    }
-  }, [pendingDeleteId, deleteAgendamento])
-
-  const handleConfirmMove = useCallback(async (scope: 'single' | 'future') => {
-    if (!pendingMove) return
-    setIsSaving(true)
-    try {
-      const success = await moveAgendamento(
-        pendingMove.agendamentoId,
-        pendingMove.date,
-        pendingMove.hour,
-        scope
-      )
-      if (success) {
-        setConfirmMoveOpen(false)
-      }
-    } finally {
-      setIsSaving(false)
-      setPendingMove(null)
-    }
-  }, [pendingMove, moveAgendamento])
-
-  // Handle today click
-  const handleTodayClick = useCallback(() => {
-    setCurrentDate(new Date())
-  }, [setCurrentDate])
-
-  // Memoized slot click handler for daily view
-  const handleDailySlotClick = useCallback((hour: number) => {
-    handleSlotClick(currentDate, hour)
-  }, [handleSlotClick, currentDate])
+  const {
+    modalOpen,
+    setModalOpen,
+    modalMode,
+    selectedAgendamento,
+    selectedDate,
+    selectedHour,
+    isSaving,
+    confirmDeleteOpen,
+    confirmMoveOpen,
+    handleSlotClick,
+    handleMemberClick,
+    handleDayClick,
+    handleDragStart,
+    handleDragEnd,
+    handleDrop,
+    handleDailyDrop,
+    handleModalSave,
+    handleModalDelete,
+    handleConfirmDelete,
+    handleConfirmMove,
+    handleTodayClick,
+    handleDailySlotClick,
+    handleDeleteDialogOpenChange,
+    handleMoveDialogOpenChange,
+    closeConfirmDelete,
+    closeConfirmMove,
+  } = useAgendaInteractions({
+    currentDate,
+    setCurrentDate,
+    setView,
+    setDraggingId,
+    createAgendamento,
+    updateAgendamento,
+    deleteAgendamento,
+    moveAgendamento,
+  })
 
   // Calculate stats with memoization
   const stats = useMemo(() => {
@@ -362,10 +254,7 @@ export default function AgendaPage() {
 
       <Dialog
         open={confirmDeleteOpen}
-        onOpenChange={(open) => {
-          setConfirmDeleteOpen(open)
-          if (!open) setPendingDeleteId(null)
-        }}
+        onOpenChange={handleDeleteDialogOpenChange}
       >
         <DialogContent>
           <DialogHeader>
@@ -377,7 +266,7 @@ export default function AgendaPage() {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => setConfirmDeleteOpen(false)}
+              onClick={closeConfirmDelete}
               disabled={isSaving}
             >
               Cancelar
@@ -402,10 +291,7 @@ export default function AgendaPage() {
 
       <Dialog
         open={confirmMoveOpen}
-        onOpenChange={(open) => {
-          setConfirmMoveOpen(open)
-          if (!open) setPendingMove(null)
-        }}
+        onOpenChange={handleMoveDialogOpenChange}
       >
         <DialogContent>
           <DialogHeader>
@@ -417,7 +303,7 @@ export default function AgendaPage() {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => setConfirmMoveOpen(false)}
+              onClick={closeConfirmMove}
               disabled={isSaving}
             >
               Cancelar
