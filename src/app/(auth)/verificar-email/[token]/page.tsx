@@ -11,6 +11,9 @@ import Image from "next/image"
 
 type VerificationStatus = "loading" | "success" | "error" | "expired"
 
+const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
+const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
+
 export default function VerificarTokenPage({
   params,
 }: {
@@ -44,6 +47,12 @@ export default function VerificarTokenPage({
           // Store profile token for next step (regular users only)
           if (data.profileToken) {
             setProfileToken(data.profileToken)
+            try {
+              localStorage.setItem(PROFILE_TOKEN_STORAGE_KEY, data.profileToken)
+              localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
+            } catch {
+              // Ignore storage errors (private mode / blocked storage)
+            }
           }
         } else if (data.error === "Token expirado") {
           setStatus("expired")
