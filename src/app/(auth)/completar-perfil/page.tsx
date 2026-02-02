@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useSyncExternalStore } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -20,8 +20,21 @@ function CompletarPerfilContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
-  const [profileToken, setProfileToken] = useState<string | null>(tokenFromUrl)
-  const [tokenChecked, setTokenChecked] = useState(false)
+  const profileTokenFromStorage = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof window === "undefined") return null
+      try {
+        return localStorage.getItem(PROFILE_TOKEN_STORAGE_KEY)
+      } catch {
+        return null
+      }
+    },
+    () => null
+  )
+  const profileToken = status === "authenticated"
+    ? null
+    : (tokenFromUrl ?? profileTokenFromStorage)
   const [isLoading, setIsLoading] = useState(false)
   const [cpf, setCpf] = useState("")
   const [telefone, setTelefone] = useState("")
@@ -29,47 +42,32 @@ function CompletarPerfilContent() {
 
   useEffect(() => {
     if (tokenFromUrl) {
-      setProfileToken(tokenFromUrl)
       try {
         localStorage.setItem(PROFILE_TOKEN_STORAGE_KEY, tokenFromUrl)
       } catch {
         // Ignore storage errors (private mode / blocked storage)
       }
-      setTokenChecked(true)
       return
     }
 
     if (status === "authenticated") {
-      setProfileToken(null)
       try {
         localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
       } catch {
         // Ignore storage errors (private mode / blocked storage)
       }
-      setTokenChecked(true)
-      return
     }
-
-    try {
-      const storedToken = localStorage.getItem(PROFILE_TOKEN_STORAGE_KEY)
-      if (storedToken) {
-        setProfileToken(storedToken)
-      }
-    } catch {
-      // Ignore storage errors (private mode / blocked storage)
-    }
-    setTokenChecked(true)
   }, [tokenFromUrl, status])
 
   // Redirect if not authenticated AND no profile token
   useEffect(() => {
-    if (!tokenChecked || status === "loading") {
+    if (status === "loading") {
       return
     }
     if (status === "unauthenticated" && !profileToken) {
       router.push("/login")
     }
-  }, [status, profileToken, router, tokenChecked])
+  }, [status, profileToken, router])
 
   // Format CPF as user types
   function handleCpfChange(value: string) {
