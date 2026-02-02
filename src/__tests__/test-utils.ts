@@ -26,6 +26,8 @@ export type MockValidationOptions = {
   errorMessage?: (error: MockValidationError) => string
 }
 
+export type PrismaMockShape = Record<string, string[]>
+
 export function createSessionRef(initial?: TestSession): SessionRef {
   return {
     current: initial ?? { user: { role: 'ADMIN', membroId: 'm-admin' } },
@@ -46,6 +48,51 @@ export function mockWithApiAuth(sessionRef: SessionRef) {
       }
     ),
   }
+}
+
+export function createPrismaMock(shape: PrismaMockShape) {
+  const prismaMock: Record<string, Record<string, ReturnType<typeof vi.fn>>> = {}
+
+  for (const [model, methods] of Object.entries(shape)) {
+    prismaMock[model] = Object.fromEntries(
+      methods.map((method) => [method, vi.fn()])
+    )
+  }
+
+  return prismaMock as Record<string, Record<string, ReturnType<typeof vi.fn>>>
+}
+
+export function createValidateRequestMock() {
+  return vi.fn(
+    async (
+      request: Request,
+      schema: MockValidationSchema,
+      options?: MockValidationOptions
+    ) => {
+      let body: unknown
+      try {
+        body = await request.json()
+      } catch {
+        return {
+          error: NextResponse.json(
+            { error: options?.invalidJsonMessage ?? 'Dados inválidos enviados. Verifique o formulário.' },
+            { status: 400 }
+          ),
+        }
+      }
+
+      const validation = schema.safeParse(body)
+      if (!validation.success) {
+        const message =
+          options?.errorMessage?.(validation.error) ??
+          validation.error.issues[0]?.message ??
+          'Dados inválidos enviados. Verifique o formulário.'
+        return { error: NextResponse.json({ error: message }, { status: 400 }) }
+      }
+
+      return { data: validation.data }
+    }
+  )
 }
 
 export function createJsonRequest(

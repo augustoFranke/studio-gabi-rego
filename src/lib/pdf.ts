@@ -51,17 +51,12 @@ function drawPageBorder(doc: PDFKit.PDFDocument): void {
   doc.restore()
 }
 
-function drawTrainingTable(options: {
+function createTableDrawer(options: {
   doc: PDFKit.PDFDocument
   fontRegular: string
   fontBold: string
-  title: string
-  exercises: TrainingPDFExercise[]
-  cursorY: number
 }) {
-  const { doc, fontRegular, fontBold, title, exercises } = options
-  let cursorY = options.cursorY
-
+  const { doc, fontRegular, fontBold } = options
   const colWidths = [
     USABLE_WIDTH * 0.45, // Exercise
     USABLE_WIDTH * 0.15, // Sets
@@ -90,7 +85,7 @@ function drawTrainingTable(options: {
         width: width - 4,
         align,
         lineBreak: false,
-        ellipsis: true
+        ellipsis: true,
       }
 
       doc.text(text, textX, textY, textOptions)
@@ -103,48 +98,59 @@ function drawTrainingTable(options: {
     })
   }
 
-  // Check for page break
-  if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
-    doc.addPage()
-    cursorY = MARGIN_TOP
-  }
+  const drawTable = (params: {
+    title: string
+    exercises: TrainingPDFExercise[]
+    cursorY: number
+  }) => {
+    const { title, exercises } = params
+    let cursorY = params.cursorY
 
-  // Title
-  doc.font(fontBold).fontSize(18)
-  doc.text(title, MARGIN_LEFT, cursorY)
-  cursorY += 1 * CM
-
-  // Check space for whole table or at least header + 1 row
-  const totalTableHeight = (exercises.length + EXTRA_ROWS + 1) * rowHeight
-  if (cursorY + totalTableHeight > PAGE_HEIGHT - MARGIN_BOTTOM) {
-    if (cursorY > MARGIN_TOP + 5 * CM) {
+    // Check for page break
+    if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
       doc.addPage()
       cursorY = MARGIN_TOP
-      doc.font(fontBold).fontSize(18)
-      doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
-      cursorY += 1 * CM
     }
+
+    // Title
+    doc.font(fontBold).fontSize(18)
+    doc.text(title, MARGIN_LEFT, cursorY)
+    cursorY += 1 * CM
+
+    // Check space for whole table or at least header + 1 row
+    const totalTableHeight = (exercises.length + EXTRA_ROWS + 1) * rowHeight
+    if (cursorY + totalTableHeight > PAGE_HEIGHT - MARGIN_BOTTOM) {
+      if (cursorY > MARGIN_TOP + 5 * CM) {
+        doc.addPage()
+        cursorY = MARGIN_TOP
+        doc.font(fontBold).fontSize(18)
+        doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
+        cursorY += 1 * CM
+      }
+    }
+
+    // Header
+    drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', ''], true)
+    cursorY += rowHeight
+
+    // Rows
+    exercises.forEach((ex) => {
+      drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''])
+      cursorY += rowHeight
+    })
+
+    // Extra Rows
+    for (let i = 0; i < EXTRA_ROWS; i++) {
+      drawRow(cursorY, ['', '', '', ''])
+      cursorY += rowHeight
+    }
+
+    cursorY += 1 * CM // Spacing after table
+
+    return cursorY
   }
 
-  // Header
-  drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', ''], true)
-  cursorY += rowHeight
-
-  // Rows
-  exercises.forEach((ex) => {
-    drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''])
-    cursorY += rowHeight
-  })
-
-  // Extra Rows
-  for (let i = 0; i < EXTRA_ROWS; i++) {
-    drawRow(cursorY, ['', '', '', ''])
-    cursorY += rowHeight
-  }
-
-  cursorY += 1 * CM // Spacing after table
-
-  return cursorY
+  return { drawTable }
 }
 
 export async function generateTrainingPDF(data: TrainingPDFData): Promise<Buffer> {
@@ -230,13 +236,12 @@ export async function generateTrainingPDF(data: TrainingPDFData): Promise<Buffer
     // Move cursor below header
     cursorY = MARGIN_TOP + logoSize + 1 * CM
 
+    const tableDrawer = createTableDrawer({ doc, fontRegular, fontBold })
+
     // 2. WORKOUT TABLES
     data.sessions.forEach((session) => {
       if (session.exercises && session.exercises.length > 0) {
-        cursorY = drawTrainingTable({
-          doc,
-          fontRegular,
-          fontBold,
+        cursorY = tableDrawer.drawTable({
           title: `TREINO ${session.name}`,
           exercises: session.exercises,
           cursorY,

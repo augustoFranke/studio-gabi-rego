@@ -1,62 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { DELETE, GET, PATCH } from '@/app/api/agendamentos/[id]/route'
-import type { MockValidationOptions, MockValidationSchema } from '@/__tests__/test-utils'
 
 const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock, ensureOwnerOrAdminMock } = vi.hoisted(() => {
-  const sessionRef = {
-    current: { user: { role: 'ADMIN' as const, membroId: 'm-admin' } },
-  } as { current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } } }
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
+  const sessionRef = createSessionRef()
 
   return {
-    prismaMock: {
-      agendamento: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        count: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      horarioDisponivel: {
-        findUnique: vi.fn(),
-      },
-    },
-    sessionRef,
-    withApiAuthMock: vi.fn(
-      async (
-        handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-        options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-      ) => {
-        if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-          return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-        }
-        return handler(sessionRef.current)
-      }
-    ),
-    validateRequestMock: vi.fn(async (request: NextRequest, schema: MockValidationSchema, options?: MockValidationOptions) => {
-      let body: unknown
-      try {
-        body = await request.json()
-      } catch {
-        return {
-          error: NextResponse.json(
-            { error: options?.invalidJsonMessage ?? 'Dados inválidos enviados. Verifique o formulário.' },
-            { status: 400 }
-          ),
-        }
-      }
-
-      const validation = schema.safeParse(body)
-      if (!validation.success) {
-        const message =
-          options?.errorMessage?.(validation.error) ??
-          validation.error.issues[0]?.message ??
-          'Dados inválidos enviados. Verifique o formulário.'
-        return { error: NextResponse.json({ error: message }, { status: 400 }) }
-      }
-
-      return { data: validation.data }
+    prismaMock: createPrismaMock({
+      agendamento: ['findUnique', 'findFirst', 'count', 'update', 'delete'],
+      horarioDisponivel: ['findUnique'],
     }),
+    sessionRef,
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
     ensureOwnerOrAdminMock: vi.fn(
       (
         session: typeof sessionRef.current,
