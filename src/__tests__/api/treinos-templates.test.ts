@@ -2,15 +2,47 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { GET, POST } from '@/app/api/treinos/templates/route'
 
-const { sessionRef, listTreinoTemplatesMock, createTreinoTemplateMock, getFichaTreinoWithDetailsMock } =
-  vi.hoisted(() => ({
-    sessionRef: {
-      current: { user: { role: 'ADMIN' as const } },
-    } as { current: { user: { role: 'ADMIN' | 'MEMBRO' } } },
-    listTreinoTemplatesMock: vi.fn(),
-    createTreinoTemplateMock: vi.fn(),
-    getFichaTreinoWithDetailsMock: vi.fn(),
-  }))
+const {
+  sessionRef,
+  listTreinoTemplatesMock,
+  createTreinoTemplateMock,
+  getFichaTreinoWithDetailsMock,
+  validateRequestMock,
+} = vi.hoisted(() => ({
+  sessionRef: {
+    current: { user: { role: 'ADMIN' as const } },
+  } as { current: { user: { role: 'ADMIN' | 'MEMBRO' } } },
+  listTreinoTemplatesMock: vi.fn(),
+  createTreinoTemplateMock: vi.fn(),
+  getFichaTreinoWithDetailsMock: vi.fn(),
+  validateRequestMock: vi.fn(
+    async (request: NextRequest, schema: { safeParse: (data: unknown) => any }) => {
+      let body: unknown
+      try {
+        body = await request.json()
+      } catch {
+        return {
+          error: NextResponse.json(
+            { error: 'Dados inválidos enviados. Verifique o formulário.' },
+            { status: 400 }
+          ),
+        }
+      }
+
+      const validation = schema.safeParse(body)
+      if (!validation.success) {
+        return {
+          error: NextResponse.json(
+            { error: validation.error.issues[0]?.message ?? 'Dados inválidos enviados.' },
+            { status: 400 }
+          ),
+        }
+      }
+
+      return { data: validation.data }
+    }
+  ),
+}))
 
 vi.mock('@/services/treino.service', () => ({
   listTreinoTemplates: listTreinoTemplatesMock,
@@ -30,6 +62,7 @@ vi.mock('@/lib/api', () => ({
       return handler(sessionRef.current)
     }
   ),
+  validateRequest: validateRequestMock,
 }))
 
 describe('Treinos Templates API', () => {
