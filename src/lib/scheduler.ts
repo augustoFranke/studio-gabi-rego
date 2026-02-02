@@ -15,6 +15,7 @@
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
+import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import { Prisma, TipoNotificacao } from '@prisma/client'
 
 type NotificationProcessOptions<T> = {
@@ -55,6 +56,16 @@ async function processNotifications<T>({
   }
 
   return items.length
+}
+
+type RecurringAppointmentsParams = {
+  startDate: Date
+  endDate: Date
+  membroId?: string
+}
+
+export async function generateRecurringAppointments(params: RecurringAppointmentsParams) {
+  return syncAgendamentosRecorrentes(params)
 }
 
 /**
