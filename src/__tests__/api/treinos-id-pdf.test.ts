@@ -2,17 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { GET } from '@/app/api/treinos/[id]/pdf/route'
 
-const { sessionRef, prismaMock, generateTrainingPDFMock } = vi.hoisted(() => ({
-  sessionRef: {
-    current: { user: { role: 'ADMIN' as const, membroId: 'm-1' } },
-  } as { current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } } },
-  prismaMock: {
-    fichaTreino: {
-      findUnique: vi.fn(),
-    },
-  },
-  generateTrainingPDFMock: vi.fn(),
-}))
+const { sessionRef, prismaMock, generateTrainingPDFMock, withApiAuthMock } = vi.hoisted(() => {
+  const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { role: 'ADMIN', membroId: 'm-1' } })
+  return {
+    sessionRef,
+    prismaMock: createPrismaMock({
+      fichaTreino: ['findUnique'],
+    }),
+    generateTrainingPDFMock: vi.fn(),
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
@@ -23,12 +24,7 @@ vi.mock('@/lib/pdf', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      _options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => handler(sessionRef.current)
-  ),
+  withApiAuth: withApiAuthMock,
   ensureOwnerOrAdmin: vi.fn(
     (
       session: typeof sessionRef.current,

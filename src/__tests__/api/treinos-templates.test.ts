@@ -1,17 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
-import type { ZodSchema } from 'zod'
+import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/treinos/templates/route'
 
-const { sessionRef, listTreinoTemplatesMock, createTreinoTemplateMock, getFichaTreinoWithDetailsMock } =
-  vi.hoisted(() => ({
-    sessionRef: {
-      current: { user: { role: 'ADMIN' as const } },
-    } as { current: { user: { role: 'ADMIN' | 'MEMBRO' } } },
+const {
+  sessionRef,
+  listTreinoTemplatesMock,
+  createTreinoTemplateMock,
+  getFichaTreinoWithDetailsMock,
+  withApiAuthMock,
+  validateRequestMock,
+} = vi.hoisted(() => {
+  const { createSessionRef, createValidateRequestMock, mockWithApiAuth } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
+  return {
+    sessionRef,
     listTreinoTemplatesMock: vi.fn(),
     createTreinoTemplateMock: vi.fn(),
     getFichaTreinoWithDetailsMock: vi.fn(),
-  }))
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
+  }
+})
 
 vi.mock('@/services/treino.service', () => ({
   listTreinoTemplates: listTreinoTemplatesMock,
@@ -20,42 +29,8 @@ vi.mock('@/services/treino.service', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => {
-      if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-      return handler(sessionRef.current)
-    }
-  ),
-  validateRequest: async <T>(request: NextRequest, schema: ZodSchema<T>) => {
-    let body: unknown
-    try {
-      body = await request.json()
-    } catch {
-      return {
-        error: NextResponse.json(
-          { error: 'Dados inválidos enviados. Verifique o formulário.' },
-          { status: 400 }
-        ),
-      }
-    }
-
-    const validation = schema.safeParse(body)
-    if (!validation.success) {
-      return {
-        error: NextResponse.json(
-          { error: validation.error.issues[0]?.message ?? 'Dados inválidos enviados. Verifique o formulário.' },
-          { status: 400 }
-        ),
-      }
-    }
-
-    return { data: validation.data }
-  },
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Treinos Templates API', () => {
