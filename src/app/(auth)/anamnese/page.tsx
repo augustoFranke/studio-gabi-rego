@@ -66,6 +66,7 @@ function AnamneseContent() {
     parq: false,
     experience: false,
   })
+  const [submissionSuccessful, setSubmissionSuccessful] = useState(false)
   const router = useRouter()
 
   // Load user data on mount
@@ -73,6 +74,9 @@ function AnamneseContent() {
     let isMounted = true
 
     async function loadData() {
+      // Don't reload data if submission was successful (prevents race condition redirect)
+      if (submissionSuccessful) return
+
       try {
         setTokenError(null)
         const endpoint = token
@@ -125,7 +129,7 @@ function AnamneseContent() {
     return () => {
       isMounted = false
     }
-  }, [status, router, token])
+  }, [status, router, token, submissionSuccessful])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -166,9 +170,10 @@ function AnamneseContent() {
         return
       }
 
+      setSubmissionSuccessful(true)
       toast.success(token ? "Anamnese enviada com sucesso!" : "Cadastro concluído!")
       setIsLoading(false)
-      router.push("/inicio")
+      router.replace("/inicio")
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar")
       console.error(error)
@@ -178,7 +183,7 @@ function AnamneseContent() {
 
   if (status === "loading" || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     )
@@ -186,7 +191,7 @@ function AnamneseContent() {
 
   if (tokenError) {
     return (
-      <div className="min-h-screen p-4 relative overflow-hidden bg-white dark:bg-white">
+      <div className="min-h-screen p-4 relative overflow-hidden bg-background">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
           <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
@@ -210,7 +215,7 @@ function AnamneseContent() {
   }
 
   return (
-    <div className="min-h-screen p-4 relative overflow-hidden bg-white dark:bg-white">
+    <div className="min-h-screen p-4 relative overflow-hidden bg-background">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
@@ -669,7 +674,7 @@ function AnamneseContent() {
 export default function AnamnesePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
