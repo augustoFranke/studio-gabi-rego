@@ -10,8 +10,8 @@ const isProduction = process.env.NODE_ENV === "production"
 const authError = (code: string) => (isProduction ? "INVALID_CREDENTIALS" : code)
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // Required for Vercel deployment - trust the proxy headers
-  trustHost: process.env.VERCEL === "1",
+  // Trust host in dev or when behind Vercel's proxy
+  trustHost: process.env.NODE_ENV !== "production" || process.env.VERCEL === "1",
   // Explicitly use NEXTAUTH_SECRET for backward compatibility
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   providers: [
