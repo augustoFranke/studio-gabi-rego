@@ -508,19 +508,14 @@ export default function FinanceiroPage() {
       const url = editingPagamento ? `/api/pagamentos/${editingPagamento.id}` : "/api/pagamentos"
       const method = editingPagamento ? "PUT" : "POST"
 
-      const body = editingPagamento
-        ? {
-          formaPagamento: pagamentoForm.formaPagamento,
-          observacao: pagamentoForm.observacao || null,
-        }
-        : {
-          membroId: pagamentoForm.membroId,
-          planoId: pagamentoForm.planoId,
-          valor: parseFloat(pagamentoForm.valor),
-          dataVencimento: pagamentoForm.dataVencimento,
-          formaPagamento: pagamentoForm.formaPagamento,
-          observacao: pagamentoForm.observacao || null,
-        }
+      const body = {
+        membroId: pagamentoForm.membroId,
+        planoId: pagamentoForm.planoId,
+        valor: parseFloat(pagamentoForm.valor),
+        dataVencimento: pagamentoForm.dataVencimento,
+        formaPagamento: pagamentoForm.formaPagamento,
+        observacao: pagamentoForm.observacao || null,
+      }
 
       const res = await fetch(url, {
         method,
@@ -731,7 +726,7 @@ export default function FinanceiroPage() {
                               setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
                             }
                           }}
-                          disabled={!!editingPagamento}
+                          disabled={submitting}
                         >
                           <SelectTrigger className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}>
                             <SelectValue placeholder="Selecione o aluno" />
@@ -783,7 +778,7 @@ export default function FinanceiroPage() {
                                   setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
                                 }
                               }}
-                              disabled={!!editingPagamento}
+                              disabled={submitting}
                             >
                               <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
                                 <SelectValue placeholder="Selecione o plano" />
@@ -862,7 +857,7 @@ export default function FinanceiroPage() {
                                 setPagamentoErrors({ ...pagamentoErrors, valor: "" })
                               }
                             }}
-                            disabled={!!editingPagamento}
+                            disabled={submitting}
                             className={pagamentoErrors.valor ? "border-destructive" : "border-input/50"}
                           />
                           {pagamentoErrors.valor && (
@@ -883,7 +878,7 @@ export default function FinanceiroPage() {
                                 setPagamentoErrors({ ...pagamentoErrors, dataVencimento: "" })
                               }
                             }}
-                            disabled={!!editingPagamento}
+                            disabled={submitting}
                             className={pagamentoErrors.dataVencimento ? "border-destructive" : "border-input/50"}
                           />
                           {pagamentoErrors.dataVencimento && (

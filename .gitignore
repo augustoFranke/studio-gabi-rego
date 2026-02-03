@@ -51,10 +51,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# utility exports (sensitive data)
-/utility/csv/
-/utility/email-previews/
-/utility/logs/
 /prisma/dev.db
 
 # Python virtual environment
