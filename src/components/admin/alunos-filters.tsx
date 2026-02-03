@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,6 +37,28 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
   const [statusValue, setStatusValue] = useState(status ?? "todos")
   const [planoValue, setPlanoValue] = useState(plano ?? "todos")
   const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const restoreSearchFocusRef = useRef(false)
+
+  useEffect(() => {
+    setSearchValue(search ?? "")
+    setStatusValue(status ?? "todos")
+    setPlanoValue(plano ?? "todos")
+    setOrderValue(order ?? "recent_desc")
+  }, [order, plano, search, status])
+
+  useEffect(() => {
+    if (!restoreSearchFocusRef.current) {
+      return
+    }
+    const rafId = requestAnimationFrame(() => {
+      if (document.activeElement !== searchInputRef.current) {
+        searchInputRef.current?.focus()
+      }
+      restoreSearchFocusRef.current = false
+    })
+    return () => cancelAnimationFrame(rafId)
+  }, [searchParams])
 
   const groupedPlanos = useMemo(() => {
     const planosGabi = planos.filter(p => p.nome.toLowerCase().includes("gabi"))
@@ -73,44 +95,32 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
     const nextQuery = buildQuery(values)
     const currentQuery = searchParams.toString()
     if (nextQuery === currentQuery) {
-      return
+      return false
     }
     router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+    return true
   }, [buildQuery, pathname, router, searchParams])
-
-  useEffect(() => {
-    const currentSearch = searchParams.get("search") ?? ""
-    const currentStatus = searchParams.get("status") ?? "todos"
-    const currentPlano = searchParams.get("plano") ?? "todos"
-    const currentOrder = searchParams.get("order") ?? "recent_desc"
-    const nextSearch = searchValue.trim()
-
-    const filtersChanged =
-      currentSearch !== nextSearch ||
-      currentStatus !== statusValue ||
-      currentPlano !== planoValue ||
-      currentOrder !== orderValue
-
-    if (!filtersChanged) {
-      return
-    }
-
-    const timer = setTimeout(() => {
-      applyFilters({ search: nextSearch, status: statusValue, plano: planoValue, order: orderValue })
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [applyFilters, orderValue, planoValue, searchParams, searchValue, statusValue])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative w-full md:w-64">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={searchInputRef}
           name="search"
           placeholder="Nome, CPF ou Email..."
           className="pl-8 border-input/50 focus:border-primary"
           value={searchValue}
-          onChange={(event) => setSearchValue(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value
+            setSearchValue(nextValue)
+            restoreSearchFocusRef.current = applyFilters({
+              search: nextValue.trim(),
+              status: statusValue,
+              plano: planoValue,
+              order: orderValue,
+            })
+          }}
         />
       </div>
 
@@ -118,6 +128,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         value={statusValue}
         onValueChange={(value) => {
           setStatusValue(value)
+          applyFilters({ search: searchValue.trim(), status: value, plano: planoValue, order: orderValue })
         }}
       >
         <SelectTrigger className="w-[140px] border-input/50">
@@ -135,6 +146,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         value={planoValue}
         onValueChange={(value) => {
           setPlanoValue(value)
+          applyFilters({ search: searchValue.trim(), status: statusValue, plano: value, order: orderValue })
         }}
       >
         <SelectTrigger className="w-[220px] border-input/50">
@@ -197,6 +209,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         value={orderValue}
         onValueChange={(value) => {
           setOrderValue(value)
+          applyFilters({ search: searchValue.trim(), status: statusValue, plano: planoValue, order: value })
         }}
       >
         <SelectTrigger className="w-[200px] border-input/50">
@@ -220,7 +233,14 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="ghost"
         className="hover:text-primary"
-        onClick={() => router.push(pathname)}
+        onClick={() => {
+          const cleared = { search: "", status: "todos", plano: "todos", order: "recent_desc" }
+          setSearchValue("")
+          setStatusValue("todos")
+          setPlanoValue("todos")
+          setOrderValue("recent_desc")
+          applyFilters(cleared)
+        }}
       >
         Limpar
       </Button>

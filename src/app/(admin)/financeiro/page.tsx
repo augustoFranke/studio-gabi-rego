@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -100,6 +100,7 @@ export default function FinanceiroPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loadingPagamentos, setLoadingPagamentos] = useState(false)
+  const pagamentosRequestId = useRef(0)
   const ITEMS_PER_PAGE = 10
 
   // Dialog states
@@ -181,6 +182,7 @@ export default function FinanceiroPage() {
 
   // Fetch pagamentos with pagination and filters
   const fetchPagamentos = useCallback(async (page: number = 1, search?: string, status?: string, sort?: string) => {
+    const requestId = ++pagamentosRequestId.current
     setLoadingPagamentos(true)
     try {
       const params = new URLSearchParams({
@@ -192,6 +194,9 @@ export default function FinanceiroPage() {
       if (sort) params.set('sort', sort)
 
       const res = await fetch(`/api/pagamentos?${params.toString()}`)
+      if (requestId !== pagamentosRequestId.current) {
+        return
+      }
       if (res.ok) {
         const response = await res.json()
         setPagamentos(response.data)
@@ -199,10 +204,15 @@ export default function FinanceiroPage() {
         setCurrentPage(response.meta.page)
       }
     } catch (error) {
+      if (requestId !== pagamentosRequestId.current) {
+        return
+      }
       console.error("Erro ao carregar pagamentos:", error)
       toast.error("Erro ao carregar pagamentos")
     } finally {
-      setLoadingPagamentos(false)
+      if (requestId === pagamentosRequestId.current) {
+        setLoadingPagamentos(false)
+      }
     }
   }, [])
 
@@ -238,12 +248,9 @@ export default function FinanceiroPage() {
     fetchData()
   }, [fetchData])
 
-  // Refetch when search or filter changes (with debounce for search)
+  // Refetch when search or filter changes (real-time)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)
-    }, 300)
-    return () => clearTimeout(timer)
+    fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)
   }, [searchPagamento, filterStatus, sortPagamento, fetchPagamentos])
 
   // Plano handlers
