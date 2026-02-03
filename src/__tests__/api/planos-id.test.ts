@@ -49,6 +49,28 @@ describe('Planos API - /api/planos/[id]', () => {
 
     expect(res.status).toBe(200)
     expect(json.id).toBe('p-1')
+    expect(prismaMock.plano.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: {
+          _count: {
+            select: { membros: true, pagamentos: true },
+          },
+        },
+      })
+    )
+  })
+
+  it('GET hides counts for non-admins', async () => {
+    sessionRef.current = { user: { role: 'MEMBRO' } }
+    prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
+
+    const res = await GET(new NextRequest('http://localhost:3000/api/planos/p-1'), params('p-1'))
+    const json = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(json.id).toBe('p-1')
+    const args = prismaMock.plano.findUnique.mock.calls[0]?.[0]
+    expect(args.include).toBeUndefined()
   })
 
   it('PUT updates plan fields', async () => {

@@ -64,43 +64,45 @@ export async function PATCH(
                 ? data.email.toLowerCase().trim()
                 : undefined
 
-        // Verificar se membro existe
-        const membroExistente = await prisma.membro.findUnique({
-            where: { id },
-            select: {
-                id: true,
-                usuarioId: true,
-                cpf: true,
-                planoId: true,
-                usuario: true,
-            },
-        })
+        const cpfLimpo = typeof data.cpf === 'string' && data.cpf
+            ? data.cpf.replace(/\D/g, '')
+            : null
+
+        // Parallelize member lookup and validation checks
+        const [membroExistente, emailExiste, cpfExiste] = await Promise.all([
+            prisma.membro.findUnique({
+                where: { id },
+                include: { usuario: true }
+            }),
+            normalizedEmail
+                ? prisma.usuario.findUnique({ where: { email: normalizedEmail } })
+                : Promise.resolve(null),
+            cpfLimpo
+                ? prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+                : Promise.resolve(null),
+        ])
 
         if (!membroExistente) {
             return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
         }
 
-        // Validações de unicidade se houver alteração
+        // Validate email uniqueness
         if (normalizedEmail && normalizedEmail !== membroExistente.usuario.email) {
             if (!validarEmail(normalizedEmail)) {
                 return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
             }
-            const emailExiste = await prisma.usuario.findUnique({ where: { email: normalizedEmail } })
             if (emailExiste) {
                 return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
             }
         }
 
-        if (typeof data.cpf === 'string' && data.cpf) {
-            const cpfLimpo = data.cpf.replace(/\D/g, '')
-            if (cpfLimpo !== membroExistente.cpf) {
-                if (!validarCPF(data.cpf)) {
-                    return NextResponse.json({ error: 'CPF inválido' }, { status: 400 })
-                }
-                const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
-                if (cpfExiste) {
-                    return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
-                }
+        // Validate CPF uniqueness
+        if (cpfLimpo && cpfLimpo !== membroExistente.cpf) {
+            if (!validarCPF(data.cpf!)) {
+                return NextResponse.json({ error: 'CPF inválido' }, { status: 400 })
+            }
+            if (cpfExiste) {
+                return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 400 })
             }
         }
 

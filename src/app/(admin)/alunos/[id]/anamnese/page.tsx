@@ -129,7 +129,7 @@ export default function AnamnesePage() {
         window.prompt("Copie o link abaixo:", data.link)
       }
 
-      toast.success("Link copiado! Ele expira em 24 horas.")
+      toast.success("Link copiado! Ele expira em 1 hora.")
     } catch (error) {
       console.error("Error copying link:", error)
       toast.error("Erro ao copiar link")
