@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
     // Generate new token
     const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     await prisma.usuario.update({
       where: { id: usuario.id },

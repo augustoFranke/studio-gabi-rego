@@ -441,7 +441,7 @@ export const emailTemplates = {
                                   </td>
                                   <td>
                                     <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
-                                      <strong>Importante:</strong> Este link é válido por 24 horas. Se você não solicitou este cadastro, pode ignorar este email com segurança.
+                                      <strong>Importante:</strong> Este link é válido por 1 hora. Se você não solicitou este cadastro, pode ignorar este email com segurança.
                                     </p>
                                   </td>
                                 </tr>
