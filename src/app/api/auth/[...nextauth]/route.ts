@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { handlers } from "@/lib/auth"
 import { rateLimitByIp } from "@/lib/rate-limit"
 
@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export const GET = handlers.GET
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const url = new URL(request.url)
 
   if (url.pathname.includes("/callback/credentials")) {

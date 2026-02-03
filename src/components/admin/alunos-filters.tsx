@@ -39,10 +39,20 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
   const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
 
   const groupedPlanos = useMemo(() => {
-    const planosGabi = planos.filter(p => p.nome.toLowerCase().includes("gabi"))
-    const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes("estagiário") || p.nome.toLowerCase().includes("estagiarios"))
-    const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes("gabi") && !p.nome.toLowerCase().includes("estagiário") && !p.nome.toLowerCase().includes("estagiarios"))
-
+    // Single-pass categorization instead of multiple filter iterations
+    const planosGabi: typeof planos = []
+    const planosEstagiarios: typeof planos = []
+    const planosOutros: typeof planos = []
+    for (const p of planos) {
+      const nameLower = p.nome.toLowerCase()
+      if (nameLower.includes("gabi")) {
+        planosGabi.push(p)
+      } else if (nameLower.includes("estagiário") || nameLower.includes("estagiarios")) {
+        planosEstagiarios.push(p)
+      } else {
+        planosOutros.push(p)
+      }
+    }
     return { planosGabi, planosEstagiarios, planosOutros }
   }, [planos])
 

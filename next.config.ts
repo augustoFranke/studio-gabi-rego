@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "2mb",
     },
+    // Auto-transform barrel imports for smaller bundles
+    optimizePackageImports: ["lucide-react"],
   },
 
   async headers() {

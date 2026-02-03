@@ -156,6 +156,20 @@ export async function POST(
   }, { requiredRole: 'ADMIN' })
 }
 
+// Module-level Set for O(1) lookups instead of O(n) array.includes()
+const FEMALE_NAMES = new Set([
+  'maria', 'ana', 'julia', 'gabriela', 'fernanda', 'amanda', 'bruna', 'camila', 'carla', 'claudia', 'cristina',
+  'daniela', 'elaine', 'fabiana', 'juliana', 'larissa', 'leticia', 'luciana', 'marcia', 'patricia', 'priscila',
+  'renata', 'sandra', 'tatiana', 'vanessa', 'adriana', 'aline', 'beatriz', 'bianca', 'carolina', 'debora',
+  'denise', 'eduarda', 'eliana', 'elisabete', 'flavia', 'franciele', 'gisele', 'helena', 'isabela', 'jessica',
+  'joana', 'jussara', 'karen', 'karina', 'lais', 'lilian', 'livia', 'luana', 'lucia', 'luciane', 'luiza',
+  'mara', 'marcela', 'mariana', 'marina', 'marta', 'michele', 'milena', 'monica', 'natalia', 'paula',
+  'rafaela', 'raquel', 'regina', 'roberta', 'rosana', 'sabrina', 'samantha', 'simone', 'solange', 'sonia',
+  'suzana', 'tais', 'thais', 'vera', 'vivian', 'viviane',
+])
+
+const FEMALE_ENDINGS = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
+
 // Helper function to determine gender
 // Fallback heuristic when sexo is not set.
 function determineSexo(membro: { usuario: { nome: string | null } }): "Masculino" | "Feminino" {
@@ -165,20 +179,14 @@ function determineSexo(membro: { usuario: { nome: string | null } }): "Masculino
     return "Masculino"
   }
 
-  // Common female name endings in Portuguese
-  const femaleEndings = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
-
-  // Common female names
-  const femaleNames = ['maria', 'ana', 'julia', 'gabriela', 'fernanda', 'amanda', 'bruna', 'camila', 'carla', 'claudia', 'cristina', 'daniela', 'elaine', 'fabiana', 'juliana', 'larissa', 'leticia', 'luciana', 'marcia', 'patricia', 'priscila', 'renata', 'sandra', 'tatiana', 'vanessa', 'adriana', 'aline', 'beatriz', 'bianca', 'carolina', 'debora', 'denise', 'eduarda', 'eliana', 'elisabete', 'flavia', 'franciele', 'gisele', 'helena', 'isabela', 'jessica', 'joana', 'jussara', 'karen', 'karina', 'lais', 'lilian', 'livia', 'luana', 'lucia', 'luciane', 'luiza', 'mara', 'marcela', 'mariana', 'marina', 'marta', 'michele', 'milena', 'monica', 'natalia', 'paula', 'rafaela', 'raquel', 'regina', 'roberta', 'rosana', 'sabrina', 'samantha', 'simone', 'solange', 'sonia', 'suzana', 'tais', 'thais', 'vera', 'vivian', 'viviane']
-
   const firstName = nome.split(' ')[0]
 
-  if (femaleNames.includes(firstName)) {
+  if (FEMALE_NAMES.has(firstName)) {
     return "Feminino"
   }
 
   // Check name endings
-  for (const ending of femaleEndings) {
+  for (const ending of FEMALE_ENDINGS) {
     if (firstName.endsWith(ending) && !firstName.endsWith('o')) {
       return "Feminino"
     }
