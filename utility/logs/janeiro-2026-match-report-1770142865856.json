@@ -1,0 +1,1686 @@
+{
+  "report": {
+    "totalEntries": 367,
+    "uniqueNames": 138,
+    "matched": 35,
+    "ambiguous": 70,
+    "unmatched": 33,
+    "sample": {
+      "matched": [
+        [
+          "LUANA N",
+          "cmk1998zo00682mi0mjhxpnpw"
+        ],
+        [
+          "CHIRLEI BECK",
+          "cmk2kqh2t00va2msayml7p5hq"
+        ],
+        [
+          "DR JULIO",
+          "cmk2kqlpu01582msauiozwpwr"
+        ],
+        [
+          "ANDRE S",
+          "cmk198t2000182mi065p6smae"
+        ],
+        [
+          "ANDRE B",
+          "cmk198tbj001b2mi0x13vbcvr"
+        ]
+      ],
+      "ambiguous": [
+        {
+          "name": "ANA F",
+          "candidates": [
+            {
+              "id": "cmk198plh00052mi0vd9sq0ac",
+              "nome": "ANA FLÁVIA CARDOSO DA SILVA MEAZZA",
+              "email": "anaf_csilva@hotmail.com",
+              "status": "ATIVO",
+              "normalizedName": "ANA FLAVIA CARDOSO DA SILVA MEAZZA",
+              "tokens": [
+                "ANA",
+                "FLAVIA",
+                "CARDOSO",
+                "DA",
+                "SILVA",
+                "MEAZZA"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ANA PAULA",
+          "candidates": [
+            {
+              "id": "cmk198rzq000w2mi0zho10guw",
+              "nome": "Ana Paula Biazoto Matos",
+              "email": "anapaula_biazoto@hotmail.com",
+              "status": "ATIVO",
+              "normalizedName": "ANA PAULA BIAZOTO MATOS",
+              "tokens": [
+                "ANA",
+                "PAULA",
+                "BIAZOTO",
+                "MATOS"
+              ]
+            },
+            {
+              "id": "cmk198s9b000z2mi0oqitra0w",
+              "nome": "Ana Paula de Souza Santos",
+              "email": "anapaulacontadorarb@hotmail.com",
+              "status": "ATIVO",
+              "normalizedName": "ANA PAULA DE SOUZA SANTOS",
+              "tokens": [
+                "ANA",
+                "PAULA",
+                "DE",
+                "SOUZA",
+                "SANTOS"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "RENATO",
+          "candidates": [
+            {
+              "id": "cmk199k7z009q2mi0aihokjw4",
+              "nome": "Renato Ceruti Facco",
+              "email": "rcfacco@gmail.com",
+              "status": "ATIVO",
+              "normalizedName": "RENATO CERUTI FACCO",
+              "tokens": [
+                "RENATO",
+                "CERUTI",
+                "FACCO"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ROSANGELA",
+          "candidates": [
+            {
+              "id": "cmk199jf8009h2mi0i5rphoxr",
+              "nome": "ROSANGELA NOVAIS",
+              "email": "arq.ronovais@hotmail.com",
+              "status": "ATIVO",
+              "normalizedName": "ROSANGELA NOVAIS",
+              "tokens": [
+                "ROSANGELA",
+                "NOVAIS"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "PATRICIA",
+          "candidates": [
+            {
+              "id": "cmk199icw00952mi0lsmpw8e3",
+              "nome": "Patrícia Cristiane Chagas Alves Belone",
+              "email": "belonepatricia@gmail.com",
+              "status": "ATIVO",
+              "normalizedName": "PATRICIA CRISTIANE CHAGAS ALVES BELONE",
+              "tokens": [
+                "PATRICIA",
+                "CRISTIANE",
+                "CHAGAS",
+                "ALVES",
+                "BELONE"
+              ]
+            },
+            {
+              "id": "cmk2kqeaa00ov2msaw3hbi9vu",
+              "nome": "Patrícia Raggagnin",
+              "email": "patrícia.raggagnin@placeholder.local",
+              "status": "PENDENTE",
+              "normalizedName": "PATRICIA RAGGAGNIN",
+              "tokens": [
+                "PATRICIA",
+                "RAGGAGNIN"
+              ]
+            }
+          ]
+        }
+      ],
+      "unmatched": [
+        "DRA. ADRIANA",
+        "BE",
+        "PAULO N.",
+        "KETHY",
+        "TATA"
+      ]
+    }
+  },
+  "ambiguous": [
+    {
+      "name": "ANA F",
+      "candidates": [
+        {
+          "id": "cmk198plh00052mi0vd9sq0ac",
+          "nome": "ANA FLÁVIA CARDOSO DA SILVA MEAZZA",
+          "email": "anaf_csilva@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ANA FLAVIA CARDOSO DA SILVA MEAZZA",
+          "tokens": [
+            "ANA",
+            "FLAVIA",
+            "CARDOSO",
+            "DA",
+            "SILVA",
+            "MEAZZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ANA PAULA",
+      "candidates": [
+        {
+          "id": "cmk198rzq000w2mi0zho10guw",
+          "nome": "Ana Paula Biazoto Matos",
+          "email": "anapaula_biazoto@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ANA PAULA BIAZOTO MATOS",
+          "tokens": [
+            "ANA",
+            "PAULA",
+            "BIAZOTO",
+            "MATOS"
+          ]
+        },
+        {
+          "id": "cmk198s9b000z2mi0oqitra0w",
+          "nome": "Ana Paula de Souza Santos",
+          "email": "anapaulacontadorarb@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ANA PAULA DE SOUZA SANTOS",
+          "tokens": [
+            "ANA",
+            "PAULA",
+            "DE",
+            "SOUZA",
+            "SANTOS"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RENATO",
+      "candidates": [
+        {
+          "id": "cmk199k7z009q2mi0aihokjw4",
+          "nome": "Renato Ceruti Facco",
+          "email": "rcfacco@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "RENATO CERUTI FACCO",
+          "tokens": [
+            "RENATO",
+            "CERUTI",
+            "FACCO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ROSANGELA",
+      "candidates": [
+        {
+          "id": "cmk199jf8009h2mi0i5rphoxr",
+          "nome": "ROSANGELA NOVAIS",
+          "email": "arq.ronovais@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ROSANGELA NOVAIS",
+          "tokens": [
+            "ROSANGELA",
+            "NOVAIS"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PATRICIA",
+      "candidates": [
+        {
+          "id": "cmk199icw00952mi0lsmpw8e3",
+          "nome": "Patrícia Cristiane Chagas Alves Belone",
+          "email": "belonepatricia@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "PATRICIA CRISTIANE CHAGAS ALVES BELONE",
+          "tokens": [
+            "PATRICIA",
+            "CRISTIANE",
+            "CHAGAS",
+            "ALVES",
+            "BELONE"
+          ]
+        },
+        {
+          "id": "cmk2kqeaa00ov2msaw3hbi9vu",
+          "nome": "Patrícia Raggagnin",
+          "email": "patrícia.raggagnin@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "PATRICIA RAGGAGNIN",
+          "tokens": [
+            "PATRICIA",
+            "RAGGAGNIN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PAULO",
+      "candidates": [
+        {
+          "id": "cmk199i3b00922mi0b9qug5km",
+          "nome": "PAULO CESAR MACIEL YULE",
+          "email": "paulo.yule@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "PAULO CESAR MACIEL YULE",
+          "tokens": [
+            "PAULO",
+            "CESAR",
+            "MACIEL",
+            "YULE"
+          ]
+        },
+        {
+          "id": "cmk199iw0009b2mi03pzql81x",
+          "nome": "Paulo Marcelo Schroeder Curti",
+          "email": "pauloscurti@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "PAULO MARCELO SCHROEDER CURTI",
+          "tokens": [
+            "PAULO",
+            "MARCELO",
+            "SCHROEDER",
+            "CURTI"
+          ]
+        },
+        {
+          "id": "cmkb7f6vo01eq2mrm9dpu9p6e",
+          "nome": "Paulo Suzy",
+          "email": "paulo.suzy@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "PAULO SUZY",
+          "tokens": [
+            "PAULO",
+            "SUZY"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NIVALDO",
+      "candidates": [
+        {
+          "id": "cmk199han008t2mi0gavokllh",
+          "nome": "Nivaldo José de Paiva Filho",
+          "email": "njpaiva87@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "NIVALDO JOSE DE PAIVA FILHO",
+          "tokens": [
+            "NIVALDO",
+            "JOSE",
+            "DE",
+            "PAIVA",
+            "FILHO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LOIDE",
+      "candidates": [
+        {
+          "id": "cmk1998q400652mi0j3oh8k8f",
+          "nome": "LOIDE LOPES",
+          "email": "loide.lopes@outlook.com.br",
+          "status": "ATIVO",
+          "normalizedName": "LOIDE LOPES",
+          "tokens": [
+            "LOIDE",
+            "LOPES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CRIS",
+      "candidates": [
+        {
+          "id": "cmk198wig002b2mi06vqg92nm",
+          "nome": "Cristian Gelain do Nascimento",
+          "email": "cristian_gelain@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "CRISTIAN GELAIN DO NASCIMENTO",
+          "tokens": [
+            "CRISTIAN",
+            "GELAIN",
+            "DO",
+            "NASCIMENTO"
+          ]
+        },
+        {
+          "id": "cmk198wrz002e2mi0yuwdflbl",
+          "nome": "Cristiane Elis Kunz",
+          "email": "chrrisskunz@yhoo.com.br",
+          "status": "ATIVO",
+          "normalizedName": "CRISTIANE ELIS KUNZ",
+          "tokens": [
+            "CRISTIANE",
+            "ELIS",
+            "KUNZ"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RITA",
+      "candidates": [
+        {
+          "id": "cmk199khj009t2mi0wi1jutmy",
+          "nome": "Rita de Cássia Gomes da Silva",
+          "email": "rs6303217@gmail.com.br",
+          "status": "ATIVO",
+          "normalizedName": "RITA DE CASSIA GOMES DA SILVA",
+          "tokens": [
+            "RITA",
+            "DE",
+            "CASSIA",
+            "GOMES",
+            "DA",
+            "SILVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "VITÓRIA",
+      "candidates": [
+        {
+          "id": "cmk199sb700c82mi0f6kviwjw",
+          "nome": "Vitória da Silva Gomes",
+          "email": "Vitooriagomes08@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "VITORIA DA SILVA GOMES",
+          "tokens": [
+            "VITORIA",
+            "DA",
+            "SILVA",
+            "GOMES"
+          ]
+        },
+        {
+          "id": "cmk199rqf00c22mi09zthn3to",
+          "nome": "VITÓRIA OLIVEIRA MEAZZA",
+          "email": "vitoriameazza@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "VITORIA OLIVEIRA MEAZZA",
+          "tokens": [
+            "VITORIA",
+            "OLIVEIRA",
+            "MEAZZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "YASMIN",
+      "candidates": [
+        {
+          "id": "cmk199twf00cq2mi0vlqg5i7z",
+          "nome": "YASMIN CABELO BORGES",
+          "email": "yasmincabelo@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "YASMIN CABELO BORGES",
+          "tokens": [
+            "YASMIN",
+            "CABELO",
+            "BORGES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CRISTIAN G",
+      "candidates": [
+        {
+          "id": "cmk198wig002b2mi06vqg92nm",
+          "nome": "Cristian Gelain do Nascimento",
+          "email": "cristian_gelain@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "CRISTIAN GELAIN DO NASCIMENTO",
+          "tokens": [
+            "CRISTIAN",
+            "GELAIN",
+            "DO",
+            "NASCIMENTO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RAQUEL",
+      "candidates": [
+        {
+          "id": "cml1e9l830002l6048risp403",
+          "nome": "Raquel Vieira Gambin",
+          "email": "temp_1769808467351@placeholder.local",
+          "status": "ATIVO",
+          "normalizedName": "RAQUEL VIEIRA GAMBIN",
+          "tokens": [
+            "RAQUEL",
+            "VIEIRA",
+            "GAMBIN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LORRAINE",
+      "candidates": [
+        {
+          "id": "cmk199bz100752mi0l1otqgsk",
+          "nome": "Lorraine Vidal",
+          "email": "Lovidal@outlook.com",
+          "status": "ATIVO",
+          "normalizedName": "LORRAINE VIDAL",
+          "tokens": [
+            "LORRAINE",
+            "VIDAL"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SIMONE",
+      "candidates": [
+        {
+          "id": "cmk199m3600ab2mi079i4s20x",
+          "nome": "SIMONE SOBREIRA BARBOSA",
+          "email": "zeliaaraujosobreira@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SIMONE SOBREIRA BARBOSA",
+          "tokens": [
+            "SIMONE",
+            "SOBREIRA",
+            "BARBOSA"
+          ]
+        },
+        {
+          "id": "cmk199n5t00an2mi0ei7myxal",
+          "nome": "Simone Assmann Santos Topper",
+          "email": "assmann2007@yahoo.com.br",
+          "status": "ATIVO",
+          "normalizedName": "SIMONE ASSMANN SANTOS TOPPER",
+          "tokens": [
+            "SIMONE",
+            "ASSMANN",
+            "SANTOS",
+            "TOPPER"
+          ]
+        },
+        {
+          "id": "cmk199nff00aq2mi0vb28mgm9",
+          "nome": "Simone Kler Chiminacio Braz garcia",
+          "email": "Monykler3@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SIMONE KLER CHIMINACIO BRAZ GARCIA",
+          "tokens": [
+            "SIMONE",
+            "KLER",
+            "CHIMINACIO",
+            "BRAZ",
+            "GARCIA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MARILI",
+      "candidates": [
+        {
+          "id": "cmk199fpg008b2mi0xsa8dufo",
+          "nome": "Marili Correia da Silva",
+          "email": "marilcsilva@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARILI CORREIA DA SILVA",
+          "tokens": [
+            "MARILI",
+            "CORREIA",
+            "DA",
+            "SILVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CARLA",
+      "candidates": [
+        {
+          "id": "cmk198v6k001w2mi02ivlhs3x",
+          "nome": "Carla Dilene Fernandes Almeida Lima",
+          "email": "carla_fal1@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "CARLA DILENE FERNANDES ALMEIDA LIMA",
+          "tokens": [
+            "CARLA",
+            "DILENE",
+            "FERNANDES",
+            "ALMEIDA",
+            "LIMA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MARIANA",
+      "candidates": [
+        {
+          "id": "cmk199e3m007t2mi0ixoer361",
+          "nome": "MARIANA VIANA VIEIRA",
+          "email": "mari_viana1@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARIANA VIANA VIEIRA",
+          "tokens": [
+            "MARIANA",
+            "VIANA",
+            "VIEIRA"
+          ]
+        },
+        {
+          "id": "cmk199ffw00882mi0kl7sg4ty",
+          "nome": "Mariana Borges Bisognin",
+          "email": "ma_bbisognin@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARIANA BORGES BISOGNIN",
+          "tokens": [
+            "MARIANA",
+            "BORGES",
+            "BISOGNIN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SHEILA",
+      "candidates": [
+        {
+          "id": "cmk199ljv00a52mi0kszrm603",
+          "nome": "SHEILA FERNANDES ALMEIDA",
+          "email": "sheila@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SHEILA FERNANDES ALMEIDA",
+          "tokens": [
+            "SHEILA",
+            "FERNANDES",
+            "ALMEIDA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LUCAS FERREIRA",
+      "candidates": [
+        {
+          "id": "cmk199c8o00782mi0i58xo9to",
+          "nome": "Lucas Ferreira de oliveira",
+          "email": "lucas.elypay@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LUCAS FERREIRA DE OLIVEIRA",
+          "tokens": [
+            "LUCAS",
+            "FERREIRA",
+            "DE",
+            "OLIVEIRA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FELICIANA",
+      "candidates": [
+        {
+          "id": "cmk1990qt003n2mi0hdys30el",
+          "nome": "Feliciana Pereira Rodrigues",
+          "email": "Felicianarb@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "FELICIANA PEREIRA RODRIGUES",
+          "tokens": [
+            "FELICIANA",
+            "PEREIRA",
+            "RODRIGUES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "KAREN",
+      "candidates": [
+        {
+          "id": "cmk1997o3005t2mi09sqsxelz",
+          "nome": "Karen Ingrid Matias de Castro",
+          "email": "karen.castroo@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "KAREN INGRID MATIAS DE CASTRO",
+          "tokens": [
+            "KAREN",
+            "INGRID",
+            "MATIAS",
+            "DE",
+            "CASTRO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MARINA",
+      "candidates": [
+        {
+          "id": "cmk199fyx008e2mi0fp972yif",
+          "nome": "Marina Ribeiro Sanches",
+          "email": "Mah.sanches@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARINA RIBEIRO SANCHES",
+          "tokens": [
+            "MARINA",
+            "RIBEIRO",
+            "SANCHES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LUCIANA",
+      "candidates": [
+        {
+          "id": "cmk199cic007b2mi0qtp5mco9",
+          "nome": "Luciana lago",
+          "email": "Lucianafloraixx75@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LUCIANA LAGO",
+          "tokens": [
+            "LUCIANA",
+            "LAGO"
+          ]
+        },
+        {
+          "id": "cmk1999iq006e2mi0t3jx81b3",
+          "nome": "LUCIANA DA SILVA RODRIGUES",
+          "email": "lucianasilva@uems.br",
+          "status": "ATIVO",
+          "normalizedName": "LUCIANA DA SILVA RODRIGUES",
+          "tokens": [
+            "LUCIANA",
+            "DA",
+            "SILVA",
+            "RODRIGUES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LORENZO",
+      "candidates": [
+        {
+          "id": "cmk199bpg00722mi0h2liupqd",
+          "nome": "Lorenzo Ribeiro Sanches Leite",
+          "email": "lorenzoleite09268@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LORENZO RIBEIRO SANCHES LEITE",
+          "tokens": [
+            "LORENZO",
+            "RIBEIRO",
+            "SANCHES",
+            "LEITE"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ILIÊ",
+      "candidates": [
+        {
+          "id": "cmk1993ou004k2mi0o0iyh8eu",
+          "nome": "Iliê Vidal Basso",
+          "email": "ilie_vn@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ILIE VIDAL BASSO",
+          "tokens": [
+            "ILIE",
+            "VIDAL",
+            "BASSO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LUZIA",
+      "candidates": [
+        {
+          "id": "cmk1999s8006h2mi0p4pbtt3b",
+          "nome": "LUZIA CAMPOS MORGADO",
+          "email": "luziamorgado@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LUZIA CAMPOS MORGADO",
+          "tokens": [
+            "LUZIA",
+            "CAMPOS",
+            "MORGADO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MANOEL",
+      "candidates": [
+        {
+          "id": "cmk199dkh007n2mi013blvxc9",
+          "nome": "MANOEL SANTOS MORGADO",
+          "email": "manoelmorgado@uol.com.br",
+          "status": "ATIVO",
+          "normalizedName": "MANOEL SANTOS MORGADO",
+          "tokens": [
+            "MANOEL",
+            "SANTOS",
+            "MORGADO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ELISANGELA",
+      "candidates": [
+        {
+          "id": "cmk198zoo003b2mi0ysucbtvn",
+          "nome": "Elisangela Araujo Adão Ferreira",
+          "email": "elisangelaadao@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ELISANGELA ARAUJO ADAO FERREIRA",
+          "tokens": [
+            "ELISANGELA",
+            "ARAUJO",
+            "ADAO",
+            "FERREIRA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GUILHERME",
+      "candidates": [
+        {
+          "id": "cmk1993f9004h2mi0fqdke02o",
+          "nome": "Guilherme Alves Lopes",
+          "email": "guilhermealveslopes@outlook.com",
+          "status": "ATIVO",
+          "normalizedName": "GUILHERME ALVES LOPES",
+          "tokens": [
+            "GUILHERME",
+            "ALVES",
+            "LOPES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BRUNA AGOST.",
+      "candidates": [
+        {
+          "id": "cmk198u4a001k2mi0ca568vue",
+          "nome": "Bruna Agostini de Paiva",
+          "email": "engmecagostini@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "BRUNA AGOSTINI DE PAIVA",
+          "tokens": [
+            "BRUNA",
+            "AGOSTINI",
+            "DE",
+            "PAIVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DANI SCHWEN.",
+      "candidates": [
+        {
+          "id": "cmk198x1i002h2mi0xm55s0kp",
+          "nome": "DANIELLE SCHWENGBER",
+          "email": "schwengberdanielle@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "DANIELLE SCHWENGBER",
+          "tokens": [
+            "DANIELLE",
+            "SCHWENGBER"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JULIO (RITA)",
+      "candidates": [
+        {
+          "id": "cmk1996lu005h2mi0krzlfmel",
+          "nome": "Julio cesar de souza soares junior",
+          "email": "juliojunior40@outlook.com",
+          "status": "ATIVO",
+          "normalizedName": "JULIO CESAR DE SOUZA SOARES JUNIOR",
+          "tokens": [
+            "JULIO",
+            "CESAR",
+            "DE",
+            "SOUZA",
+            "SOARES",
+            "JUNIOR"
+          ]
+        },
+        {
+          "id": "cmk19974z005n2mi07svyi7h3",
+          "nome": "Júlio César Ricci Tolomei",
+          "email": "jctolomei@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "JULIO CESAR RICCI TOLOMEI",
+          "tokens": [
+            "JULIO",
+            "CESAR",
+            "RICCI",
+            "TOLOMEI"
+          ]
+        },
+        {
+          "id": "cmk1995jc00552mi0cc7ame27",
+          "nome": "JULIO CÉSAR SOARES",
+          "email": "juliocesar.fazpalmeira@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "JULIO CESAR SOARES",
+          "tokens": [
+            "JULIO",
+            "CESAR",
+            "SOARES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MARLENE",
+      "candidates": [
+        {
+          "id": "cmk199g8l008h2mi0oa3cch2x",
+          "nome": "Marlene de Araujo Oliveira Meazza",
+          "email": "marlenemeazza@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARLENE DE ARAUJO OLIVEIRA MEAZZA",
+          "tokens": [
+            "MARLENE",
+            "DE",
+            "ARAUJO",
+            "OLIVEIRA",
+            "MEAZZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ALEXANDRE",
+      "candidates": [
+        {
+          "id": "cmk198pbt00022mi0uothgwyv",
+          "nome": "ALEXANDRE ANTONIO SANTOS DE SOUZA",
+          "email": "alexandreassouza@yahoo.com.br",
+          "status": "ATIVO",
+          "normalizedName": "ALEXANDRE ANTONIO SANTOS DE SOUZA",
+          "tokens": [
+            "ALEXANDRE",
+            "ANTONIO",
+            "SANTOS",
+            "DE",
+            "SOUZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ALCIMARA",
+      "candidates": [
+        {
+          "id": "cmk198qxe000k2mi0yrn7b1l5",
+          "nome": "Alcimara Ferreira Cardoso",
+          "email": "alc_cardoso@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ALCIMARA FERREIRA CARDOSO",
+          "tokens": [
+            "ALCIMARA",
+            "FERREIRA",
+            "CARDOSO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ROSINEIDE",
+      "candidates": [
+        {
+          "id": "cmk199l0m009z2mi0o4jc5stf",
+          "nome": "Rosineide Silvano dos Santos Muniz",
+          "email": "rosineidesilvano@yahoo.com",
+          "status": "ATIVO",
+          "normalizedName": "ROSINEIDE SILVANO DOS SANTOS MUNIZ",
+          "tokens": [
+            "ROSINEIDE",
+            "SILVANO",
+            "DOS",
+            "SANTOS",
+            "MUNIZ"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BIANCA",
+      "candidates": [
+        {
+          "id": "cmk198tur001h2mi0aitg53mf",
+          "nome": "BIANCA DALCIN STIEVEN LOURENÇO",
+          "email": "biancadalcin1@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "BIANCA DALCIN STIEVEN LOURENCO",
+          "tokens": [
+            "BIANCA",
+            "DALCIN",
+            "STIEVEN",
+            "LOURENCO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DIEGO",
+      "candidates": [
+        {
+          "id": "cmk198y3i002t2mi0mtl1jvo5",
+          "nome": "Diego Oliveira",
+          "email": "Diego.agro.ufv@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "DIEGO OLIVEIRA",
+          "tokens": [
+            "DIEGO",
+            "OLIVEIRA"
+          ]
+        },
+        {
+          "id": "cmk198yd2002w2mi0q45w78j8",
+          "nome": "Diego Pires Domingues",
+          "email": "diegopiresdomingues@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "DIEGO PIRES DOMINGUES",
+          "tokens": [
+            "DIEGO",
+            "PIRES",
+            "DOMINGUES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LEANDRO GAS.",
+      "candidates": [
+        {
+          "id": "cmk199alf006q2mi0v7013ak0",
+          "nome": "Leandro Gaspar Duarte",
+          "email": "Leandrogasparduarte@yahoo.com",
+          "status": "ATIVO",
+          "normalizedName": "LEANDRO GASPAR DUARTE",
+          "tokens": [
+            "LEANDRO",
+            "GASPAR",
+            "DUARTE"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FLÁVIA (ANA)",
+      "candidates": [
+        {
+          "id": "cmk1991je003w2mi0ht5znrf8",
+          "nome": "Flávia Godoy Moraes Silveira",
+          "email": "flasilveira1982@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "FLAVIA GODOY MORAES SILVEIRA",
+          "tokens": [
+            "FLAVIA",
+            "GODOY",
+            "MORAES",
+            "SILVEIRA"
+          ]
+        },
+        {
+          "id": "cmk1991u6003z2mi0k29x32yg",
+          "nome": "Flávia Rodrigues de Oliveira",
+          "email": "flaviallhy@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "FLAVIA RODRIGUES DE OLIVEIRA",
+          "tokens": [
+            "FLAVIA",
+            "RODRIGUES",
+            "DE",
+            "OLIVEIRA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ANA FLÁVIA",
+      "candidates": [
+        {
+          "id": "cmk198plh00052mi0vd9sq0ac",
+          "nome": "ANA FLÁVIA CARDOSO DA SILVA MEAZZA",
+          "email": "anaf_csilva@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ANA FLAVIA CARDOSO DA SILVA MEAZZA",
+          "tokens": [
+            "ANA",
+            "FLAVIA",
+            "CARDOSO",
+            "DA",
+            "SILVA",
+            "MEAZZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TATIANE",
+      "candidates": [
+        {
+          "id": "cmk199q4v00bk2mi0k9cdjvj1",
+          "nome": "Tatiane Regina dos Santos Rocha",
+          "email": "trsr88@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "TATIANE REGINA DOS SANTOS ROCHA",
+          "tokens": [
+            "TATIANE",
+            "REGINA",
+            "DOS",
+            "SANTOS",
+            "ROCHA"
+          ]
+        },
+        {
+          "id": "cmkls2mhk0005js04zp04zavx",
+          "nome": "Tatiane José dos Santos",
+          "email": "tatty025@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "TATIANE JOSE DOS SANTOS",
+          "tokens": [
+            "TATIANE",
+            "JOSE",
+            "DOS",
+            "SANTOS"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RENATA",
+      "candidates": [
+        {
+          "id": "cmk199jye009n2mi0w0jfqkmz",
+          "nome": "Renata Barbosa de Paiva Facco",
+          "email": "renatapaiva_6@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "RENATA BARBOSA DE PAIVA FACCO",
+          "tokens": [
+            "RENATA",
+            "BARBOSA",
+            "DE",
+            "PAIVA",
+            "FACCO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JARBAS",
+      "candidates": [
+        {
+          "id": "cmk19950f004z2mi0up36poxo",
+          "nome": "JARBAS BARBOSA",
+          "email": "barbosa.jarbas@uol.com.br",
+          "status": "ATIVO",
+          "normalizedName": "JARBAS BARBOSA",
+          "tokens": [
+            "JARBAS",
+            "BARBOSA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JOAO",
+      "candidates": [
+        {
+          "id": "cmk19962d005b2mi0d9hsy0kv",
+          "nome": "Joao Luiz zirondi cardoso",
+          "email": "jlzcardoso@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "JOAO LUIZ ZIRONDI CARDOSO",
+          "tokens": [
+            "JOAO",
+            "LUIZ",
+            "ZIRONDI",
+            "CARDOSO"
+          ]
+        },
+        {
+          "id": "cmk2kql9c014s2msaark27qrj",
+          "nome": "João Miguel",
+          "email": "joão.miguel@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "JOAO MIGUEL",
+          "tokens": [
+            "JOAO",
+            "MIGUEL"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LEANDRO LUIZ",
+      "candidates": [
+        {
+          "id": "cmk199av4006t2mi0bziu6mfr",
+          "nome": "Leandro Luiz Batistella",
+          "email": "batistella2901@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LEANDRO LUIZ BATISTELLA",
+          "tokens": [
+            "LEANDRO",
+            "LUIZ",
+            "BATISTELLA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "VANESSA",
+      "candidates": [
+        {
+          "id": "cmkwhlrxt0002jo04qahubxge",
+          "nome": "Vanessa Maria Bremm",
+          "email": "vanessambremm@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "VANESSA MARIA BREMM",
+          "tokens": [
+            "VANESSA",
+            "MARIA",
+            "BREMM"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JAIRO",
+      "candidates": [
+        {
+          "id": "cmkvtqft80002lb0432dc1djm",
+          "nome": "Jairo Rodrigues Alvel",
+          "email": "jairinho.rodrigues01@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "JAIRO RODRIGUES ALVEL",
+          "tokens": [
+            "JAIRO",
+            "RODRIGUES",
+            "ALVEL"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SABRINA",
+      "candidates": [
+        {
+          "id": "cmkvrmdf30002kv04fiektoth",
+          "nome": "Sabrina Martins",
+          "email": "saferreira0709@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SABRINA MARTINS",
+          "tokens": [
+            "SABRINA",
+            "MARTINS"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SANDRA",
+      "candidates": [
+        {
+          "id": "cmk199mmc00ah2mi0j7idnzko",
+          "nome": "Sandra Regina donha",
+          "email": "sandra_rbr@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SANDRA REGINA DONHA",
+          "tokens": [
+            "SANDRA",
+            "REGINA",
+            "DONHA"
+          ]
+        },
+        {
+          "id": "cmk199la800a22mi0rix5sr61",
+          "nome": "SANDRA JANETE SMANIOTTO GASPARELLI",
+          "email": "sandragasparelli@gmail.com.br",
+          "status": "ATIVO",
+          "normalizedName": "SANDRA JANETE SMANIOTTO GASPARELLI",
+          "tokens": [
+            "SANDRA",
+            "JANETE",
+            "SMANIOTTO",
+            "GASPARELLI"
+          ]
+        },
+        {
+          "id": "cmk199mcr00ae2mi0ldpn3s2e",
+          "nome": "Sandra Katia Barbieri",
+          "email": "skbarbieri@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SANDRA KATIA BARBIERI",
+          "tokens": [
+            "SANDRA",
+            "KATIA",
+            "BARBIERI"
+          ]
+        },
+        {
+          "id": "cmko19dm60002l4047rkhiv1r",
+          "nome": "Sandra Giuliani Bortolotto",
+          "email": "sandra_giuliani@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "SANDRA GIULIANI BORTOLOTTO",
+          "tokens": [
+            "SANDRA",
+            "GIULIANI",
+            "BORTOLOTTO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DORA",
+      "candidates": [
+        {
+          "id": "cmkb7hpil01qo2mrmmzuankq4",
+          "nome": "Dora Selma Ferreira do Rêgo",
+          "email": "dora@placeholder.local",
+          "status": "ATIVO",
+          "normalizedName": "DORA SELMA FERREIRA DO REGO",
+          "tokens": [
+            "DORA",
+            "SELMA",
+            "FERREIRA",
+            "DO",
+            "REGO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "KARINE",
+      "candidates": [
+        {
+          "id": "cmk1997el005q2mi02t6inz7d",
+          "nome": "KARINE BLUME DE SOUZA",
+          "email": "karineblume@yahoo.com.br",
+          "status": "ATIVO",
+          "normalizedName": "KARINE BLUME DE SOUZA",
+          "tokens": [
+            "KARINE",
+            "BLUME",
+            "DE",
+            "SOUZA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NATALIA BIAZ.",
+      "candidates": [
+        {
+          "id": "cmk199grl008n2mi04xzr6jlk",
+          "nome": "Natália Biazoto de Paiva",
+          "email": "natalia_biazoto@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "NATALIA BIAZOTO DE PAIVA",
+          "tokens": [
+            "NATALIA",
+            "BIAZOTO",
+            "DE",
+            "PAIVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TÂNIA",
+      "candidates": [
+        {
+          "id": "cmk2kql17014f2msa1vxjxmki",
+          "nome": "Tânia Biazoto",
+          "email": "tânia.biazoto@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "TANIA BIAZOTO",
+          "tokens": [
+            "TANIA",
+            "BIAZOTO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADALGISA",
+      "candidates": [
+        {
+          "id": "cmk198q4n000b2mi0m4gh4l7d",
+          "nome": "Adalgisa Regina Ramos Ceolin",
+          "email": "reginamurer@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "ADALGISA REGINA RAMOS CEOLIN",
+          "tokens": [
+            "ADALGISA",
+            "REGINA",
+            "RAMOS",
+            "CEOLIN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FABÍOLA",
+      "candidates": [
+        {
+          "id": "cmk1990h9003k2mi0138jf3hx",
+          "nome": "Fabíola dos Santos Gonçalez",
+          "email": "fabiola_goncalez@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "FABIOLA DOS SANTOS GONCALEZ",
+          "tokens": [
+            "FABIOLA",
+            "DOS",
+            "SANTOS",
+            "GONCALEZ"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DANI RUCH",
+      "candidates": [
+        {
+          "id": "cmk2kqnnc01bp2msag0moziwl",
+          "nome": "Daniela Ruch",
+          "email": "daniela.ruch@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "DANIELA RUCH",
+          "tokens": [
+            "DANIELA",
+            "RUCH"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RÉGIS (17:30)",
+      "candidates": [
+        {
+          "id": "cmk199j5k009e2mi063detome",
+          "nome": "REGIS AUGUSTO KOSTER CANOVA",
+          "email": "regis@cultivarms.com.br",
+          "status": "ATIVO",
+          "normalizedName": "REGIS AUGUSTO KOSTER CANOVA",
+          "tokens": [
+            "REGIS",
+            "AUGUSTO",
+            "KOSTER",
+            "CANOVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ONICE",
+      "candidates": [
+        {
+          "id": "cmk2kqfxw00tf2msap1yqtfhk",
+          "nome": "Onice Pedó",
+          "email": "onice.pedó@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "ONICE PEDO",
+          "tokens": [
+            "ONICE",
+            "PEDO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MIGUEL",
+      "candidates": [
+        {
+          "id": "cmk2kqfpm00t22msarhudewdw",
+          "nome": "Miguél Pedo",
+          "email": "miguél.pedo@placeholder.local",
+          "status": "PENDENTE",
+          "normalizedName": "MIGUEL PEDO",
+          "tokens": [
+            "MIGUEL",
+            "PEDO"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LIANDRA",
+      "candidates": [
+        {
+          "id": "cmk199bec006z2mi0bu10sc9v",
+          "nome": "Liandra Vitoria Canova",
+          "email": "liandra_canova@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LIANDRA VITORIA CANOVA",
+          "tokens": [
+            "LIANDRA",
+            "VITORIA",
+            "CANOVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MARCELA",
+      "candidates": [
+        {
+          "id": "cmk199en2007z2mi0dx7y88kk",
+          "nome": "Marcela Regina de Oliveira Carvalho Duarte",
+          "email": "Marcelaregina_6@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "MARCELA REGINA DE OLIVEIRA CARVALHO DUARTE",
+          "tokens": [
+            "MARCELA",
+            "REGINA",
+            "DE",
+            "OLIVEIRA",
+            "CARVALHO",
+            "DUARTE"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GENI",
+      "candidates": [
+        {
+          "id": "cmk1992w9004b2mi08maqjp3l",
+          "nome": "Geni strey",
+          "email": "Geni_strey@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "GENI STREY",
+          "tokens": [
+            "GENI",
+            "STREY"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BRUNO",
+      "candidates": [
+        {
+          "id": "cmk1ezvuu00cw2mi0rui6xiaw",
+          "nome": "Bruno Almeida Carvalho de Aguiar",
+          "email": "baca1983@hotmail.com",
+          "status": "ATIVO",
+          "normalizedName": "BRUNO ALMEIDA CARVALHO DE AGUIAR",
+          "tokens": [
+            "BRUNO",
+            "ALMEIDA",
+            "CARVALHO",
+            "DE",
+            "AGUIAR"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LEANDRO",
+      "candidates": [
+        {
+          "id": "cmk199av4006t2mi0bziu6mfr",
+          "nome": "Leandro Luiz Batistella",
+          "email": "batistella2901@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LEANDRO LUIZ BATISTELLA",
+          "tokens": [
+            "LEANDRO",
+            "LUIZ",
+            "BATISTELLA"
+          ]
+        },
+        {
+          "id": "cmk199alf006q2mi0v7013ak0",
+          "nome": "Leandro Gaspar Duarte",
+          "email": "Leandrogasparduarte@yahoo.com",
+          "status": "ATIVO",
+          "normalizedName": "LEANDRO GASPAR DUARTE",
+          "tokens": [
+            "LEANDRO",
+            "GASPAR",
+            "DUARTE"
+          ]
+        },
+        {
+          "id": "cmk199b4q006w2mi04s7rgel2",
+          "nome": "Leandro Muller",
+          "email": "leandromuller.adv@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "LEANDRO MULLER",
+          "tokens": [
+            "LEANDRO",
+            "MULLER"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BRUNA AGOS.",
+      "candidates": [
+        {
+          "id": "cmk198u4a001k2mi0ca568vue",
+          "nome": "Bruna Agostini de Paiva",
+          "email": "engmecagostini@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "BRUNA AGOSTINI DE PAIVA",
+          "tokens": [
+            "BRUNA",
+            "AGOSTINI",
+            "DE",
+            "PAIVA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CARLOS",
+      "candidates": [
+        {
+          "id": "cmk198vpt00222mi0p1etbg19",
+          "nome": "Carlos Eduardo Araujo Soares",
+          "email": "ceduardo_soares@outlook.com",
+          "status": "ATIVO",
+          "normalizedName": "CARLOS EDUARDO ARAUJO SOARES",
+          "tokens": [
+            "CARLOS",
+            "EDUARDO",
+            "ARAUJO",
+            "SOARES"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JESSICA",
+      "candidates": [
+        {
+          "id": "cmk1996vh005k2mi0fo6ow0xh",
+          "nome": "Jéssica Pedó",
+          "email": "jessicapedo.adv@gmail.com",
+          "status": "ATIVO",
+          "normalizedName": "JESSICA PEDO",
+          "tokens": [
+            "JESSICA",
+            "PEDO"
+          ]
+        }
+      ]
+    }
+  ],
+  "unmatched": [
+    "DRA. ADRIANA",
+    "BE",
+    "PAULO N.",
+    "KETHY",
+    "TATA",
+    "ANDERSON",
+    "WALQUÍRIA",
+    "CYNTHIA (13:30)",
+    "HELÔ",
+    "VITORIA BATIS.",
+    "ISA. CARVALHO",
+    "BIA GABBI",
+    "CAMILA GABBI",
+    "GIOVANNA",
+    "DRA. GLAUCIA",
+    "ANDREA LEITE",
+    "SUZY (18:40)",
+    "ANGELICA",
+    "MARCIANO",
+    "TONY",
+    "BACANINHA",
+    "BELINHA",
+    "DAGNA",
+    "TATY",
+    "LEANDRO DIE.",
+    "NILVADO",
+    "DR. ADRIANA",
+    "YASMN",
+    "VITÓRIA BAST.",
+    "LUIZ",
+    "EDLEUZA",
+    "ANDREA",
+    "JULIA CUEL"
+  ]
+}

@@ -1,0 +1,257 @@
+[
+  {
+    "plan": "TREINO 2X POR SEMANA (ESTAGIÁRIO)",
+    "prices": [
+      {
+        "price": 250,
+        "memberCount": 12,
+        "members": [
+          "André Ricardo Schwingel",
+          "Carlieli Fernandes Romão Bastos",
+          "Carlyani Fernandes Romão Campos",
+          "Diego Pires Domingues",
+          "Fabiana Merlo de Oliveira",
+          "Flávia Rodrigues de Oliveira",
+          "Francilene daiana portillo marim",
+          "Isabela de Carvalho Fernandes",
+          "Italita Alcântara Gurtler",
+          "JOAQUINA DA COSTA BETONI",
+          "Paulo Marcelo Schroeder Curti",
+          "Tatiana Moraes de Oliveira"
+        ]
+      },
+      {
+        "price": 225,
+        "memberCount": 6,
+        "members": [
+          "ALEXANDRE ANTONIO SANTOS DE SOUZA",
+          "GIOVANA BLUME DE SOUZA",
+          "Geni strey",
+          "Julia Lopes Vidal Carlesso",
+          "Leandro Diemer",
+          "Manuély dos Santos Luzia"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 4X POR SEMANA (GABI)",
+    "prices": [
+      {
+        "price": 550,
+        "memberCount": 5,
+        "members": [
+          "ANA FLÁVIA CARDOSO DA SILVA MEAZZA",
+          "DANIELLE SCHWENGBER",
+          "Karen Ingrid Matias de Castro",
+          "LUANA DA SILVA NEVES",
+          "Laudemira Gabbi"
+        ]
+      },
+      {
+        "price": 495,
+        "memberCount": 1,
+        "members": [
+          "LUANA LOPES VIDAL"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 3X POR SEMANA (ESTAGIÁRIO)",
+    "prices": [
+      {
+        "price": 350,
+        "memberCount": 20,
+        "members": [
+          "Alcimara Ferreira Cardoso",
+          "Aline Madruga de Avila",
+          "Ana Paula de Souza Santos",
+          "Analice Verdi",
+          "André Sobreira Barbosa",
+          "Cristiane Elis Kunz",
+          "Diego Oliveira",
+          "Dinalva Bezerra Cavalcante",
+          "Elda A A Xandu",
+          "Evone Bezerra Alves",
+          "Feliciana Pereira Rodrigues",
+          "Flávia Godoy Moraes Silveira",
+          "Gabriela Ragagnin",
+          "Khety Line Albarello Kubitz",
+          "Nivaldo José de Paiva Filho",
+          "Patrícia Ragagnin",
+          "Rosineide Silvano dos Santos Muniz",
+          "Silvana Espirandeli",
+          "Sonia Regane Zemolin Migotto",
+          "Thamara Fagundes Marques"
+        ]
+      },
+      {
+        "price": 315,
+        "memberCount": 10,
+        "members": [
+          "Adailton Mendes de Lima",
+          "Adelson Alves Nantes",
+          "Aline Cristina dos Santos",
+          "Andréia Pinheiro Rondon Nantes",
+          "Bruna Agostini de Paiva",
+          "Jaqueline Pimentel Gomes de Lima",
+          "Leandro Gaspar Duarte",
+          "Leandro Muller",
+          "Lorenzo Ribeiro Sanches Leite",
+          "Marcela Regina de Oliveira Carvalho Duarte"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 2X POR SEMANA (GABI)",
+    "prices": [
+      {
+        "price": 350,
+        "memberCount": 15,
+        "members": [
+          "Adalgisa Regina Ramos Ceolin",
+          "Alércio de Alcântara",
+          "Andreia Vincensi",
+          "Irma Ampuero Ogaya",
+          "Jéssica Pedó",
+          "LUCIANA DA SILVA RODRIGUES",
+          "Liandra Vitoria Canova",
+          "Lucio Messias da Silva",
+          "Mariana Borges Bisognin",
+          "Patrícia Cristiane Chagas Alves Belone",
+          "SANDRA JANETE SMANIOTTO GASPARELLI",
+          "Sandra Katia Barbieri",
+          "Sumaia Dorazi Lemes",
+          "Telma Márcia Maciel yule",
+          "Viviane Soares Cabelo"
+        ]
+      },
+      {
+        "price": 315,
+        "memberCount": 4,
+        "members": [
+          "KARINE BLUME DE SOUZA",
+          "LUZIA CAMPOS MORGADO",
+          "MANOEL SANTOS MORGADO",
+          "Renata Barbosa de Paiva Facco"
+        ]
+      },
+      {
+        "price": 250,
+        "memberCount": 1,
+        "members": [
+          "Fernanda Caroline Gelain"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 1X POR SEMANA (GABI)",
+    "prices": [
+      {
+        "price": 160,
+        "memberCount": 1,
+        "members": [
+          "Adriana Giuliani Buosi"
+        ]
+      },
+      {
+        "price": 150,
+        "memberCount": 1,
+        "members": [
+          "Natália Biazoto de Paiva"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 3X POR SEMANA (GABI)",
+    "prices": [
+      {
+        "price": 450,
+        "memberCount": 11,
+        "members": [
+          "Camila de Santana Perussi",
+          "Danielli Neves Tambosi",
+          "Fernando Balestrin",
+          "Isabella Carneiro Fernandes",
+          "Keli Cristiane da Costa",
+          "LOIDE LOPES",
+          "Lorraine Vidal",
+          "Luciano Cargnin Manfio",
+          "Marlene de Araujo Oliveira Meazza",
+          "ROSANGELA NOVAIS",
+          "VITÓRIA OLIVEIRA MEAZZA"
+        ]
+      },
+      {
+        "price": 405,
+        "memberCount": 7,
+        "members": [
+          "BIANCA DALCIN STIEVEN LOURENÇO",
+          "Camila Garcia Ceolin",
+          "Cristian Gelain do Nascimento",
+          "Marina Ribeiro Sanches",
+          "REGIS AUGUSTO KOSTER CANOVA",
+          "Rita de Cássia Gomes da Silva",
+          "YASMIN CABELO BORGES"
+        ]
+      },
+      {
+        "price": 370,
+        "memberCount": 1,
+        "members": [
+          "MARIANA VIANA VIEIRA"
+        ]
+      },
+      {
+        "price": 400,
+        "memberCount": 1,
+        "members": [
+          "Wanderson Willian Santiago Santos"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "PERSONAL 3X POR SEMANA (GABI)",
+    "prices": [
+      {
+        "price": 550,
+        "memberCount": 1,
+        "members": [
+          "Carla Dilene Fernandes Almeida Lima"
+        ]
+      },
+      {
+        "price": 530,
+        "memberCount": 1,
+        "members": [
+          "SHEILA FERNANDES ALMEIDA"
+        ]
+      }
+    ]
+  },
+  {
+    "plan": "TREINO 5X POR SEMANA (ESTAGIÁRIO)",
+    "prices": [
+      {
+        "price": 550,
+        "memberCount": 2,
+        "members": [
+          "Cleonilda Dias de Lima Cereda",
+          "Taína Rodrigues Toscan"
+        ]
+      },
+      {
+        "price": 485,
+        "memberCount": 1,
+        "members": [
+          "Walkiria Simony Corrêa"
+        ]
+      }
+    ]
+  }
+]
