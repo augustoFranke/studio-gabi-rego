@@ -5,9 +5,13 @@ import { compare, hash } from "bcryptjs"
 const isStrongPassword = (value: string) =>
   value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value)
 
+const isProduction = process.env.NODE_ENV === "production"
+
+const authError = (code: string) => (isProduction ? "INVALID_CREDENTIALS" : code)
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Required for Vercel deployment - trust the proxy headers
-  trustHost: true,
+  trustHost: process.env.VERCEL === "1",
   // Explicitly use NEXTAUTH_SECRET for backward compatibility
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   providers: [
@@ -34,12 +38,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         })
 
         if (!usuario) {
-          throw new Error("USER_NOT_FOUND")
+          throw new Error(authError("USER_NOT_FOUND"))
         }
 
         if (!usuario.senhaDefinida) {
           if (!isStrongPassword(password)) {
-            throw new Error("WEAK_PASSWORD")
+            throw new Error(authError("WEAK_PASSWORD"))
           }
 
           const senhaHash = await hash(password, 12)
@@ -63,7 +67,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senhaCorreta = await compare(password, usuario.senha)
 
         if (!senhaCorreta) {
-          throw new Error("WRONG_PASSWORD")
+          throw new Error(authError("WRONG_PASSWORD"))
         }
 
         return {
@@ -99,5 +103,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
+    maxAge: 24 * 60 * 60,
   },
 })

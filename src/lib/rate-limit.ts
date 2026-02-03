@@ -1,0 +1,39 @@
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
+
+const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
+const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+
+const rateLimiter = UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN
+  ? new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(5, "1 m"),
+    })
+  : null
+
+export function isRateLimitConfigured() {
+  return Boolean(rateLimiter)
+}
+
+function getRequestIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for")
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown"
+  }
+
+  const realIp = request.headers.get("x-real-ip")
+  if (realIp) {
+    return realIp
+  }
+
+  return "unknown"
+}
+
+export async function rateLimitByIp(request: Request, keyPrefix: string) {
+  if (!rateLimiter) {
+    return { success: true }
+  }
+
+  const ip = getRequestIp(request)
+  return rateLimiter.limit(`${keyPrefix}:${ip}`)
+}

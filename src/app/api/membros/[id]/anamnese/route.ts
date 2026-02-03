@@ -2,6 +2,68 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
 
+const ANAMNESE_FIELDS = new Set([
+  'altura',
+  'pesoAtual',
+  'objetivo',
+  'praticaAtividade',
+  'praticaAtividadeQual',
+  'tempoSedentario',
+  'condicaoMedica',
+  'condicaoMedicaQual',
+  'lesao',
+  'lesaoQual',
+  'restricaoMovimento',
+  'restricaoMovimentoQual',
+  'desconfortoMovimento',
+  'desconfortoMovimentoQual',
+  'problemasOrtopedicos',
+  'problemasOrtopedicosQual',
+  'medicamentoControlado',
+  'medicamentoControladoQual',
+  'obesoSobrepeso',
+  'colesterolElevado',
+  'taquicardia',
+  'doencasCardiacas',
+  'diabetes',
+  'dificuldadeExercicio',
+  'cicloMenstrual',
+  'experienciaMusculacao',
+  'ondeConheceu',
+  'expectativas',
+  'parq1',
+  'parq2',
+  'parq3',
+  'parq4',
+  'parq5',
+  'parq6',
+  'parq7',
+])
+
+function sanitizeAnamnesePayload(payload: Record<string, unknown>) {
+  const data: Record<string, string | null> = {}
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (!ANAMNESE_FIELDS.has(key)) {
+      return { error: 'Dados inválidos' } as const
+    }
+
+    if (typeof value === 'string') {
+      data[key] = value.trim() === '' ? null : value
+      continue
+    }
+
+    if (value === null) {
+      data[key] = null
+      continue
+    }
+
+    return { error: 'Dados inválidos' } as const
+  }
+
+  return { data } as const
+}
+
 interface Params {
   params: Promise<{
     id: string
@@ -55,7 +117,22 @@ export async function POST(
 ) {
   return withApiAuth(async () => {
     const { id } = await params
-    const body = await request.json()
+    let body: unknown
+
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
+
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
+    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
 
     const membro = await prisma.membro.findUnique({
       where: { id },
@@ -70,9 +147,9 @@ export async function POST(
       where: { membroId: id },
       create: {
         membroId: id,
-        ...body,
+        ...sanitized.data,
       },
-      update: body,
+      update: sanitized.data,
     })
 
     return NextResponse.json(anamnese)

@@ -3,9 +3,18 @@ import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
+import { rateLimitByIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await rateLimitByIp(request, "auth:resend-verification")
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email } = body
 
@@ -72,7 +81,7 @@ export async function POST(request: Request) {
           html: emailTemplates.completarPerfil(usuario.nome ?? null, completionLink),
         })
       } else {
-        console.log("Resend not configured. Completion link:", completionLink)
+        console.warn("Resend não configurado - envio de email ignorado.")
       }
 
       return NextResponse.json({
@@ -102,7 +111,7 @@ export async function POST(request: Request) {
         html: emailTemplates.verificacaoEmail(usuario.nome ?? null, verificationLink),
       })
     } else {
-      console.log("Resend not configured. Verification link:", verificationLink)
+      console.warn("Resend não configurado - envio de email ignorado.")
     }
 
     return NextResponse.json({
