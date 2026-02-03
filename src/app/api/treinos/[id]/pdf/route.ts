@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
 
 interface RouteParams {
@@ -33,8 +33,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
     }
 
-    if (session.user.role === 'MEMBRO' && ficha.membroId !== session.user.membroId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+    const authError = ensureOwnerOrAdmin(session, ficha.membroId)
+    if (authError) {
+      return authError
     }
 
     try {

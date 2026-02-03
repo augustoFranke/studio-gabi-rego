@@ -42,6 +42,17 @@ const fichaSelect = {
   },
 } satisfies Prisma.FichaTreinoSelect
 
+const mapExerciseToPrisma = (ex: ExercicioInput, index: number) => ({
+  sessao: ex.sessao || 'A',
+  nome: ex.nome || 'Exercício',
+  grupoMuscular: ex.grupoMuscular,
+  series: ex.series ? String(ex.series) : '3',
+  repeticoes: ex.repeticoes || '10',
+  descanso: ex.descanso,
+  observacoes: ex.observacoes,
+  ordem: index,
+})
+
 export async function listFichasTreino(where: Prisma.FichaTreinoWhereInput) {
   return prisma.fichaTreino.findMany({
     where,
@@ -69,16 +80,7 @@ export async function createFichaTreino(data: {
       observacoes,
       exercicios: exercicios
         ? {
-            create: exercicios.map((ex, index) => ({
-              sessao: ex.sessao || 'A',
-              nome: ex.nome || 'Exercício',
-              grupoMuscular: ex.grupoMuscular,
-              series: ex.series ? String(ex.series) : '3',
-              repeticoes: ex.repeticoes || '10',
-              descanso: ex.descanso,
-              observacoes: ex.observacoes,
-              ordem: index,
-            })),
+            create: exercicios.map(mapExerciseToPrisma),
           }
         : undefined,
     },
@@ -130,14 +132,7 @@ export async function replaceFichaExercicios(
   await prisma.exercicio.createMany({
     data: exercicios.map((ex, index) => ({
       fichaId,
-      sessao: ex.sessao || 'A',
-      nome: ex.nome || 'Exercício',
-      grupoMuscular: ex.grupoMuscular,
-      series: ex.series ? String(ex.series) : '3',
-      repeticoes: ex.repeticoes || '10',
-      descanso: ex.descanso,
-      observacoes: ex.observacoes,
-      ordem: index,
+      ...mapExerciseToPrisma(ex, index),
     })),
   })
 }
@@ -171,16 +166,7 @@ export async function createTreinoTemplate(data: {
       objetivo: data.objetivo,
       observacoes: data.observacoes,
       exercicios: {
-        create: data.exercicios.map((ex, index) => ({
-          sessao: ex.sessao || 'A',
-          nome: ex.nome || 'Exercício',
-          grupoMuscular: ex.grupoMuscular,
-          series: ex.series ? String(ex.series) : '3',
-          repeticoes: ex.repeticoes || '10',
-          descanso: ex.descanso,
-          observacoes: ex.observacoes,
-          ordem: index,
-        })),
+        create: data.exercicios.map(mapExerciseToPrisma),
       },
     },
     include: {

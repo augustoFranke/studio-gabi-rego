@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/membros/[id]/anamnese-link/route'
 
-const { prismaMock, sessionRef, randomBytesMock } = vi.hoisted(() => ({
-  prismaMock: {
-    membro: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-  },
-  sessionRef: {
-    current: { user: { role: 'ADMIN' as const } },
-  } as { current: { user: { role: 'ADMIN' | 'MEMBRO' } } },
-  randomBytesMock: vi.fn(),
-}))
+const { prismaMock, sessionRef, randomBytesMock, withApiAuthMock } = vi.hoisted(() => {
+  const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
+  return {
+    prismaMock: createPrismaMock({
+      membro: ['findUnique', 'update'],
+    }),
+    sessionRef,
+    randomBytesMock: vi.fn(),
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+  }
+})
 
 vi.mock('crypto', () => ({
   randomBytes: randomBytesMock,
@@ -24,17 +24,7 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => {
-      if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-      return handler(sessionRef.current)
-    }
-  ),
+  withApiAuth: withApiAuthMock,
 }))
 
 describe('Membros Anamnese Link API', () => {

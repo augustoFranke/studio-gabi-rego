@@ -1,9 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { POST } from '@/app/api/pagamentos/route'
 import { prisma } from '@/lib/prisma'
-import { NextRequest } from 'next/server'
+import { createJsonRequest } from '@/__tests__/test-utils'
 
 // Mocks
+const { withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const { createSessionRef, createValidateRequestMock, mockWithApiAuth } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
+
+  return {
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
+  }
+})
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     pagamento: {
@@ -13,7 +23,8 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn((handler) => handler({ user: { role: 'ADMIN' } })),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 vi.mock('@/lib/schedule', () => ({
@@ -25,12 +36,8 @@ describe('Pagamentos API - POST /api/pagamentos', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: Record<string, unknown>) => {
-    return new NextRequest('http://localhost:3000/api/pagamentos', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    })
-  }
+  const createRequest = (body: Record<string, unknown>) =>
+    createJsonRequest('http://localhost:3000/api/pagamentos', body)
 
   it('should create a new payment successfully', async () => {
     const validBody = {

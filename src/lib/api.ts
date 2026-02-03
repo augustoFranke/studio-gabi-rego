@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import type { ZodError, ZodSchema } from 'zod'
 
 type Role = 'ADMIN' | 'MEMBRO'
 
@@ -53,4 +54,60 @@ export async function withApiAuth<T extends AuthOptions = RequireAuthOptions>(
     console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
+}
+
+type ValidationResult<T> = { data: T } | { error: NextResponse }
+
+type ValidationOptions<T> = {
+  invalidJsonMessage?: string
+  errorMessage?: (error: ZodError<T>) => string
+}
+
+type OwnerCheckOptions = {
+  status?: number
+  error?: string
+}
+
+export function ensureOwnerOrAdmin(
+  session: { user: { role: Role; membroId?: string | null } },
+  ownerId?: string | null,
+  options?: OwnerCheckOptions
+) {
+  if (session.user.role === 'MEMBRO' && ownerId !== session.user.membroId) {
+    return NextResponse.json(
+      { error: options?.error ?? 'Não autorizado' },
+      { status: options?.status ?? 403 }
+    )
+  }
+
+  return null
+}
+
+export async function validateRequest<T>(
+  request: NextRequest,
+  schema: ZodSchema<T>,
+  options?: ValidationOptions<T>
+): Promise<ValidationResult<T>> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return {
+      error: NextResponse.json(
+        { error: options?.invalidJsonMessage ?? 'Dados inválidos enviados. Verifique o formulário.' },
+        { status: 400 }
+      ),
+    }
+  }
+
+  const validation = schema.safeParse(body)
+  if (!validation.success) {
+    const message =
+      options?.errorMessage?.(validation.error) ??
+      validation.error.issues[0]?.message ??
+      'Dados inválidos enviados. Verifique o formulário.'
+    return { error: NextResponse.json({ error: message }, { status: 400 }) }
+  }
+
+  return { data: validation.data }
 }

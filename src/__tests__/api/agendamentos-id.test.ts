@@ -2,42 +2,49 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { DELETE, GET, PATCH } from '@/app/api/agendamentos/[id]/route'
 
-const { prismaMock, sessionRef } = vi.hoisted(() => ({
-  prismaMock: {
-    agendamento: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      count: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    horarioDisponivel: {
-      findUnique: vi.fn(),
-    },
-  },
-  sessionRef: {
-    current: { user: { role: 'ADMIN' as const, membroId: 'm-admin' } },
-  } as {
-    current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } }
-  },
-}))
+const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock, ensureOwnerOrAdminMock } = vi.hoisted(() => {
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
+  const sessionRef = createSessionRef()
+
+  return {
+    prismaMock: createPrismaMock({
+      agendamento: ['findUnique', 'findFirst', 'count', 'update', 'delete'],
+      horarioDisponivel: ['findUnique'],
+    }),
+    sessionRef,
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
+    ensureOwnerOrAdminMock: vi.fn(
+      (
+        session: typeof sessionRef.current,
+        ownerId?: string | null,
+        options?: { status?: number; error?: string }
+      ) => {
+        if (session.user.role === 'MEMBRO' && ownerId !== session.user.membroId) {
+          return NextResponse.json(
+            { error: options?.error ?? 'Não autorizado' },
+            { status: options?.status ?? 403 }
+          )
+        }
+        return null
+      }
+    ),
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => {
-      if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-      return handler(sessionRef.current)
-    }
-  ),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
+  ensureOwnerOrAdmin: ensureOwnerOrAdminMock,
 }))
 
 describe('Agendamentos API - /api/agendamentos/[id]', () => {

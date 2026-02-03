@@ -1,7 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo } from "react"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { groupPlansByCategory } from "@/lib/planos"
+import { useUrlFilters } from "@/hooks/use-url-filters"
 
 interface PlanoOption {
   id: string
@@ -28,107 +29,56 @@ interface AlunosFiltersProps {
   planos: PlanoOption[]
 }
 
+type FilterValues = {
+  search: string
+  status: string
+  plano: string
+  order: string
+}
+
+const DEFAULT_FILTERS: FilterValues = {
+  search: "",
+  status: "todos",
+  plano: "todos",
+  order: "recent_desc",
+}
+
 export function AlunosFilters({ search, status, plano, order, planos }: AlunosFiltersProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const [searchValue, setSearchValue] = useState(search ?? "")
-  const [statusValue, setStatusValue] = useState(status ?? "todos")
-  const [planoValue, setPlanoValue] = useState(plano ?? "todos")
-  const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const restoreSearchFocusRef = useRef(false)
-
-  useEffect(() => {
-    setSearchValue(search ?? "")
-    setStatusValue(status ?? "todos")
-    setPlanoValue(plano ?? "todos")
-    setOrderValue(order ?? "recent_desc")
-  }, [order, plano, search, status])
-
-  useEffect(() => {
-    if (!restoreSearchFocusRef.current) {
-      return
+  const { filters, setFilters, applyFilters, clearFilters } = useUrlFilters(
+    {
+      ...DEFAULT_FILTERS,
+      search: search ?? DEFAULT_FILTERS.search,
+      status: status ?? DEFAULT_FILTERS.status,
+      plano: plano ?? DEFAULT_FILTERS.plano,
+      order: order ?? DEFAULT_FILTERS.order,
+    },
+    {
+      defaults: DEFAULT_FILTERS,
+      normalize: {
+        search: (value) => value.trim(),
+      },
     }
-    const rafId = requestAnimationFrame(() => {
-      if (document.activeElement !== searchInputRef.current) {
-        searchInputRef.current?.focus()
-      }
-      restoreSearchFocusRef.current = false
-    })
-    return () => cancelAnimationFrame(rafId)
-  }, [searchParams])
+  )
 
-  const groupedPlanos = useMemo(() => {
-    const planosGabi = planos.filter(p => p.nome.toLowerCase().includes("gabi"))
-    const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes("estagiário") || p.nome.toLowerCase().includes("estagiarios"))
-    const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes("gabi") && !p.nome.toLowerCase().includes("estagiário") && !p.nome.toLowerCase().includes("estagiarios"))
-
-    return { planosGabi, planosEstagiarios, planosOutros }
-  }, [planos])
-
-  const buildQuery = useCallback((values: { search: string; status: string; plano: string; order: string }) => {
-    const params = new URLSearchParams()
-    let hasFilters = false
-    if (values.search.trim()) params.set("search", values.search.trim())
-    if (values.search.trim()) hasFilters = true
-    if (values.status && values.status !== "todos") {
-      params.set("status", values.status)
-      hasFilters = true
-    }
-    if (values.plano && values.plano !== "todos") {
-      params.set("plano", values.plano)
-      hasFilters = true
-    }
-    if (values.order && values.order !== "recent_desc") {
-      params.set("order", values.order)
-      hasFilters = true
-    }
-    if (hasFilters) {
-      params.set("page", "1")
-    }
-    return params.toString()
-  }, [])
-
-  const applyFilters = useCallback((values: { search: string; status: string; plano: string; order: string }) => {
-    const nextQuery = buildQuery(values)
-    const currentQuery = searchParams.toString()
-    if (nextQuery === currentQuery) {
-      return false
-    }
-    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
-    return true
-  }, [buildQuery, pathname, router, searchParams])
+  const groupedPlanos = useMemo(() => groupPlansByCategory(planos), [planos])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative w-full md:w-64">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          ref={searchInputRef}
           name="search"
           placeholder="Nome, CPF ou Email..."
           className="pl-8 border-input/50 focus:border-primary"
-          value={searchValue}
-          onChange={(event) => {
-            const nextValue = event.target.value
-            setSearchValue(nextValue)
-            restoreSearchFocusRef.current = applyFilters({
-              search: nextValue.trim(),
-              status: statusValue,
-              plano: planoValue,
-              order: orderValue,
-            })
-          }}
+          value={filters.search}
+          onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
         />
       </div>
 
       <Select
-        value={statusValue}
+        value={filters.status}
         onValueChange={(value) => {
-          setStatusValue(value)
-          applyFilters({ search: searchValue.trim(), status: value, plano: planoValue, order: orderValue })
+          setFilters((prev) => ({ ...prev, status: value }))
         }}
       >
         <SelectTrigger className="w-[140px] border-input/50">
@@ -143,10 +93,9 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
       </Select>
 
       <Select
-        value={planoValue}
+        value={filters.plano}
         onValueChange={(value) => {
-          setPlanoValue(value)
-          applyFilters({ search: searchValue.trim(), status: statusValue, plano: value, order: orderValue })
+          setFilters((prev) => ({ ...prev, plano: value }))
         }}
       >
         <SelectTrigger className="w-[220px] border-input/50">
@@ -206,10 +155,9 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
       </Select>
 
       <Select
-        value={orderValue}
+        value={filters.order}
         onValueChange={(value) => {
-          setOrderValue(value)
-          applyFilters({ search: searchValue.trim(), status: statusValue, plano: planoValue, order: value })
+          setFilters((prev) => ({ ...prev, order: value }))
         }}
       >
         <SelectTrigger className="w-[200px] border-input/50">
@@ -225,7 +173,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="secondary"
         className="hover:bg-primary/10 hover:text-primary"
-        onClick={() => applyFilters({ search: searchValue, status: statusValue, plano: planoValue, order: orderValue })}
+        onClick={() => applyFilters(filters)}
       >
         Filtrar
       </Button>
@@ -233,14 +181,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="ghost"
         className="hover:text-primary"
-        onClick={() => {
-          const cleared = { search: "", status: "todos", plano: "todos", order: "recent_desc" }
-          setSearchValue("")
-          setStatusValue("todos")
-          setPlanoValue("todos")
-          setOrderValue("recent_desc")
-          applyFilters(cleared)
-        }}
+        onClick={clearFilters}
       >
         Limpar
       </Button>

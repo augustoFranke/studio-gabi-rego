@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -55,8 +55,51 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { FinanceiroStats, Pagamento, Plano } from '@/domain/financeiro'
-import type { Membro } from '@/domain/membro'
+import type { Prisma } from '@prisma/client'
+import { groupPlansByCategory } from "@/lib/planos"
+
+type FinanceiroStats = {
+  totalPlanos: number
+  pagamentosPendentes: number
+  pagamentosAtrasados: number
+  receitaMes: number
+}
+
+type Plano = Omit<
+  Prisma.PlanoGetPayload<{
+    include: { _count: { select: { membros: true; pagamentos: true } } }
+  }>,
+  'valor'
+> & {
+  valor: string | number
+}
+
+type Pagamento = Omit<
+  Prisma.PagamentoGetPayload<{
+    include: {
+      membro: { include: { usuario: { select: { nome: true } } } }
+      plano: true
+    }
+  }>,
+  'valor' | 'dataVencimento' | 'dataPagamento'
+> & {
+  valor: string | number
+  dataVencimento: string
+  dataPagamento: string | null
+}
+
+type Membro = Omit<
+  Prisma.MembroGetPayload<{
+    include: {
+      usuario: { select: { id: true; nome: true; email: true } }
+      plano: true
+    }
+  }>,
+  'dataNascimento' | 'precoCustomizado'
+> & {
+  dataNascimento?: string | Date | null
+  precoCustomizado?: string | number | null
+}
 
 // Helper functions
 function formatCurrency(value: string | number): string {
@@ -166,6 +209,12 @@ export default function FinanceiroPage() {
     pagamentosAtrasados: 0,
     receitaMes: 0
   })
+
+  const groupedPlanos = useMemo(() => groupPlansByCategory(planos), [planos])
+  const groupedPlanosAtivos = useMemo(
+    () => groupPlansByCategory(planos.filter((p) => p.ativo)),
+    [planos]
+  )
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -710,84 +759,75 @@ export default function FinanceiroPage() {
                         <Label htmlFor="plano" className={pagamentoErrors.planoId ? "text-destructive" : ""}>
                           Plano
                         </Label>
-                        {(() => {
-                          const activePlanos = planos.filter((p) => p.ativo)
-                          const planosGabi = activePlanos.filter(p => p.nome.toLowerCase().includes('gabi'))
-                          const planosEstagiarios = activePlanos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
-                          const planosOutros = activePlanos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-
-                          return (
-                            <Select
-                              value={pagamentoForm.planoId}
-                              onValueChange={(v) => {
-                                const plano = planos.find((p) => p.id === v)
-                                setPagamentoForm({
-                                  ...pagamentoForm,
-                                  planoId: v,
-                                  valor: plano ? String(plano.valor) : pagamentoForm.valor,
-                                })
-                                if (pagamentoErrors.planoId) {
-                                  setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
-                                }
-                              }}
-                              disabled={!!editingPagamento}
-                            >
-                              <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
-                                <SelectValue placeholder="Selecione o plano" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {planosGabi.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                      Planos com Gabi
-                                    </SelectLabel>
-                                    {planosGabi.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                                {planosEstagiarios.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                                      Planos com Estagiários
-                                    </SelectLabel>
-                                    {planosEstagiarios.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                                {planosOutros.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-violet-500"></span>
-                                      Outros Planos
-                                    </SelectLabel>
-                                    {planosOutros.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          )
-                        })()}
+                        <Select
+                          value={pagamentoForm.planoId}
+                          onValueChange={(v) => {
+                            const plano = planos.find((p) => p.id === v)
+                            setPagamentoForm({
+                              ...pagamentoForm,
+                              planoId: v,
+                              valor: plano ? String(plano.valor) : pagamentoForm.valor,
+                            })
+                            if (pagamentoErrors.planoId) {
+                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
+                            }
+                          }}
+                          disabled={!!editingPagamento}
+                        >
+                          <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
+                            <SelectValue placeholder="Selecione o plano" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {groupedPlanosAtivos.planosGabi.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="flex items-center gap-2">
+                                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                  Planos com Gabi
+                                </SelectLabel>
+                                {groupedPlanosAtivos.planosGabi.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="pl-6">
+                                    <span className="flex items-center gap-2">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                                      {p.nome} - {formatCurrency(p.valor)}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {groupedPlanosAtivos.planosEstagiarios.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="flex items-center gap-2">
+                                  <span className="h-2 w-2 rounded-full bg-sky-500"></span>
+                                  Planos com Estagiários
+                                </SelectLabel>
+                                {groupedPlanosAtivos.planosEstagiarios.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="pl-6">
+                                    <span className="flex items-center gap-2">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+                                      {p.nome} - {formatCurrency(p.valor)}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {groupedPlanosAtivos.planosOutros.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="flex items-center gap-2">
+                                  <span className="h-2 w-2 rounded-full bg-violet-500"></span>
+                                  Outros Planos
+                                </SelectLabel>
+                                {groupedPlanosAtivos.planosOutros.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="pl-6">
+                                    <span className="flex items-center gap-2">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
+                                      {p.nome} - {formatCurrency(p.valor)}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                          </SelectContent>
+                        </Select>
                         {pagamentoErrors.planoId && (
                           <p className="text-xs text-destructive">{pagamentoErrors.planoId}</p>
                         )}
@@ -1271,15 +1311,8 @@ export default function FinanceiroPage() {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {/* Planos Gabi */}
-                  {(() => {
-                    const planosGabi = planos.filter(p => p.nome.toLowerCase().includes('gabi'))
-                    const planosEstagiarios = planos.filter(p => p.nome.toLowerCase().includes('estagiário') || p.nome.toLowerCase().includes('estagiarios'))
-                    const planosOutros = planos.filter(p => !p.nome.toLowerCase().includes('gabi') && !p.nome.toLowerCase().includes('estagiário') && !p.nome.toLowerCase().includes('estagiarios'))
-
-                    return (
-                      <>
-                        {planosGabi.length > 0 && (
+                  <>
+                    {groupedPlanos.planosGabi.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/30">
@@ -1290,11 +1323,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Atendimento personalizado pela Gabi</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 ml-auto">
-                                {planosGabi.length} {planosGabi.length === 1 ? 'plano' : 'planos'}
+                                {groupedPlanos.planosGabi.length} {groupedPlanos.planosGabi.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosGabi.map((plano) => (
+                              {groupedPlanos.planosGabi.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-all`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1366,7 +1399,7 @@ export default function FinanceiroPage() {
                           </div>
                         )}
 
-                        {planosEstagiarios.length > 0 && (
+                        {groupedPlanos.planosEstagiarios.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-blue-500/30">
@@ -1377,11 +1410,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Atendimento pela equipe de estagiários</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-sky-400 to-blue-500 text-white border-0 ml-auto">
-                                {planosEstagiarios.length} {planosEstagiarios.length === 1 ? 'plano' : 'planos'}
+                                {groupedPlanos.planosEstagiarios.length} {groupedPlanos.planosEstagiarios.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosEstagiarios.map((plano) => (
+                              {groupedPlanos.planosEstagiarios.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 dark:from-sky-950/20 dark:to-blue-950/10 dark:border-sky-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1453,7 +1486,7 @@ export default function FinanceiroPage() {
                           </div>
                         )}
 
-                        {planosOutros.length > 0 && (
+                        {groupedPlanos.planosOutros.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30">
@@ -1464,11 +1497,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Planos especiais e personalizados</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-violet-400 to-purple-500 text-white border-0 ml-auto">
-                                {planosOutros.length} {planosOutros.length === 1 ? 'plano' : 'planos'}
+                                {groupedPlanos.planosOutros.length} {groupedPlanos.planosOutros.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosOutros.map((plano) => (
+                              {groupedPlanos.planosOutros.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10 dark:border-violet-800/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1539,9 +1572,7 @@ export default function FinanceiroPage() {
                             </div>
                           </div>
                         )}
-                      </>
-                    )
-                  })()}
+                  </>
                 </div>
               )}
             </CardContent>
