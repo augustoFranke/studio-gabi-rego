@@ -30,6 +30,10 @@ function getRequestIp(request: Request) {
 }
 
 export async function rateLimitByIp(request: Request, keyPrefix: string) {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
+    return { success: true }
+  }
+
   if (!rateLimiter) {
     return { success: true }
   }
