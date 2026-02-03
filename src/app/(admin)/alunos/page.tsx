@@ -128,7 +128,6 @@ export default async function MembrosPage({
               </div>
             </div>
             <AlunosFilters
-              key={`${search ?? ""}-${status ?? ""}-${plano ?? ""}-${order ?? ""}`}
               search={search}
               status={status}
               plano={plano}
