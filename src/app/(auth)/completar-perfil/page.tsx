@@ -18,6 +18,7 @@ const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
 
 function CompletarPerfilContent() {
   const { status } = useSession()
+  const isDev = process.env.NODE_ENV === "development"
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
   const profileTokenFromStorage = useSyncExternalStore(
@@ -64,10 +65,13 @@ function CompletarPerfilContent() {
     if (status === "loading") {
       return
     }
+    if (isDev) {
+      return
+    }
     if (status === "unauthenticated" && !profileToken) {
       router.push("/login")
     }
-  }, [status, profileToken, router])
+  }, [status, profileToken, router, isDev])
 
   // Format CPF as user types
   function handleCpfChange(value: string) {
@@ -326,7 +330,7 @@ function CompletarPerfilContent() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="dataNascimento" className="text-sm font-medium flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                   Data de nascimento
@@ -340,7 +344,7 @@ function CompletarPerfilContent() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="sexo" className="text-sm font-medium flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                   Sexo
