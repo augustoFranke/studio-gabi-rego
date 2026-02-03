@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { parseLocalDate } from '@/lib/schedule'
 import { z } from 'zod'
 import { Prisma, StatusPagamento } from '@prisma/client'
@@ -97,14 +97,10 @@ export async function GET(request: NextRequest) {
 // POST /api/pagamentos - Criar novo pagamento (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    const body = await request.json()
-    const validation = pagamentoSchema.safeParse(body)
+    const validation = await validateRequest(request, pagamentoSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const { membroId, planoId, valor, dataVencimento, formaPagamento, observacao } = validation.data

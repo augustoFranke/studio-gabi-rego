@@ -1,28 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NextResponse } from 'next/server'
 import { POST } from '@/app/api/auth/enviar-reset-senha/route'
 
-const { prismaMock, resendMock, sessionRef, cryptoMock } = vi.hoisted(() => ({
-  prismaMock: {
-    usuario: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
+const { prismaMock, resendMock, sessionRef, cryptoMock, withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { role: 'ADMIN', id: 'u-admin' } })
+
+  return {
+    prismaMock: createPrismaMock({
+      usuario: ['findUnique', 'update'],
+    }),
+    resendMock: {
+      enviarEmail: vi.fn(),
+      isResendConfigured: vi.fn(() => true),
+      emailTemplates: {
+        redefinirSenha: vi.fn((_nome: string, link: string) => `<a href="${link}">reset</a>`),
+      },
     },
-  },
-  resendMock: {
-    enviarEmail: vi.fn(),
-    isResendConfigured: vi.fn(() => true),
-    emailTemplates: {
-      redefinirSenha: vi.fn((_nome: string, link: string) => `<a href="${link}">reset</a>`),
+    sessionRef,
+    cryptoMock: {
+      randomBytes: vi.fn(() => Buffer.from('a'.repeat(32))),
     },
-  },
-  sessionRef: {
-    current: { user: { role: 'ADMIN' as const, id: 'u-admin' } },
-  } as { current: { user: { role: 'ADMIN' | 'MEMBRO'; id: string } } },
-  cryptoMock: {
-    randomBytes: vi.fn(() => Buffer.from('a'.repeat(32))),
-  },
-}))
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
@@ -33,9 +39,8 @@ vi.mock('@/lib/resend', () => resendMock)
 vi.mock('crypto', () => cryptoMock)
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(async (handler: (session: typeof sessionRef.current) => Promise<NextResponse>) =>
-    handler(sessionRef.current)
-  ),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Auth API - POST /api/auth/enviar-reset-senha', () => {

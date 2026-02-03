@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { treinoTemplateSchema } from '@/schemas/treino.schema'
 import {
   createTreinoTemplate,
@@ -19,14 +19,10 @@ export async function GET() {
 // POST /api/treinos/templates - Criar template de treino (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    const body = await request.json()
-    const validation = treinoTemplateSchema.safeParse(body)
+    const validation = await validateRequest(request, treinoTemplateSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const { nome, objetivo, observacoes, fichaId, exercicios } = validation.data

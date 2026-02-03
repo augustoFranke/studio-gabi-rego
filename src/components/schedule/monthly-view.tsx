@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   getCalendarDaysMonSat,
   formatDateISO,
-  parseDateFromAPI,
   isToday,
   DiaSemanaAbrev,
 } from '@/lib/schedule'
@@ -14,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { getMonth } from 'date-fns'
 import { DiaSemana } from '@prisma/client'
 import { DayDetailModal } from './day-detail-modal'
+import { useScheduleData } from './use-schedule-data'
 
 interface MonthlyViewProps {
   date: Date
@@ -32,26 +32,7 @@ export const MonthlyView = memo(function MonthlyView({
 
   const calendarDays = useMemo(() => getCalendarDaysMonSat(date), [date])
   const currentMonth = getMonth(date)
-
-  // Pre-compute agendamentos by date to avoid recalculating on each render
-  const { agendamentosByDate, countsByDate } = useMemo(() => {
-    const byDate = new Map<string, Agendamento[]>()
-    const counts = new Map<string, number>()
-
-    for (const agendamento of agendamentos) {
-      const dateKey = formatDateISO(parseDateFromAPI(agendamento.data))
-      if (!byDate.has(dateKey)) {
-        byDate.set(dateKey, [])
-      }
-      byDate.get(dateKey)!.push(agendamento)
-    }
-
-    for (const [dateKey, dayAgendamentos] of byDate) {
-      counts.set(dateKey, dayAgendamentos.length)
-    }
-
-    return { agendamentosByDate: byDate, countsByDate: counts }
-  }, [agendamentos])
+  const { agendamentosByDate, countsByDate } = useScheduleData(agendamentos)
 
   const handleDayClick = useCallback((day: Date) => {
     setSelectedDay(day)

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
+import { normalizeEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -48,10 +49,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
     }
 
     const usuario = membro.usuario ?? { nome: null, email: null }
-    const usuarioEmail =
-        usuario.email && !usuario.email.endsWith("@placeholder.local")
-            ? usuario.email
-            : undefined
+    const usuarioEmail = normalizeEmail(usuario.email) ?? undefined
 
     // Transform Prisma null values to undefined for form compatibility
     const formData = {

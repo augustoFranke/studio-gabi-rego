@@ -11,8 +11,6 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-gabi_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gabi_studio}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - EVOLUTION_API_URL=http://evolution:8080
-      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
       - RESEND_API_KEY=${RESEND_API_KEY}
     ports:
       - "3000:3000"
@@ -50,66 +48,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ==================== Evolution API (WhatsApp) ====================
-  evolution:
-    image: atendai/evolution-api:latest
-    container_name: gabi_studio_evolution
-    restart: unless-stopped
-    environment:
-      - SERVER_URL=${EVOLUTION_SERVER_URL:-http://localhost:8080}
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-evolution_api_key_change_me}
-      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER:-gabi_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gabi_studio}
-      - DATABASE_SAVE_DATA_INSTANCE=true
-      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
-      - DATABASE_SAVE_MESSAGE_UPDATE=true
-      - DATABASE_SAVE_DATA_CONTACTS=true
-      - DATABASE_SAVE_DATA_CHATS=true
-      - LOG_LEVEL=ERROR
-      - DEL_INSTANCE=false
-      - QRCODE_LIMIT=30
-      - WEBHOOK_GLOBAL_ENABLED=false
-    ports:
-      - "8080:8080"
-    volumes:
-      - evolution_instances:/evolution/instances
-      - evolution_store:/evolution/store
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - gabi_network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # ==================== Nginx Reverse Proxy ====================
-  nginx:
-    image: nginx:alpine
-    container_name: gabi_studio_nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - app
-      - evolution
-    networks:
-      - gabi_network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 # ==================== Networks ====================
 networks:
   gabi_network:
@@ -118,8 +56,4 @@ networks:
 # ==================== Volumes ====================
 volumes:
   postgres_data:
-    driver: local
-  evolution_instances:
-    driver: local
-  evolution_store:
     driver: local
