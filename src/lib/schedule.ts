@@ -100,6 +100,22 @@ export function parseHourFromString(timeString: string): number {
   return parseInt(timeString.split(':')[0], 10)
 }
 
+function groupByMap<T, K>(items: T[], getKey: (item: T) => K): Map<K, T[]> {
+  const grouped = new Map<K, T[]>()
+
+  for (const item of items) {
+    const key = getKey(item)
+    const existing = grouped.get(key)
+    if (existing) {
+      existing.push(item)
+    } else {
+      grouped.set(key, [item])
+    }
+  }
+
+  return grouped
+}
+
 export function getTimeSlots(): TimeSlot[] {
   return HOURS.map((hour) => ({
     hour,
@@ -218,47 +234,28 @@ export function navigateMonth(date: Date, direction: 'prev' | 'next'): Date {
 }
 
 export function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
-  const grouped = new Map<number, ScheduleEvent[]>()
-
-  for (const event of events) {
-    const hour = parseHourFromString(event.horaInicio)
-    if (!grouped.has(hour)) {
-      grouped.set(hour, [])
-    }
-    grouped.get(hour)!.push(event)
-  }
-
-  return grouped
+  return groupByMap(events, (event) => parseHourFromString(event.horaInicio))
 }
 
 export function groupEventsByDateAndHour(
   events: ScheduleEvent[]
 ): Map<string, Map<number, ScheduleEvent[]>> {
+  const groupedByDate = groupByMap(events, (event) => formatDateISO(event.data))
   const grouped = new Map<string, Map<number, ScheduleEvent[]>>()
 
-  for (const event of events) {
-    const dateKey = formatDateISO(event.data)
-    if (!grouped.has(dateKey)) {
-      grouped.set(dateKey, new Map())
-    }
-
-    const hour = parseHourFromString(event.horaInicio)
-    const dateMap = grouped.get(dateKey)!
-    if (!dateMap.has(hour)) {
-      dateMap.set(hour, [])
-    }
-    dateMap.get(hour)!.push(event)
+  for (const [dateKey, dateEvents] of groupedByDate) {
+    grouped.set(dateKey, groupEventsByHour(dateEvents))
   }
 
   return grouped
 }
 
 export function countEventsByDate(events: ScheduleEvent[]): Map<string, number> {
+  const groupedByDate = groupByMap(events, (event) => formatDateISO(event.data))
   const counts = new Map<string, number>()
 
-  for (const event of events) {
-    const dateKey = formatDateISO(event.data)
-    counts.set(dateKey, (counts.get(dateKey) || 0) + 1)
+  for (const [dateKey, dateEvents] of groupedByDate) {
+    counts.set(dateKey, dateEvents.length)
   }
 
   return counts

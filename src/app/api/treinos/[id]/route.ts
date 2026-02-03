@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuth } from '@/lib/api'
+import { ensureOwnerOrAdmin, withApiAuth, validateRequest } from '@/lib/api'
 import { fichaUpdateSchema } from '@/schemas/treino.schema'
 import {
   deleteFichaTreino,
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
     }
 
-    // If member, can only see their own training
-    if (session.user.role === 'MEMBRO' && ficha.membroId !== session.user.membroId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const authError = ensureOwnerOrAdmin(session, ficha.membroId, { status: 401 })
+    if (authError) {
+      return authError
     }
 
     return NextResponse.json(ficha)
@@ -39,14 +39,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async () => {
     const { id } = await params
-    const body = await request.json()
-    const validation = fichaUpdateSchema.safeParse(body)
+    const validation = await validateRequest(request, fichaUpdateSchema)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const { nome, data, objetivo, observacoes, exercicios } = validation.data

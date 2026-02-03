@@ -51,6 +51,108 @@ function drawPageBorder(doc: PDFKit.PDFDocument): void {
   doc.restore()
 }
 
+function createTableDrawer(options: {
+  doc: PDFKit.PDFDocument
+  fontRegular: string
+  fontBold: string
+}) {
+  const { doc, fontRegular, fontBold } = options
+  const colWidths = [
+    USABLE_WIDTH * 0.45, // Exercise
+    USABLE_WIDTH * 0.15, // Sets
+    USABLE_WIDTH * 0.15, // Reps
+    USABLE_WIDTH * 0.25, // Notes (Empty)
+  ]
+  const rowHeight = 0.7 * CM
+
+  const drawRow = (y: number, cols: string[], isHeader: boolean = false) => {
+    let x = MARGIN_LEFT
+
+    cols.forEach((text, i) => {
+      const width = colWidths[i]
+
+      // Draw cell border
+      doc.rect(x, y, width, rowHeight).stroke()
+
+      // Draw text
+      doc.font(isHeader ? fontBold : fontRegular)
+        .fontSize(12)
+
+      const textX = x + 2
+      const textY = y + (rowHeight - 12) / 2 + 2
+      const align = i > 0 ? 'center' as const : 'left' as const
+      const textOptions = {
+        width: width - 4,
+        align,
+        lineBreak: false,
+        ellipsis: true,
+      }
+
+      doc.text(text, textX, textY, textOptions)
+      if (isHeader) {
+        // Simulate bold by drawing twice with a slight offset.
+        doc.text(text, textX + 0.5, textY, textOptions)
+      }
+
+      x += width
+    })
+  }
+
+  const drawTable = (params: {
+    title: string
+    exercises: TrainingPDFExercise[]
+    cursorY: number
+  }) => {
+    const { title, exercises } = params
+    let cursorY = params.cursorY
+
+    // Check for page break
+    if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
+      doc.addPage()
+      cursorY = MARGIN_TOP
+    }
+
+    // Title
+    doc.font(fontBold).fontSize(18)
+    doc.text(title, MARGIN_LEFT, cursorY)
+    cursorY += 1 * CM
+
+    // Check space for whole table or at least header + 1 row
+    const totalTableHeight = (exercises.length + EXTRA_ROWS + 1) * rowHeight
+    if (cursorY + totalTableHeight > PAGE_HEIGHT - MARGIN_BOTTOM) {
+      if (cursorY > MARGIN_TOP + 5 * CM) {
+        doc.addPage()
+        cursorY = MARGIN_TOP
+        doc.font(fontBold).fontSize(18)
+        doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
+        cursorY += 1 * CM
+      }
+    }
+
+    // Header
+    drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', ''], true)
+    cursorY += rowHeight
+
+    // Rows
+    exercises.forEach((ex) => {
+      drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''])
+      cursorY += rowHeight
+    })
+
+    // Extra Rows
+    for (let i = 0; i < EXTRA_ROWS; i++) {
+      drawRow(cursorY, ['', '', '', ''])
+      cursorY += rowHeight
+    }
+
+    cursorY += 1 * CM // Spacing after table
+
+    return cursorY
+  }
+
+  return { drawTable }
+}
+
 export async function generateTrainingPDF(data: TrainingPDFData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -134,112 +236,16 @@ export async function generateTrainingPDF(data: TrainingPDFData): Promise<Buffer
     // Move cursor below header
     cursorY = MARGIN_TOP + logoSize + 1 * CM
 
-    // Helper to draw a table row
-    const drawRow = (y: number, cols: string[], widths: number[], isHeader: boolean = false) => {
-      const rowHeight = 0.7 * CM
-      let x = MARGIN_LEFT
-      
-      // Calculate max height for this row based on text wrapping
-      // But for simplicity and matching Python, we might force fixed height or single line?
-      // Python uses `Table` which expands.
-      // Here we'll stick to fixed height for simplicity unless text is huge.
-      // Actually, let's just use fixed height cells to mimic the grid.
-      
-      cols.forEach((text, i) => {
-        const width = widths[i]
-        
-        // Draw cell border
-        doc.rect(x, y, width, rowHeight).stroke()
-        
-        // Draw text
-        doc.font(isHeader ? fontBold : fontRegular)
-           .fontSize(12)
-
-        const textX = x + 2
-        const textY = y + (rowHeight - 12) / 2 + 2
-        const align = i > 0 ? 'center' as const : 'left' as const
-        const textOptions = {
-          width: width - 4,
-          align, // Center sets/reps
-          lineBreak: false,
-          ellipsis: true
-        }
-
-        // Center text vertically
-        // For wrapping, we'd need more complex logic.
-        // Let's assume text fits or truncate for now, or simple wrap.
-        doc.text(text, textX, textY, textOptions)
-        if (isHeader) {
-          // Simulate bold by drawing twice with a slight offset.
-          doc.text(text, textX + 0.5, textY, textOptions)
-        }
-        
-        x += width
-      })
-      
-      return rowHeight
-    }
-
-    const drawTable = (title: string, sessions: TrainingPDFExercise[]) => {
-      // Check for page break
-      if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
-        doc.addPage()
-        cursorY = MARGIN_TOP
-      }
-
-      // Title
-      doc.font(fontBold).fontSize(18)
-      doc.text(title, MARGIN_LEFT, cursorY)
-      cursorY += 1 * CM
-
-      // Table Config
-      const colWidths = [
-        USABLE_WIDTH * 0.45, // Exercise
-        USABLE_WIDTH * 0.15, // Sets
-        USABLE_WIDTH * 0.15, // Reps
-        USABLE_WIDTH * 0.25  // Notes (Empty)
-      ]
-      
-      const rowHeight = 0.7 * CM
-      
-      // Check space for whole table or at least header + 1 row
-      // If not enough space, break page
-      const totalTableHeight = (sessions.length + EXTRA_ROWS + 1) * rowHeight
-      if (cursorY + totalTableHeight > PAGE_HEIGHT - MARGIN_BOTTOM) {
-         // If it really doesn't fit, we might split it, but simple approach: new page
-         if (cursorY > MARGIN_TOP + 5 * CM) { // Only break if we aren't already at top
-             doc.addPage()
-             cursorY = MARGIN_TOP
-              doc.font(fontBold).fontSize(18)
-              doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
-              cursorY += 1 * CM
-
-         }
-      }
-
-      // Header
-      drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', ''], colWidths, true)
-      cursorY += rowHeight
-
-      // Rows
-      sessions.forEach(ex => {
-        drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''], colWidths)
-        cursorY += rowHeight
-      })
-
-      // Extra Rows
-      for (let i = 0; i < EXTRA_ROWS; i++) {
-        drawRow(cursorY, ['', '', '', ''], colWidths)
-        cursorY += rowHeight
-      }
-      
-      cursorY += 1 * CM // Spacing after table
-    }
+    const tableDrawer = createTableDrawer({ doc, fontRegular, fontBold })
 
     // 2. WORKOUT TABLES
-    data.sessions.forEach(session => {
+    data.sessions.forEach((session) => {
       if (session.exercises && session.exercises.length > 0) {
-        drawTable(`TREINO ${session.name}`, session.exercises)
+        cursorY = tableDrawer.drawTable({
+          title: `TREINO ${session.name}`,
+          exercises: session.exercises,
+          cursorY,
+        })
       }
     })
 

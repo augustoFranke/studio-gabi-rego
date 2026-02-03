@@ -19,16 +19,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { MemberStatusToggle } from "@/components/admin/member-actions"
+import { MemberDeactivateItem, MemberStatusToggle } from "@/components/admin/member-actions"
 import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
+import { normalizeEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
-
-function isPlaceholderEmail(email?: string | null) {
-  return !email || email.endsWith("@placeholder.local")
-}
 
 export default async function MembrosPage({
   searchParams,
@@ -153,8 +150,10 @@ export default async function MembrosPage({
               </TableHeader>
               <TableBody>
                 {membros.length > 0 ? (
-                  membros.map((membro) => (
-                    <TableRow key={membro.id} className="hover:bg-primary/5">
+                  membros.map((membro) => {
+                    const email = normalizeEmail(membro.usuario.email)
+                    return (
+                      <TableRow key={membro.id} className="hover:bg-primary/5">
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{membro.usuario.nome}</span>
@@ -171,7 +170,7 @@ export default async function MembrosPage({
                           </div>
                           <div className="flex items-center text-xs">
                             <Mail className="mr-1.5 h-3 w-3 text-primary" />
-                            {isPlaceholderEmail(membro.usuario.email) ? "Não informado" : membro.usuario.email}
+                            {email ? email : <span className="text-muted-foreground">Não informado</span>}
                           </div>
                         </div>
                       </TableCell>
@@ -211,12 +210,18 @@ export default async function MembrosPage({
                                 Ver Detalhes
                               </Link>
                             </DropdownMenuItem>
+                            <MemberDeactivateItem
+                              id={membro.id}
+                              nome={membro.usuario.nome || undefined}
+                              disabled={membro.status === "PENDENTE"}
+                            />
                             <MemberStatusToggle id={membro.id} status={membro.status} nome={membro.usuario.nome || undefined} />
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
-                    </TableRow>
-                  ))
+                      </TableRow>
+                    )
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center">

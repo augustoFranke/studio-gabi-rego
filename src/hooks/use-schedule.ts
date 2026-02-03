@@ -22,16 +22,22 @@ interface UseScheduleReturn {
   setDraggingId: (id: string | null) => void
   fetchAgendamentos: () => Promise<void>
   fetchMembros: () => Promise<void>
-  createAgendamento: (membroId: string, date: Date, hour: number) => Promise<boolean>
+  createAgendamento: (
+    membroId: string,
+    date: Date,
+    hour: number,
+    scope?: 'single' | 'weekly'
+  ) => Promise<boolean>
   updateAgendamento: (
     id: string,
     data: { observacao?: string }
   ) => Promise<boolean>
-  deleteAgendamento: (id: string) => Promise<boolean>
+  deleteAgendamento: (id: string, scope?: 'single' | 'future') => Promise<boolean>
   moveAgendamento: (
     id: string,
     newDate: Date,
-    newHour: number
+    newHour: number,
+    scope?: 'single' | 'future'
   ) => Promise<boolean>
 }
 
@@ -109,7 +115,12 @@ export function useSchedule({
 
   // Create agendamento
   const createAgendamento = useCallback(
-    async (membroId: string, date: Date, hour: number): Promise<boolean> => {
+    async (
+      membroId: string,
+      date: Date,
+      hour: number,
+      scope: 'single' | 'weekly' = 'single'
+    ): Promise<boolean> => {
       try {
         const diaSemana = getDiaSemanaFromDay(date.getDay())
         const horaInicio = `${hour.toString().padStart(2, '0')}:00`
@@ -136,6 +147,7 @@ export function useSchedule({
             membroId,
             horarioId: horario.id,
             data: formatDateISO(date),
+            scope,
           }),
         })
 
@@ -192,10 +204,12 @@ export function useSchedule({
 
   // Delete agendamento
   const deleteAgendamento = useCallback(
-    async (id: string): Promise<boolean> => {
+    async (id: string, scope: 'single' | 'future' = 'single'): Promise<boolean> => {
       try {
         const response = await fetch(`/api/agendamentos/${id}`, {
           method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scope }),
         })
 
         if (!response.ok) {
@@ -219,7 +233,12 @@ export function useSchedule({
 
   // Move agendamento (drag & drop)
   const moveAgendamento = useCallback(
-    async (id: string, newDate: Date, newHour: number): Promise<boolean> => {
+    async (
+      id: string,
+      newDate: Date,
+      newHour: number,
+      scope: 'single' | 'future' = 'single'
+    ): Promise<boolean> => {
       try {
         const diaSemana = getDiaSemanaFromDay(newDate.getDay())
         const horaInicio = `${newHour.toString().padStart(2, '0')}:00`
@@ -245,6 +264,7 @@ export function useSchedule({
           body: JSON.stringify({
             horarioId: horario.id,
             data: formatDateISO(newDate),
+            scope,
           }),
         })
 

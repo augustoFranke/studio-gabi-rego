@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { withApiAuth, validateRequest } from '@/lib/api'
 import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { Prisma, StatusMembro } from '@prisma/client'
@@ -61,22 +61,17 @@ export async function GET(request: NextRequest) {
 // POST /api/membros - Criar novo membro
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    let body;
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: "Dados inválidos enviados. Verifique o formulário." }, { status: 400 })
-    }
+    const validation = await validateRequest(request, membroCreateSchema, {
+      invalidJsonMessage: "Dados inválidos enviados. Verifique o formulário.",
+      errorMessage: (error) => {
+        const issue = error.issues[0]
+        const path = issue.path.join('.')
+        return `Erro no campo '${path}': ${issue.message}`
+      },
+    })
 
-    const validation = membroCreateSchema.safeParse(body)
-
-    if (!validation.success) {
-      const errorMessage = validation.error.issues[0].message;
-      const path = validation.error.issues[0].path.join('.');
-      return NextResponse.json(
-        { error: `Erro no campo '${path}': ${errorMessage}` },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
     const {
@@ -123,6 +118,29 @@ export async function POST(request: NextRequest) {
       const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
       if (cpfExiste) {
         return NextResponse.json({ error: 'Este CPF já está cadastrado para outro membro.' }, { status: 400 })
+      }
+    }
+
+    if (horariosFixos?.length && planoId) {
+      const plano = await prisma.plano.findUnique({
+        where: { id: planoId },
+        select: { aulasSemanais: true },
+      })
+
+      if (plano && plano.aulasSemanais !== 7) {
+        const uniqueSlots = new Set(
+          horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
+        )
+        const totalSlots = uniqueSlots.size
+
+        if (totalSlots > plano.aulasSemanais) {
+          return NextResponse.json(
+            {
+              error: `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
+            },
+            { status: 400 }
+          )
+        }
       }
     }
 

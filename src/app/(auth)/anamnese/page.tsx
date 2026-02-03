@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useSyncExternalStore } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -58,8 +58,21 @@ function AnamneseContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
-  const [token, setToken] = useState<string | null>(tokenFromUrl)
-  const [tokenChecked, setTokenChecked] = useState(false)
+  const tokenFromStorage = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof window === "undefined") return null
+      try {
+        return localStorage.getItem(ANAMNESE_TOKEN_STORAGE_KEY)
+      } catch {
+        return null
+      }
+    },
+    () => null
+  )
+  const token = status === "authenticated"
+    ? null
+    : (tokenFromUrl ?? tokenFromStorage)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseData>({})
@@ -76,36 +89,21 @@ function AnamneseContent() {
 
   useEffect(() => {
     if (tokenFromUrl) {
-      setToken(tokenFromUrl)
       try {
         localStorage.setItem(ANAMNESE_TOKEN_STORAGE_KEY, tokenFromUrl)
       } catch {
         // Ignore storage errors (private mode / blocked storage)
       }
-      setTokenChecked(true)
       return
     }
 
     if (status === "authenticated") {
-      setToken(null)
       try {
         localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
       } catch {
         // Ignore storage errors (private mode / blocked storage)
       }
-      setTokenChecked(true)
-      return
     }
-
-    try {
-      const storedToken = localStorage.getItem(ANAMNESE_TOKEN_STORAGE_KEY)
-      if (storedToken) {
-        setToken(storedToken)
-      }
-    } catch {
-      // Ignore storage errors (private mode / blocked storage)
-    }
-    setTokenChecked(true)
   }, [tokenFromUrl, status])
 
   // Load user data on mount
@@ -166,28 +164,25 @@ function AnamneseContent() {
       }
     }
 
-    if (!tokenChecked) {
-      return
-    }
-
-    if (token || status !== "loading") {
+    const shouldLoad = Boolean(token) || status === "authenticated"
+    if (shouldLoad) {
       loadData()
     }
 
     return () => {
       isMounted = false
     }
-  }, [status, router, token, submissionSuccessful, tokenChecked])
+  }, [status, router, token, submissionSuccessful])
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!tokenChecked || status === "loading") {
+    if (status === "loading") {
       return
     }
     if (status === "unauthenticated" && !token) {
       router.push("/login")
     }
-  }, [status, router, token, tokenChecked])
+  }, [status, router, token])
 
   const updateField = (field: keyof AnamneseData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))

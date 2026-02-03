@@ -20,13 +20,6 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-vi.mock('@/lib/evolution', () => ({
-  enviarMensagemWhatsApp: vi.fn(),
-  templates: {
-    boasVindas: (nome: string) => `Olá ${nome}`,
-  },
-}))
-
 describe('Membros Server Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
