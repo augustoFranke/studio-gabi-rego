@@ -275,20 +275,22 @@ export default function TrainingPlanGeneratorPage() {
 
     // Helper to save all current exercise names to history
     const saveAllToHistory = () => {
-        const newHistory = [...exerciseHistory];
+        // Use Set for O(1) lookup instead of O(n) array.includes()
+        const historySet = new Set(exerciseHistory);
         let changed = false;
         sessions.forEach(s => {
             s.exercises.forEach(e => {
                 const trimmed = e.name.trim();
-                if (trimmed && !newHistory.includes(trimmed)) {
-                    newHistory.push(trimmed);
+                if (trimmed && !historySet.has(trimmed)) {
+                    historySet.add(trimmed);
                     changed = true;
                 }
             });
         });
 
         if (changed) {
-            newHistory.sort();
+            // Use toSorted() for immutable sort
+            const newHistory = [...historySet].toSorted();
             setExerciseHistory(newHistory);
             saveExerciseHistory(localStorage, newHistory);
         }

@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { compare, hash } from "bcryptjs"
+import { cache } from "react"
 
 const isStrongPassword = (value: string) =>
   value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value)
@@ -9,7 +10,7 @@ const isProduction = process.env.NODE_ENV === "production"
 
 const authError = (code: string) => (isProduction ? "INVALID_CREDENTIALS" : code)
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const nextAuth = NextAuth({
   // Trust host in dev or when behind Vercel's proxy
   trustHost: process.env.NODE_ENV !== "production" || process.env.VERCEL === "1",
   // Explicitly use NEXTAUTH_SECRET for backward compatibility
@@ -106,3 +107,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 24 * 60 * 60,
   },
 })
+
+export const { handlers, signIn, signOut } = nextAuth
+
+// Wrap auth with React.cache for request deduplication
+// This ensures multiple auth() calls in the same request share the same result
+export const auth = cache(nextAuth.auth)

@@ -96,27 +96,24 @@ export async function POST(request: Request) {
       )
     }
 
-    if (normalizedCpf) {
-      const existingCpf = await prisma.membro.findUnique({
-        where: { cpf: normalizedCpf },
-      })
-
-      if (existingCpf && existingCpf.usuarioId !== userId) {
-        return NextResponse.json(
-          { error: "Este CPF já está cadastrado" },
-          { status: 400 }
-        )
-      }
-    }
-
     const isTokenFlow = Boolean(token)
     const anamneseToken = isTokenFlow ? randomBytes(32).toString("hex") : null
     const anamneseTokenExpiry = isTokenFlow ? new Date(Date.now() + 60 * 60 * 1000) : null
 
-    // Check if user already has a member profile
-    const existingMembro = await prisma.membro.findUnique({
-      where: { usuarioId: userId },
-    })
+    // Parallelize CPF check and member profile lookup
+    const [existingCpf, existingMembro] = await Promise.all([
+      normalizedCpf
+        ? prisma.membro.findUnique({ where: { cpf: normalizedCpf } })
+        : Promise.resolve(null),
+      prisma.membro.findUnique({ where: { usuarioId: userId } }),
+    ])
+
+    if (existingCpf && existingCpf.usuarioId !== userId) {
+      return NextResponse.json(
+        { error: "Este CPF já está cadastrado" },
+        { status: 400 }
+      )
+    }
 
     if (existingMembro) {
       // Update existing profile

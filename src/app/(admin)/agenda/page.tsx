@@ -4,13 +4,11 @@ import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
-import {
-  ScheduleHeader,
-  DailyView,
-  WeeklyView,
-  MonthlyView,
-  AgendamentoModal,
-} from '@/components/schedule'
+import { ScheduleHeader } from '@/components/schedule/schedule-header'
+import { DailyView } from '@/components/schedule/daily-view'
+import { WeeklyView } from '@/components/schedule/weekly-view'
+import { MonthlyView } from '@/components/schedule/monthly-view'
+import { AgendamentoModal } from '@/components/schedule/agendamento-modal'
 import { useSchedule } from '@/hooks/use-schedule'
 import { parseDateFromAPI } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
