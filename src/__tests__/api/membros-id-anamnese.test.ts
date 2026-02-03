@@ -83,6 +83,19 @@ describe('Membros Anamnese API', () => {
     expect(res.status).toBe(404)
   })
 
+  it('POST rejects unknown fields', async () => {
+    prismaMock.membro.findUnique.mockResolvedValueOnce({ id: 'm-1' })
+
+    const req = new NextRequest('http://localhost:3000/api/membros/m-1/anamnese', {
+      method: 'POST',
+      body: JSON.stringify({ objetivo: 'Saude', role: 'ADMIN' }),
+    })
+    const res = await POST(req, params('m-1'))
+
+    expect(res.status).toBe(400)
+    expect(prismaMock.anamnese.upsert).not.toHaveBeenCalled()
+  })
+
   it('POST upserts anamnese', async () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce({ id: 'm-1' })
     prismaMock.anamnese.upsert.mockResolvedValueOnce({ id: 'a-1' })

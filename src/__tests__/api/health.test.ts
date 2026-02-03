@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from '@/app/api/health/route'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $queryRaw: vi.fn(),
   },
+}))
+
+vi.mock('@/lib/api', () => ({
+  withApiAuth: vi.fn(
+    async (handler: (_session: { user: { role: 'ADMIN'; id: string } }) => Promise<NextResponse>) =>
+      handler({ user: { role: 'ADMIN', id: 'u-1' } })
+  ),
 }))
 
 describe('Health API', () => {
