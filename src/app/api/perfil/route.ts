@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
     const isTokenFlow = Boolean(token)
     const anamneseToken = isTokenFlow ? randomBytes(32).toString("hex") : null
-    const anamneseTokenExpiry = isTokenFlow ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null
+    const anamneseTokenExpiry = isTokenFlow ? new Date(Date.now() + 60 * 60 * 1000) : null
 
     // Check if user already has a member profile
     const existingMembro = await prisma.membro.findUnique({

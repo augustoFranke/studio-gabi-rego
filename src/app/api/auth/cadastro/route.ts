@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 
     // Generate verification token (needed for both paths)
     const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     // Hash password (needed for both paths)
     const hashedPassword = await hash(senha, 12)
