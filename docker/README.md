@@ -1,231 +1,187 @@
-# 🐳 Studio Gabi Rego - Docker Deployment
+# Docker Deployment - Studio Gabi Rego
 
-Este guia explica como executar o Studio Gabi Rego usando Docker para hospedagem local.
+This guide explains how to run Studio Gabi Rego using Docker for local development.
 
-## 📋 Pré-requisitos
+## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) (versão 20.10+)
-- [Docker Compose](https://docs.docker.com/compose/install/) (versão 2.0+)
+- [Docker](https://docs.docker.com/get-docker/) (version 20.10+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (version 2.0+)
 
-## 🚀 Início Rápido
+## Quick Start
 
-### 1. Configurar variáveis de ambiente
+### 1. Configure environment variables
 
 ```bash
-# Copiar arquivo de exemplo
+# Copy example file
 cp .env.example .env
 
-# Gerar chave secreta para NextAuth
+# Generate NextAuth secret
 openssl rand -base64 32
-# Cole o resultado em NEXTAUTH_SECRET no arquivo .env
+# Paste the result in NEXTAUTH_SECRET in the .env file
 ```
 
-### 2. Iniciar os serviços
+### 2. Start services
 
 ```bash
-# Usando o script de inicialização (recomendado)
+# Using the start script (recommended)
 npm run docker:start
 
-# Ou manualmente
+# Or manually
 docker compose up -d
 ```
 
-### 3. Executar migrations do banco de dados
+### 3. Run database migrations
 
 ```bash
-# Na primeira execução
+# First time setup
 docker compose exec app npx prisma migrate deploy
 
-# Ou para desenvolvimento
+# Or for development
 docker compose exec app npx prisma db push
 ```
 
-### 4. (Opcional) Popular banco com dados de teste
+### 4. (Optional) Seed database with test data
 
 ```bash
 docker compose exec app npx prisma db seed
 ```
 
-## 📍 Serviços e Portas
+## Services and Ports
 
-| Serviço | URL | Descrição |
-|---------|-----|-----------|
-| App (Next.js) | http://localhost:3000 | Aplicação principal |
-| Nginx | http://localhost:80 | Proxy reverso |
-| Evolution API | http://localhost:8080 | API do WhatsApp |
-| PostgreSQL | localhost:5432 | Banco de dados |
+| Service | URL | Description |
+|---------|-----|-------------|
+| App (Next.js) | http://localhost:3000 | Main application |
+| PostgreSQL | localhost:5432 | Database |
 
-## 🔧 Comandos Úteis
+## Useful Commands
 
 ```bash
-# Ver logs de todos os serviços
+# View logs from all services
 npm run docker:logs
 
-# Ver logs de um serviço específico
+# View logs from a specific service
 docker compose logs -f app
 
-# Parar todos os serviços
+# Stop all services
 npm run docker:stop
 
-# Reconstruir após alterações no código
+# Rebuild after code changes
 npm run docker:build
 
-# Reiniciar serviços
+# Restart services
 docker compose restart
 
-# Acessar shell do container
+# Access container shell
 docker compose exec app sh
 
-# Executar comando Prisma
+# Run Prisma commands
 docker compose exec app npx prisma studio
 ```
 
-## 💾 Backup do Banco de Dados
+## Database Backup
+
+### Local Docker Backup
 
 ```bash
-# Criar backup
+# Create backup
 npm run docker:backup
 
-# Os backups são salvos em ./backups/
+# Backups are saved in ./backups/
 
-# Restaurar backup
+# Restore backup
 gunzip -c backups/gabi_studio_XXXXXXXX_XXXXXX.sql.gz | \
   docker exec -i gabi_studio_db psql -U gabi_admin -d gabi_studio
 ```
 
-## 🔐 Configuração do Evolution API (WhatsApp)
+### Supabase Production Backup
 
-1. Acesse http://localhost:8080
-2. Use a API key configurada em `EVOLUTION_API_KEY`
-3. Crie uma instância chamada `gabi-studio`
-4. Escaneie o QR Code com o WhatsApp
-
-### Endpoints úteis:
+Pull production data from Supabase into your local Docker PostgreSQL:
 
 ```bash
-# Criar instância
-curl -X POST http://localhost:8080/instance/create \
-  -H "apikey: sua_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{"instanceName": "gabi-studio"}'
+# Set your Supabase direct connection URL
+export DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres"
 
-# Obter QR Code
-curl http://localhost:8080/instance/qrcode/gabi-studio \
-  -H "apikey: sua_api_key"
+# Run the backup script
+./docker/scripts/supabase-backup.sh
+
+# Or export only (without importing)
+./docker/scripts/supabase-backup.sh --export-only
+
+# Or import a specific backup file
+./docker/scripts/supabase-backup.sh --import-only backups/supabase_production_XXXXXXXX.sql.gz
 ```
 
-## 🌐 Configuração para Produção
+## Troubleshooting
 
-### 1. Configurar domínio e SSL
-
-Edite `docker/nginx/nginx.conf`:
-- Descomente o bloco de redirecionamento HTTP → HTTPS
-- Descomente o bloco do servidor HTTPS
-- Configure seus certificados SSL em `docker/nginx/ssl/`
-
-### 2. Gerar certificados SSL (Let's Encrypt)
+### Container won't start
 
 ```bash
-# Usando certbot
-sudo certbot certonly --standalone -d seu-dominio.com.br
-
-# Copiar certificados
-cp /etc/letsencrypt/live/seu-dominio.com.br/fullchain.pem docker/nginx/ssl/cert.pem
-cp /etc/letsencrypt/live/seu-dominio.com.br/privkey.pem docker/nginx/ssl/key.pem
-```
-
-### 3. Atualizar variáveis de ambiente
-
-```env
-NODE_ENV=production
-NEXTAUTH_URL=https://seu-dominio.com.br
-EVOLUTION_SERVER_URL=https://seu-dominio.com.br:8080
-```
-
-### 4. Configurar firewall
-
-```bash
-# UFW (Ubuntu)
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw deny 3000/tcp  # Bloquear acesso direto ao Next.js
-sudo ufw deny 8080/tcp  # Bloquear acesso direto ao Evolution (opcional)
-```
-
-## 🐛 Troubleshooting
-
-### Container não inicia
-
-```bash
-# Ver logs detalhados
+# View detailed logs
 docker compose logs app
 
-# Verificar status
+# Check status
 docker compose ps
 
-# Reiniciar container específico
+# Restart specific container
 docker compose restart app
 ```
 
-### Erro de conexão com banco de dados
+### Database connection error
 
 ```bash
-# Verificar se PostgreSQL está rodando
+# Check if PostgreSQL is running
 docker compose ps postgres
 
-# Verificar logs do PostgreSQL
+# View PostgreSQL logs
 docker compose logs postgres
 
-# Testar conexão
+# Test connection
 docker compose exec postgres psql -U gabi_admin -d gabi_studio -c "SELECT 1"
 ```
 
-### Erro de permissão
+### Permission error
 
 ```bash
-# Corrigir permissões dos scripts
+# Fix script permissions
 chmod +x docker/scripts/*.sh
 ```
 
-### Limpar tudo e recomeçar
+### Clean up and start fresh
 
 ```bash
-# ATENÇÃO: Isso apaga todos os dados!
+# WARNING: This will delete all data!
 docker compose down -v
 docker compose up -d --build
 ```
 
-## 📁 Estrutura de Arquivos
+## Directory Structure
 
 ```
 docker/
-├── nginx/
-│   ├── nginx.conf      # Configuração do Nginx
-│   └── ssl/            # Certificados SSL (produção)
 ├── postgres/
-│   └── init/           # Scripts de inicialização do banco
+│   └── init/           # Database initialization scripts
 ├── scripts/
-│   ├── start.sh        # Script de inicialização
-│   ├── stop.sh         # Script de parada
-│   └── backup.sh       # Script de backup
-└── README.md           # Este arquivo
+│   ├── start.sh        # Start script
+│   ├── stop.sh         # Stop script
+│   ├── backup.sh       # Local backup script
+│   └── supabase-backup.sh  # Supabase backup script
+└── README.md           # This file
 ```
 
-## 🔄 Atualizações
+## Updates
 
-Para atualizar a aplicação:
+To update the application:
 
 ```bash
-# Baixar alterações
+# Pull changes
 git pull
 
-# Reconstruir containers
+# Rebuild containers
 docker compose build
 
-# Reiniciar com nova versão
+# Restart with new version
 docker compose up -d
 
-# Executar migrations (se houver)
+# Run migrations (if any)
 docker compose exec app npx prisma migrate deploy
 ```
-

@@ -1,42 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/agendamentos/route'
+import { createJsonRequest } from '@/__tests__/test-utils'
 
-const { prismaMock, sessionRef } = vi.hoisted(() => ({
-  prismaMock: {
-    agendamento: {
-      findMany: vi.fn(),
-      count: vi.fn(),
-      findFirst: vi.fn(),
-      create: vi.fn(),
-    },
-    horarioDisponivel: {
-      findUnique: vi.fn(),
-    },
-  },
-  sessionRef: {
-    current: { user: { role: 'ADMIN' as const, membroId: 'm-admin' } },
-  } as {
-    current: { user: { role: 'ADMIN' | 'MEMBRO'; membroId?: string } }
-  },
-}))
+const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
+  const sessionRef = createSessionRef()
+
+  return {
+    prismaMock: createPrismaMock({
+      agendamento: ['findMany', 'count', 'findFirst', 'create'],
+      membro: ['findUnique'],
+      horarioDisponivel: ['findUnique'],
+      horarioFixo: ['findFirst', 'create'],
+    }),
+    sessionRef,
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
 }))
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => {
-      if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-      return handler(sessionRef.current)
-    }
-  ),
+  withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Agendamentos API', () => {
@@ -46,10 +41,7 @@ describe('Agendamentos API', () => {
   })
 
   const createRequest = (body: Record<string, unknown>) =>
-    new NextRequest('http://localhost:3000/api/agendamentos', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    })
+    createJsonRequest('http://localhost:3000/api/agendamentos', body)
 
   it('GET scopes to membroId when session is MEMBRO', async () => {
     sessionRef.current = { user: { role: 'MEMBRO', membroId: 'm-1' } }
@@ -163,5 +155,93 @@ describe('Agendamentos API', () => {
 
     expect(res.status).toBe(400)
     expect(json.error).toContain('já tem um agendamento')
+  })
+
+  it('POST returns 400 when weekly limit is exceeded', async () => {
+    prismaMock.horarioDisponivel.findUnique.mockResolvedValue({
+      id: 'h-1',
+      ativo: true,
+      vagasTotal: 10,
+      diaSemana: 'SEGUNDA',
+      horaInicio: '10:00',
+    })
+    prismaMock.agendamento.count.mockResolvedValue(0)
+    prismaMock.agendamento.findFirst.mockResolvedValue(null)
+    prismaMock.membro.findUnique.mockResolvedValue({
+      id: 'm-1',
+      plano: { aulasSemanais: 2 },
+      horariosFixos: [
+        { diaSemana: 'SEGUNDA', hora: '08:00' },
+        { diaSemana: 'QUARTA', hora: '08:00' },
+      ],
+    })
+
+    const res = await POST(
+      createRequest({
+        membroId: 'm-1',
+        horarioId: 'h-1',
+        data: '2025-01-20',
+        scope: 'weekly',
+      })
+    )
+    const json = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(json.error).toContain('Limite do plano')
+  })
+
+  it('POST creates HorarioFixo when weekly scope is selected', async () => {
+    prismaMock.horarioDisponivel.findUnique.mockResolvedValue({
+      id: 'h-1',
+      ativo: true,
+      vagasTotal: 10,
+      diaSemana: 'SEGUNDA',
+      horaInicio: '10:00',
+    })
+    prismaMock.agendamento.count.mockResolvedValue(0)
+    prismaMock.agendamento.findFirst.mockResolvedValue(null)
+    prismaMock.membro.findUnique.mockResolvedValue({
+      id: 'm-1',
+      plano: { aulasSemanais: 3 },
+      horariosFixos: [{ diaSemana: 'SEGUNDA', hora: '08:00' }],
+    })
+    prismaMock.horarioFixo.findFirst.mockResolvedValue(null)
+    prismaMock.horarioFixo.create.mockResolvedValue({ id: 'hf-1' })
+    prismaMock.agendamento.create.mockResolvedValue({
+      id: 'a-1',
+      membroId: 'm-1',
+      horarioId: 'h-1',
+      data: new Date('2025-01-20T12:00:00'),
+      presente: null,
+      observacao: null,
+      membro: {
+        id: 'm-1',
+        fotoUrl: null,
+        usuario: { nome: 'Aluno', email: 'aluno@example.com' },
+      },
+      horario: {
+        id: 'h-1',
+        diaSemana: 'SEGUNDA',
+        horaInicio: '10:00',
+        horaFim: '11:00',
+        vagasTotal: 10,
+      },
+    })
+
+    const res = await POST(
+      createRequest({
+        membroId: 'm-1',
+        horarioId: 'h-1',
+        data: '2025-01-20',
+        scope: 'weekly',
+      })
+    )
+
+    expect(res.status).toBe(201)
+    expect(prismaMock.horarioFixo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ membroId: 'm-1', diaSemana: 'SEGUNDA', hora: '10:00' }),
+      })
+    )
   })
 })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, memo } from 'react'
+import { useCallback, memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeSlot } from './time-slot'
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
 import { cn } from '@/lib/utils'
+import { useScheduleData } from './use-schedule-data'
 
 interface DailyViewProps {
   date: Date
@@ -36,19 +37,7 @@ const DailyViewBase = function DailyView({
   onDrop,
 }: DailyViewProps) {
   const isTodayDate = isToday(date)
-
-  // Pre-compute agendamentos by hour to avoid filtering on each render
-  const agendamentosByHour = useMemo(() => {
-    const byHour = new Map<number, Agendamento[]>()
-    for (const a of agendamentos) {
-      const hour = parseInt(a.horario.horaInicio.split(':')[0], 10)
-      if (!byHour.has(hour)) {
-        byHour.set(hour, [])
-      }
-      byHour.get(hour)!.push(a)
-    }
-    return byHour
-  }, [agendamentos])
+  const { agendamentosByHour } = useScheduleData(agendamentos)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -111,4 +100,3 @@ const DailyViewBase = function DailyView({
 }
 
 export const DailyView = memo(DailyViewBase)
-

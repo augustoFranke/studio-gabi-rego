@@ -13,10 +13,60 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { enviarMensagemWhatsApp, templates, isEvolutionConfigured } from '@/lib/evolution'
 import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
-import { TipoNotificacao } from '@prisma/client'
+import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
+import { Prisma, TipoNotificacao } from '@prisma/client'
+
+type NotificationProcessOptions<T> = {
+  items: T[]
+  shouldSkipWhere: (item: T) => Prisma.NotificacaoWhereInput
+  buildNotification: (item: T) => Prisma.NotificacaoCreateInput
+  sendEmail?: (item: T) => Promise<void>
+}
+
+async function processNotifications<T>({
+  items,
+  shouldSkipWhere,
+  buildNotification,
+  sendEmail,
+}: NotificationProcessOptions<T>) {
+  for (const item of items) {
+    const jaEnviou = await prisma.notificacao.findFirst({
+      where: shouldSkipWhere(item),
+    })
+
+    if (jaEnviou) continue
+
+    const notificacao = await prisma.notificacao.create({
+      data: buildNotification(item),
+    })
+
+    if (sendEmail) {
+      await sendEmail(item)
+    }
+
+    await prisma.notificacao.update({
+      where: { id: notificacao.id },
+      data: {
+        enviada: true,
+        enviadaEm: new Date(),
+      },
+    })
+  }
+
+  return items.length
+}
+
+type RecurringAppointmentsParams = {
+  startDate: Date
+  endDate: Date
+  membroId?: string
+}
+
+export async function generateRecurringAppointments(params: RecurringAppointmentsParams) {
+  return syncAgendamentosRecorrentes(params)
+}
 
 /**
  * Processa lembretes de aula para as próximas horas
@@ -26,6 +76,8 @@ export async function processarLembretesAula() {
 
   const agora = new Date()
   const limite = new Date(agora.getTime() + horasAntecedencia * 60 * 60 * 1000)
+  const resendEnabled = isResendConfigured()
+  const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
 
   // Buscar agendamentos das próximas horas que ainda não receberam lembrete
   const agendamentos = await prisma.agendamento.findMany({
@@ -45,63 +97,48 @@ export async function processarLembretesAula() {
     },
   })
 
-  for (const agendamento of agendamentos) {
+  const getContext = (agendamento: typeof agendamentos[number]) => {
     const { membro, horario } = agendamento
-    const nome = membro.usuario.nome || 'Aluno(a)'
-    const dataFormatada = formatarData(agendamento.data)
+    return {
+      membro,
+      horario,
+      nome: membro.usuario.nome || 'Aluno(a)',
+      dataFormatada: formatarData(agendamento.data),
+    }
+  }
 
-    // Verificar se já enviou notificação
-    const jaEnviou = await prisma.notificacao.findFirst({
-      where: {
-        membroId: membro.id,
-        tipo: TipoNotificacao.LEMBRETE_AULA,
-        criadoEm: {
-          gte: new Date(agora.getTime() - 24 * 60 * 60 * 1000), // Últimas 24h
-        },
+  return processNotifications({
+    items: agendamentos,
+    shouldSkipWhere: (agendamento) => ({
+      membroId: agendamento.membro.id,
+      tipo: TipoNotificacao.LEMBRETE_AULA,
+      criadoEm: {
+        gte: since, // Últimas 24h
       },
-    })
-
-    if (jaEnviou) continue
-
-    // Criar notificação
-    const notificacao = await prisma.notificacao.create({
-      data: {
+    }),
+    buildNotification: (agendamento) => {
+      const { membro, horario, dataFormatada } = getContext(agendamento)
+      return {
         membroId: membro.id,
         tipo: TipoNotificacao.LEMBRETE_AULA,
         titulo: 'Lembrete de Aula',
         mensagem: `Sua aula está agendada para ${horario.horaInicio} em ${dataFormatada}`,
-        canalWhatsapp: isEvolutionConfigured(),
-        canalEmail: isResendConfigured(),
-      },
-    })
-
-    // Enviar WhatsApp
-    if (isEvolutionConfigured() && membro.telefone) {
-      const mensagem = templates.lembreteAula(nome, horario.horaInicio, dataFormatada)
-      await enviarMensagemWhatsApp({ telefone: membro.telefone, mensagem })
-    }
-
-    // Enviar Email
-    if (isResendConfigured()) {
-      const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
-      await enviarEmail({
-        para: membro.usuario.email,
-        assunto: '📅 Lembrete: Sua aula está chegando!',
-        html,
-      })
-    }
-
-    // Marcar como enviada
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: {
-        enviada: true,
-        enviadaEm: new Date(),
-      },
-    })
-  }
-
-  return agendamentos.length
+        canalWhatsapp: false,
+        canalEmail: resendEnabled,
+      }
+    },
+    sendEmail: resendEnabled
+      ? async (agendamento) => {
+          const { membro, horario, nome, dataFormatada } = getContext(agendamento)
+          const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
+          await enviarEmail({
+            para: membro.usuario.email,
+            assunto: '📅 Lembrete: Sua aula está chegando!',
+            html,
+          })
+        }
+      : undefined,
+  })
 }
 
 /**
@@ -112,6 +149,8 @@ export async function processarCobrancas() {
 
   const agora = new Date()
   const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000)
+  const resendEnabled = isResendConfigured()
+  const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
 
   // Buscar pagamentos pendentes próximos do vencimento
   const pagamentos = await prisma.pagamento.findMany({
@@ -131,73 +170,60 @@ export async function processarCobrancas() {
     },
   })
 
-  for (const pagamento of pagamentos) {
+  const getContext = (pagamento: typeof pagamentos[number]) => {
     const { membro } = pagamento
-    const nome = membro.usuario.nome || 'Aluno(a)'
-    const valor = formatarMoeda(Number(pagamento.valor))
-    const vencimento = formatarData(pagamento.dataVencimento)
+    return {
+      membro,
+      nome: membro.usuario.nome || 'Aluno(a)',
+      valor: formatarMoeda(Number(pagamento.valor)),
+      vencimento: formatarData(pagamento.dataVencimento),
+    }
+  }
 
-    // Verificar se já enviou notificação
-    const jaEnviou = await prisma.notificacao.findFirst({
-      where: {
-        membroId: membro.id,
-        tipo: TipoNotificacao.COBRANCA,
-        criadoEm: {
-          gte: new Date(agora.getTime() - 24 * 60 * 60 * 1000), // Últimas 24h
-        },
+  return processNotifications({
+    items: pagamentos,
+    shouldSkipWhere: (pagamento) => ({
+      membroId: pagamento.membro.id,
+      tipo: TipoNotificacao.COBRANCA,
+      criadoEm: {
+        gte: since, // Últimas 24h
       },
-    })
-
-    if (jaEnviou) continue
-
-    // Criar notificação
-    const notificacao = await prisma.notificacao.create({
-      data: {
+    }),
+    buildNotification: (pagamento) => {
+      const { membro, valor, vencimento } = getContext(pagamento)
+      return {
         membroId: membro.id,
         tipo: TipoNotificacao.COBRANCA,
         titulo: 'Lembrete de Pagamento',
         mensagem: `Seu pagamento de ${valor} vence em ${vencimento}`,
-        canalWhatsapp: isEvolutionConfigured(),
-        canalEmail: isResendConfigured(),
-      },
-    })
-
-    // Enviar WhatsApp
-    if (isEvolutionConfigured() && membro.telefone) {
-      const mensagem = templates.cobranca(nome, valor, vencimento)
-      await enviarMensagemWhatsApp({ telefone: membro.telefone, mensagem })
-    }
-
-    // Enviar Email
-    if (isResendConfigured()) {
-      const html = emailTemplates.cobranca(nome, valor, vencimento)
-      await enviarEmail({
-        para: membro.usuario.email,
-        assunto: '💰 Lembrete: Pagamento próximo do vencimento',
-        html,
-      })
-    }
-
-    // Marcar como enviada
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: {
-        enviada: true,
-        enviadaEm: new Date(),
-      },
-    })
-  }
-
-  return pagamentos.length
+        canalWhatsapp: false,
+        canalEmail: resendEnabled,
+      }
+    },
+    sendEmail: resendEnabled
+      ? async (pagamento) => {
+          const { membro, nome, valor, vencimento } = getContext(pagamento)
+          const html = emailTemplates.cobranca(nome, valor, vencimento)
+          await enviarEmail({
+            para: membro.usuario.email,
+            assunto: '💰 Lembrete: Pagamento próximo do vencimento',
+            html,
+          })
+        }
+      : undefined,
+  })
 }
 
 /**
- * Processa aniversariantes do dia
+ * Processa aniversariantes do dia (email only)
  */
 export async function processarAniversarios() {
   const hoje = new Date()
   const mes = hoje.getMonth() + 1
   const dia = hoje.getDate()
+  const resendEnabled = isResendConfigured()
+  const startOfToday = new Date(hoje)
+  startOfToday.setHours(0, 0, 0, 0)
 
   // Buscar membros que fazem aniversário hoje
   const membros = await prisma.membro.findMany({
@@ -215,51 +241,43 @@ export async function processarAniversarios() {
     return dataNasc.getMonth() + 1 === mes && dataNasc.getDate() === dia
   })
 
-  for (const membro of aniversariantes) {
-    const nome = membro.usuario.nome || 'Aluno(a)'
+  const getContext = (membro: typeof aniversariantes[number]) => ({
+    membro,
+    nome: membro.usuario.nome || 'Aluno(a)',
+  })
 
-    // Verificar se já enviou notificação
-    const jaEnviou = await prisma.notificacao.findFirst({
-      where: {
-        membroId: membro.id,
-        tipo: TipoNotificacao.ANIVERSARIO,
-        criadoEm: {
-          gte: new Date(hoje.setHours(0, 0, 0, 0)),
-        },
+  return processNotifications({
+    items: aniversariantes,
+    shouldSkipWhere: (membro) => ({
+      membroId: membro.id,
+      tipo: TipoNotificacao.ANIVERSARIO,
+      criadoEm: {
+        gte: startOfToday,
       },
-    })
-
-    if (jaEnviou) continue
-
-    // Criar notificação
-    const notificacao = await prisma.notificacao.create({
-      data: {
+    }),
+    buildNotification: (membro) => {
+      const { nome } = getContext(membro)
+      return {
         membroId: membro.id,
         tipo: TipoNotificacao.ANIVERSARIO,
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
-        canalWhatsapp: isEvolutionConfigured(),
-        canalEmail: false, // Só WhatsApp para aniversário
-      },
-    })
-
-    // Enviar WhatsApp
-    if (isEvolutionConfigured() && membro.telefone) {
-      const mensagem = templates.aniversario(nome)
-      await enviarMensagemWhatsApp({ telefone: membro.telefone, mensagem })
-    }
-
-    // Marcar como enviada
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: {
-        enviada: true,
-        enviadaEm: new Date(),
-      },
-    })
-  }
-
-  return aniversariantes.length
+        canalWhatsapp: false,
+        canalEmail: resendEnabled,
+      }
+    },
+    sendEmail: resendEnabled
+      ? async (membro) => {
+          const { nome } = getContext(membro)
+          const html = emailTemplates.aniversario(nome)
+          await enviarEmail({
+            para: membro.usuario.email,
+            assunto: '🎂 Feliz Aniversário!',
+            html,
+          })
+        }
+      : undefined,
+  })
 }
 
 /**
@@ -300,4 +318,3 @@ export async function executarTodasTarefas() {
 
   return resultados
 }
-

@@ -9,8 +9,9 @@ WORKDIR /app
 # ==================== Dependencies Stage ====================
 FROM base AS deps
 
-# Copy package files
+# Copy package files and prisma schema (needed for postinstall)
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
