@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,8 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { groupPlansByCategory } from "@/lib/planos"
-import { useUrlFilters } from "@/hooks/use-url-filters"
 
 interface PlanoOption {
   id: string
@@ -29,38 +28,88 @@ interface AlunosFiltersProps {
   planos: PlanoOption[]
 }
 
-type FilterValues = {
-  search: string
-  status: string
-  plano: string
-  order: string
-}
-
-const DEFAULT_FILTERS: FilterValues = {
-  search: "",
-  status: "todos",
-  plano: "todos",
-  order: "recent_desc",
-}
-
 export function AlunosFilters({ search, status, plano, order, planos }: AlunosFiltersProps) {
-  const { filters, setFilters, applyFilters, clearFilters } = useUrlFilters(
-    {
-      ...DEFAULT_FILTERS,
-      search: search ?? DEFAULT_FILTERS.search,
-      status: status ?? DEFAULT_FILTERS.status,
-      plano: plano ?? DEFAULT_FILTERS.plano,
-      order: order ?? DEFAULT_FILTERS.order,
-    },
-    {
-      defaults: DEFAULT_FILTERS,
-      normalize: {
-        search: (value) => value.trim(),
-      },
-    }
-  )
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  const groupedPlanos = useMemo(() => groupPlansByCategory(planos), [planos])
+  const [searchValue, setSearchValue] = useState(search ?? "")
+  const [statusValue, setStatusValue] = useState(status ?? "todos")
+  const [planoValue, setPlanoValue] = useState(plano ?? "todos")
+  const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
+
+  const groupedPlanos = useMemo(() => {
+    // Single-pass categorization instead of multiple filter iterations
+    const planosGabi: typeof planos = []
+    const planosEstagiarios: typeof planos = []
+    const planosOutros: typeof planos = []
+    for (const p of planos) {
+      const nameLower = p.nome.toLowerCase()
+      if (nameLower.includes("gabi")) {
+        planosGabi.push(p)
+      } else if (nameLower.includes("estagiário") || nameLower.includes("estagiarios")) {
+        planosEstagiarios.push(p)
+      } else {
+        planosOutros.push(p)
+      }
+    }
+    return { planosGabi, planosEstagiarios, planosOutros }
+  }, [planos])
+
+  const buildQuery = useCallback((values: { search: string; status: string; plano: string; order: string }) => {
+    const params = new URLSearchParams()
+    let hasFilters = false
+    if (values.search.trim()) params.set("search", values.search.trim())
+    if (values.search.trim()) hasFilters = true
+    if (values.status && values.status !== "todos") {
+      params.set("status", values.status)
+      hasFilters = true
+    }
+    if (values.plano && values.plano !== "todos") {
+      params.set("plano", values.plano)
+      hasFilters = true
+    }
+    if (values.order && values.order !== "recent_desc") {
+      params.set("order", values.order)
+      hasFilters = true
+    }
+    if (hasFilters) {
+      params.set("page", "1")
+    }
+    return params.toString()
+  }, [])
+
+  const applyFilters = useCallback((values: { search: string; status: string; plano: string; order: string }) => {
+    const nextQuery = buildQuery(values)
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) {
+      return
+    }
+    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+  }, [buildQuery, pathname, router, searchParams])
+
+  useEffect(() => {
+    const currentSearch = searchParams.get("search") ?? ""
+    const currentStatus = searchParams.get("status") ?? "todos"
+    const currentPlano = searchParams.get("plano") ?? "todos"
+    const currentOrder = searchParams.get("order") ?? "recent_desc"
+    const nextSearch = searchValue.trim()
+
+    const filtersChanged =
+      currentSearch !== nextSearch ||
+      currentStatus !== statusValue ||
+      currentPlano !== planoValue ||
+      currentOrder !== orderValue
+
+    if (!filtersChanged) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      applyFilters({ search: nextSearch, status: statusValue, plano: planoValue, order: orderValue })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [applyFilters, orderValue, planoValue, searchParams, searchValue, statusValue])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -70,15 +119,15 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
           name="search"
           placeholder="Nome, CPF ou Email..."
           className="pl-8 border-input/50 focus:border-primary"
-          value={filters.search}
-          onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.target.value)}
         />
       </div>
 
       <Select
-        value={filters.status}
+        value={statusValue}
         onValueChange={(value) => {
-          setFilters((prev) => ({ ...prev, status: value }))
+          setStatusValue(value)
         }}
       >
         <SelectTrigger className="w-[140px] border-input/50">
@@ -93,9 +142,9 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
       </Select>
 
       <Select
-        value={filters.plano}
+        value={planoValue}
         onValueChange={(value) => {
-          setFilters((prev) => ({ ...prev, plano: value }))
+          setPlanoValue(value)
         }}
       >
         <SelectTrigger className="w-[220px] border-input/50">
@@ -155,9 +204,9 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
       </Select>
 
       <Select
-        value={filters.order}
+        value={orderValue}
         onValueChange={(value) => {
-          setFilters((prev) => ({ ...prev, order: value }))
+          setOrderValue(value)
         }}
       >
         <SelectTrigger className="w-[200px] border-input/50">
@@ -173,7 +222,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="secondary"
         className="hover:bg-primary/10 hover:text-primary"
-        onClick={() => applyFilters(filters)}
+        onClick={() => applyFilters({ search: searchValue, status: statusValue, plano: planoValue, order: orderValue })}
       >
         Filtrar
       </Button>
@@ -181,7 +230,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="ghost"
         className="hover:text-primary"
-        onClick={clearFilters}
+        onClick={() => router.push(pathname)}
       >
         Limpar
       </Button>

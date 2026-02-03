@@ -4,20 +4,26 @@ import { withApiAuth } from '@/lib/api'
 
 // GET /api/planos - Listar todos os planos
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const includeInactive = searchParams.get('includeInactive') === 'true'
+  return withApiAuth(async (session) => {
+    const searchParams = request.nextUrl.searchParams
+    const includeInactive = session.user.role === 'ADMIN'
+      ? searchParams.get('includeInactive') === 'true'
+      : false
 
-  const planos = await prisma.plano.findMany({
-    where: includeInactive ? {} : { ativo: true },
-    orderBy: { valor: 'asc' },
-    include: {
-      _count: {
-        select: { membros: true, pagamentos: true }
-      }
-    }
+    const includeCounts = session.user.role === 'ADMIN'
+
+    const planos = await prisma.plano.findMany({
+      where: includeInactive ? {} : { ativo: true },
+      orderBy: { valor: 'asc' },
+      include: includeCounts ? {
+        _count: {
+          select: { membros: true, pagamentos: true }
+        }
+      } : undefined,
+    })
+
+    return NextResponse.json(planos)
   })
-
-  return NextResponse.json(planos)
 }
 
 // POST /api/planos - Criar novo plano (admin only)

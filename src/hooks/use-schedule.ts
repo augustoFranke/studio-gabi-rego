@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import useSWR from 'swr'
 import { formatDateISO, getDiaSemanaFromDay } from '@/lib/schedule'
+import { fetcher } from '@/lib/fetcher'
 import type { Agendamento, Membro, ScheduleView } from '@/types/schedule'
 import { toast } from 'sonner'
 
@@ -20,8 +22,6 @@ interface UseScheduleReturn {
   setCurrentDate: (date: Date) => void
   setView: (view: ScheduleView) => void
   setDraggingId: (id: string | null) => void
-  fetchAgendamentos: () => Promise<void>
-  fetchMembros: () => Promise<void>
   createAgendamento: (
     membroId: string,
     date: Date,
@@ -47,13 +47,10 @@ export function useSchedule({
 }: UseScheduleProps = {}): UseScheduleReturn {
   const [currentDate, setCurrentDate] = useState<Date>(initialDate)
   const [view, setView] = useState<ScheduleView>(initialView)
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
-  const [membros, setMembros] = useState<Membro[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   // Calculate date range based on view
-  const getDateRange = useCallback(() => {
+  const dateRange = useMemo(() => {
     const start = new Date(currentDate)
     const end = new Date(currentDate)
 
@@ -82,36 +79,24 @@ export function useSchedule({
     }
   }, [currentDate, view])
 
-  // Fetch agendamentos
-  const fetchAgendamentos = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const { dataInicio, dataFim } = getDateRange()
-      const response = await fetch(
-        `/api/agendamentos?dataInicio=${dataInicio}&dataFim=${dataFim}`
-      )
-      if (!response.ok) throw new Error('Erro ao buscar agendamentos')
-      const data = await response.json()
-      setAgendamentos(data)
-    } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error)
-      toast.error('Erro ao carregar agendamentos')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [getDateRange])
+  // SWR for agendamentos with automatic revalidation
+  const agendamentosKey = `/api/agendamentos?dataInicio=${dateRange.dataInicio}&dataFim=${dateRange.dataFim}`
+  const {
+    data: agendamentos = [],
+    isLoading: isLoadingAgendamentos,
+    mutate: mutateAgendamentos,
+  } = useSWR<Agendamento[]>(agendamentosKey, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 2000,
+  })
 
-  // Fetch membros
-  const fetchMembros = useCallback(async () => {
-    try {
-      const response = await fetch('/api/membros?status=ATIVO&fields=compact')
-      if (!response.ok) throw new Error('Erro ao buscar membros')
-      const data = await response.json()
-      setMembros(data)
-    } catch (error) {
-      console.error('Erro ao buscar membros:', error)
-    }
-  }, [])
+  // SWR for membros with longer cache (rarely changes)
+  const {
+    data: membros = [],
+  } = useSWR<Membro[]>('/api/membros?status=ATIVO&fields=compact', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000, // 1 minute deduping - membros rarely change
+  })
 
   // Create agendamento
   const createAgendamento = useCallback(
@@ -157,7 +142,7 @@ export function useSchedule({
         }
 
         toast.success('Agendamento criado com sucesso')
-        await fetchAgendamentos()
+        await mutateAgendamentos()
         return true
       } catch (error) {
         console.error('Erro ao criar agendamento:', error)
@@ -167,7 +152,7 @@ export function useSchedule({
         return false
       }
     },
-    [fetchAgendamentos]
+    [mutateAgendamentos]
   )
 
   // Update agendamento
@@ -189,7 +174,7 @@ export function useSchedule({
         }
 
         toast.success('Agendamento atualizado com sucesso')
-        await fetchAgendamentos()
+        await mutateAgendamentos()
         return true
       } catch (error) {
         console.error('Erro ao atualizar agendamento:', error)
@@ -199,7 +184,7 @@ export function useSchedule({
         return false
       }
     },
-    [fetchAgendamentos]
+    [mutateAgendamentos]
   )
 
   // Delete agendamento
@@ -218,7 +203,7 @@ export function useSchedule({
         }
 
         toast.success('Agendamento removido com sucesso')
-        await fetchAgendamentos()
+        await mutateAgendamentos()
         return true
       } catch (error) {
         console.error('Erro ao remover agendamento:', error)
@@ -228,7 +213,7 @@ export function useSchedule({
         return false
       }
     },
-    [fetchAgendamentos]
+    [mutateAgendamentos]
   )
 
   // Move agendamento (drag & drop)
@@ -274,7 +259,7 @@ export function useSchedule({
         }
 
         toast.success('Agendamento movido com sucesso')
-        await fetchAgendamentos()
+        await mutateAgendamentos()
         return true
       } catch (error) {
         console.error('Erro ao mover agendamento:', error)
@@ -284,30 +269,19 @@ export function useSchedule({
         return false
       }
     },
-    [fetchAgendamentos]
+    [mutateAgendamentos]
   )
-
-  // Fetch data on mount and when date/view changes
-  useEffect(() => {
-    fetchAgendamentos()
-  }, [fetchAgendamentos])
-
-  useEffect(() => {
-    fetchMembros()
-  }, [fetchMembros])
 
   return {
     currentDate,
     view,
     agendamentos,
     membros,
-    isLoading,
+    isLoading: isLoadingAgendamentos,
     draggingId,
     setCurrentDate,
     setView,
     setDraggingId,
-    fetchAgendamentos,
-    fetchMembros,
     createAgendamento,
     updateAgendamento,
     deleteAgendamento,

@@ -4,6 +4,20 @@ import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
+// Module-level Set for O(1) lookups instead of O(n) array.includes()
+const FEMALE_NAMES = new Set([
+  "maria", "ana", "julia", "gabriela", "fernanda", "amanda", "bruna", "camila", "carla", "claudia", "cristina",
+  "daniela", "elaine", "fabiana", "juliana", "larissa", "leticia", "luciana", "marcia", "patricia", "priscila",
+  "renata", "sandra", "tatiana", "vanessa", "adriana", "aline", "beatriz", "bianca", "carolina", "debora",
+  "denise", "eduarda", "eliana", "elisabete", "flavia", "franciele", "gisele", "helena", "isabela", "jessica",
+  "joana", "jussara", "karen", "karina", "lais", "lilian", "livia", "luana", "lucia", "luciane", "luiza",
+  "mara", "marcela", "mariana", "marina", "marta", "michele", "milena", "monica", "natalia", "paula",
+  "rafaela", "raquel", "regina", "roberta", "rosana", "sabrina", "samantha", "simone", "solange", "sonia",
+  "suzana", "tais", "thais", "vera", "vivian", "viviane",
+])
+
+const FEMALE_ENDINGS = ["a", "e", "ia", "ana", "ine", "ene"]
+
 function determineSexoEnum(nome?: string | null): "FEMININO" | "MASCULINO" {
   const normalized = nome?.toLowerCase().trim()
 
@@ -11,25 +25,13 @@ function determineSexoEnum(nome?: string | null): "FEMININO" | "MASCULINO" {
     return "MASCULINO"
   }
 
-  const femaleEndings = ["a", "e", "ia", "ana", "ine", "ene"]
-  const femaleNames = [
-    "maria", "ana", "julia", "gabriela", "fernanda", "amanda", "bruna", "camila", "carla", "claudia", "cristina",
-    "daniela", "elaine", "fabiana", "juliana", "larissa", "leticia", "luciana", "marcia", "patricia", "priscila",
-    "renata", "sandra", "tatiana", "vanessa", "adriana", "aline", "beatriz", "bianca", "carolina", "debora",
-    "denise", "eduarda", "eliana", "elisabete", "flavia", "franciele", "gisele", "helena", "isabela", "jessica",
-    "joana", "jussara", "karen", "karina", "lais", "lilian", "livia", "luana", "lucia", "luciane", "luiza",
-    "mara", "marcela", "mariana", "marina", "marta", "michele", "milena", "monica", "natalia", "paula",
-    "rafaela", "raquel", "regina", "roberta", "rosana", "sabrina", "samantha", "simone", "solange", "sonia",
-    "suzana", "tais", "thais", "vera", "vivian", "viviane",
-  ]
-
   const firstName = normalized.split(" ")[0]
 
-  if (femaleNames.includes(firstName)) {
+  if (FEMALE_NAMES.has(firstName)) {
     return "FEMININO"
   }
 
-  for (const ending of femaleEndings) {
+  for (const ending of FEMALE_ENDINGS) {
     if (firstName.endsWith(ending) && !firstName.endsWith("o")) {
       return "FEMININO"
     }
@@ -140,37 +142,32 @@ export async function POST(request: NextRequest) {
     }
     const shouldSendWelcome = !membro.usuario.onboardingCompleto
 
-    await prisma.anamnese.upsert({
-      where: { membroId: membro.id },
-      create: {
-        membroId: membro.id,
-        ...anamneseData,
-      },
-      update: anamneseData,
-    })
+    // Parallelize database operations
+    await Promise.all([
+      prisma.anamnese.upsert({
+        where: { membroId: membro.id },
+        create: {
+          membroId: membro.id,
+          ...anamneseData,
+        },
+        update: anamneseData,
+      }),
+      prisma.usuario.update({
+        where: { id: membro.usuarioId },
+        data: {
+          etapaOnboarding: 4,
+          onboardingCompleto: true,
+        },
+      }),
+    ])
 
-    await prisma.usuario.update({
-      where: { id: membro.usuarioId },
-      data: {
-        etapaOnboarding: 4,
-        onboardingCompleto: true,
-      },
-    })
-
-    if (shouldSendWelcome && membro.usuario.email) {
-      if (isResendConfigured()) {
-        const emailResult = await enviarEmail({
-          para: membro.usuario.email,
-          assunto: "Bem-vindo(a) ao Studio Gabi Rego",
-          html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
-        })
-
-        if (!emailResult.success) {
-          console.error("Failed to send welcome email:", emailResult.error)
-        }
-      } else {
-        console.warn("Resend not configured - skipping welcome email send")
-      }
+    // Fire-and-forget email sending (non-blocking)
+    if (shouldSendWelcome && membro.usuario.email && isResendConfigured()) {
+      enviarEmail({
+        para: membro.usuario.email,
+        assunto: "Bem-vindo(a) ao Studio Gabi Rego",
+        html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
+      }).catch((err) => console.error("Failed to send welcome email:", err))
     }
 
     return NextResponse.json({

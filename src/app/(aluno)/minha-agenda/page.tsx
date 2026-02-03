@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
@@ -17,39 +18,33 @@ import {
   isToday,
   navigateWeek,
 } from '@/lib/schedule'
+import { fetcher } from '@/lib/fetcher'
 import type { Agendamento } from '@/types/schedule'
 import { cn } from '@/lib/utils'
 import { startOfWeek, endOfWeek } from 'date-fns'
 
 export default function MinhaAgendaPage() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
-  const fetchAgendamentos = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const start = startOfWeek(currentDate, { weekStartsOn: 1 })
-      const end = endOfWeek(currentDate, { weekStartsOn: 1 })
-      const dataInicio = formatDateISO(start)
-      const dataFim = formatDateISO(end)
-
-      const response = await fetch(
-        `/api/agendamentos?dataInicio=${dataInicio}&dataFim=${dataFim}`
-      )
-      if (!response.ok) throw new Error('Erro ao buscar agendamentos')
-      const data = await response.json()
-      setAgendamentos(data)
-    } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error)
-    } finally {
-      setIsLoading(false)
+  // Calculate date range for SWR key
+  const dateRange = useMemo(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const end = endOfWeek(currentDate, { weekStartsOn: 1 })
+    return {
+      dataInicio: formatDateISO(start),
+      dataFim: formatDateISO(end),
     }
   }, [currentDate])
 
-  useEffect(() => {
-    fetchAgendamentos()
-  }, [fetchAgendamentos])
+  // Use SWR for data fetching with automatic caching
+  const { data: agendamentos = [], isLoading } = useSWR<Agendamento[]>(
+    `/api/agendamentos?dataInicio=${dateRange.dataInicio}&dataFim=${dateRange.dataFim}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    }
+  )
 
   const weekDays = getWeekDays(currentDate)
 

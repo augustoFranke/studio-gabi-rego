@@ -75,3 +75,6 @@ simplifications.md
 # Temporary/generated files
 /tmp/
 *.log
+
+# Local assistant artifacts
+.claude/
