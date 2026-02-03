@@ -7,22 +7,26 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  
-  const plano = await prisma.plano.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: { membros: true, pagamentos: true }
-      }
+  return withApiAuth(async (session) => {
+    const { id } = await params
+
+    const includeCounts = session.user.role === 'ADMIN'
+    
+    const plano = await prisma.plano.findUnique({
+      where: { id },
+      include: includeCounts ? {
+        _count: {
+          select: { membros: true, pagamentos: true }
+        }
+      } : undefined,
+    })
+
+    if (!plano) {
+      return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
     }
+
+    return NextResponse.json(plano)
   })
-
-  if (!plano) {
-    return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
-  }
-
-  return NextResponse.json(plano)
 }
 
 // PUT /api/planos/[id] - Atualizar plano (admin only)

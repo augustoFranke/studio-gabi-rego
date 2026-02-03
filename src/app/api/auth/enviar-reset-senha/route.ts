@@ -3,9 +3,18 @@ import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { withApiAuth } from "@/lib/api"
+import { rateLimitByIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   return withApiAuth(async (session) => {
+    const rateLimit = await rateLimitByIp(request, "auth:admin-reset")
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     // Only admins can send password reset links for other users
     if (session.user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -72,7 +81,7 @@ export async function POST(request: Request) {
         )
       }
     } else {
-      console.log("Resend not configured. Reset link:", resetLink)
+      console.warn("Resend não configurado - envio de email ignorado.")
     }
 
     return NextResponse.json({

@@ -4,9 +4,18 @@ import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
+import { rateLimitByIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await rateLimitByIp(request, "auth:signup")
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, senha } = body
 
@@ -148,10 +157,6 @@ export async function POST(request: Request) {
 
     // Send verification email
     const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
-
-    console.log("Resend configured:", isResendConfigured())
-    console.log("Base URL:", baseUrl)
-    console.log("Verification link:", verificationLink)
 
     if (isResendConfigured()) {
       const emailResult = await enviarEmail({
