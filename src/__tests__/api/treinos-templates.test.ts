@@ -16,7 +16,14 @@ const {
   createTreinoTemplateMock: vi.fn(),
   getFichaTreinoWithDetailsMock: vi.fn(),
   validateRequestMock: vi.fn(
-    async (request: NextRequest, schema: { safeParse: (data: unknown) => any }) => {
+    async (
+      request: NextRequest,
+      schema: {
+        safeParse: (data: unknown) =>
+          | { success: true; data: unknown }
+          | { success: false; error: { issues: Array<{ message?: string }> } }
+      }
+    ) => {
       let body: unknown
       try {
         body = await request.json()

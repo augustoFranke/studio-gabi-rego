@@ -112,7 +112,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
   )
 }
 
-export function MemberDeactivateButton({
+export function MemberDeactivateItem({
   id,
   nome,
   disabled = false,
@@ -124,9 +124,15 @@ export function MemberDeactivateButton({
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  const handleDeactivate = () => {
+  const handleDeactivate = (event: Event) => {
+    if (disabled || isPending) {
+      event.preventDefault()
+      return
+    }
+
     const label = nome ? `o aluno "${nome}"` : "este aluno"
     if (!window.confirm(`Deseja desativar ${label}?`)) {
+      event.preventDefault()
       return
     }
 
@@ -142,13 +148,9 @@ export function MemberDeactivateButton({
   }
 
   return (
-    <Button
-      variant="outline"
-      onClick={handleDeactivate}
-      disabled={disabled || isPending}
-    >
+    <DropdownMenuItem onSelect={handleDeactivate} disabled={disabled || isPending}>
       <UserMinus className="mr-2 h-4 w-4" />
       {isPending ? "Desativando..." : "Desativar"}
-    </Button>
+    </DropdownMenuItem>
   )
 }

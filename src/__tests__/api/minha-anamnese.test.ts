@@ -1,30 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/minha-anamnese/route'
 
-const { prismaMock, sessionRef, resendMock } = vi.hoisted(() => ({
-  prismaMock: {
-    membro: {
-      findUnique: vi.fn(),
+const { prismaMock, sessionRef, resendMock, withApiAuthMock } = vi.hoisted(() => {
+  const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+  const sessionRef = createSessionRef({ user: { id: 'u-1', role: 'MEMBRO' } })
+  return {
+    prismaMock: createPrismaMock({
+      membro: ['findUnique'],
+      anamnese: ['upsert'],
+      usuario: ['update'],
+    }),
+    sessionRef,
+    resendMock: {
+      enviarEmail: vi.fn(),
+      isResendConfigured: vi.fn(),
+      emailTemplates: {
+        boasVindas: vi.fn(() => '<p>Oi</p>'),
+      },
     },
-    anamnese: {
-      upsert: vi.fn(),
-    },
-    usuario: {
-      update: vi.fn(),
-    },
-  },
-  sessionRef: {
-    current: { user: { id: 'u-1', role: 'MEMBRO' as const } },
-  } as { current: { user: { id: string; role: 'ADMIN' | 'MEMBRO' } } },
-  resendMock: {
-    enviarEmail: vi.fn(),
-    isResendConfigured: vi.fn(),
-    emailTemplates: {
-      boasVindas: vi.fn(() => '<p>Oi</p>'),
-    },
-  },
-}))
+    withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
@@ -33,12 +30,7 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/resend', () => resendMock)
 
 vi.mock('@/lib/api', () => ({
-  withApiAuth: vi.fn(
-    async (
-      handler: (session: typeof sessionRef.current) => Promise<NextResponse>,
-      _options?: { requiredRole?: 'ADMIN' | 'MEMBRO'; requireAuth?: boolean }
-    ) => handler(sessionRef.current)
-  ),
+  withApiAuth: withApiAuthMock,
 }))
 
 describe('Minha Anamnese API', () => {
