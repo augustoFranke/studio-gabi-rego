@@ -5,6 +5,17 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+
+const escapeHtmlOptional = (value?: string | null) =>
+  value ? escapeHtml(value) : ""
+
 interface EnviarEmailParams {
   para: string
   assunto: string
@@ -76,7 +87,12 @@ export async function enviarEmail({
  * Templates de email em HTML
  */
 export const emailTemplates = {
-  lembreteAula: (nome: string, horario: string, data: string) => `
+  lembreteAula: (nome: string, horario: string, data: string) => {
+    const safeNome = escapeHtml(nome)
+    const safeHorario = escapeHtml(horario)
+    const safeData = escapeHtml(data)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -119,7 +135,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                          Olá <strong style="color: #ea580c;">${safeNome}</strong>!
                         </p>
                         <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Este é um lembrete da sua aula agendada:
@@ -127,8 +143,8 @@ export const emailTemplates = {
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
                           <tr>
                             <td style="padding: 16px;">
-                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Data:</strong> ${data}</p>
-                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Horário:</strong> ${horario}</p>
+                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Data:</strong> ${safeData}</p>
+                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Horário:</strong> ${safeHorario}</p>
                             </td>
                           </tr>
                         </table>
@@ -195,9 +211,15 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  cobranca: (nome: string, valor: string, vencimento: string) => `
+  cobranca: (nome: string, valor: string, vencimento: string) => {
+    const safeNome = escapeHtml(nome)
+    const safeValor = escapeHtml(valor)
+    const safeVencimento = escapeHtml(vencimento)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -239,7 +261,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                          Olá <strong style="color: #ea580c;">${safeNome}</strong>!
                         </p>
                         <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Este é um lembrete sobre seu pagamento:
@@ -247,8 +269,8 @@ export const emailTemplates = {
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
                           <tr>
                             <td style="padding: 16px;">
-                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Valor:</strong> ${valor}</p>
-                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Vencimento:</strong> ${vencimento}</p>
+                              <p style="margin: 0 0 8px 0; font-size: 15px; color: #9a3412;"><strong>Valor:</strong> ${safeValor}</p>
+                              <p style="margin: 0; font-size: 15px; color: #9a3412;"><strong>Vencimento:</strong> ${safeVencimento}</p>
                             </td>
                           </tr>
                         </table>
@@ -315,9 +337,14 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  verificacaoEmail: (nome: string | null, linkVerificacao: string) => `
+  verificacaoEmail: (nome: string | null, linkVerificacao: string) => {
+    const safeNome = escapeHtmlOptional(nome)
+    const safeLink = escapeHtml(linkVerificacao)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -373,7 +400,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
+                          Olá${safeNome ? ` <strong style="color: #ea580c;">${safeNome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Obrigado por se cadastrar no <strong>Studio Gabi Rego</strong>!
@@ -388,7 +415,7 @@ export const emailTemplates = {
                               <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
                                   <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
-                                    <a href="${linkVerificacao}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                    <a href="${safeLink}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
                                       Verificar meu email
                                     </a>
                                   </td>
@@ -414,7 +441,7 @@ export const emailTemplates = {
                                   </td>
                                   <td>
                                     <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #92400e;">
-                                      <strong>Importante:</strong> Este link é válido por 24 horas. Se você não solicitou este cadastro, pode ignorar este email com segurança.
+                                      <strong>Importante:</strong> Este link é válido por 1 hora. Se você não solicitou este cadastro, pode ignorar este email com segurança.
                                     </p>
                                   </td>
                                 </tr>
@@ -425,7 +452,7 @@ export const emailTemplates = {
                         <!-- Alternative Link -->
                         <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
                           Se o botão não funcionar, copie e cole este link no seu navegador:<br>
-                          <a href="${linkVerificacao}" style="color: #ea580c; word-break: break-all;">${linkVerificacao}</a>
+                          <a href="${safeLink}" style="color: #ea580c; word-break: break-all;">${safeLink}</a>
                         </p>
                       </td>
                     </tr>
@@ -446,9 +473,14 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  completarPerfil: (nome: string | null, linkCompletar: string) => `
+  completarPerfil: (nome: string | null, linkCompletar: string) => {
+    const safeNome = escapeHtmlOptional(nome)
+    const safeLink = escapeHtml(linkCompletar)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -490,7 +522,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
+                          Olá${safeNome ? ` <strong style="color: #ea580c;">${safeNome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Encontramos um cadastro em andamento no <strong>Studio Gabi Rego</strong>.
@@ -504,7 +536,7 @@ export const emailTemplates = {
                               <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
                                   <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
-                                    <a href="${linkCompletar}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                    <a href="${safeLink}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
                                       Completar meu perfil
                                     </a>
                                   </td>
@@ -538,7 +570,7 @@ export const emailTemplates = {
                         </table>
                         <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
                           Se o botão não funcionar, copie e cole este link no seu navegador:<br>
-                          <a href="${linkCompletar}" style="color: #ea580c; word-break: break-all;">${linkCompletar}</a>
+                          <a href="${safeLink}" style="color: #ea580c; word-break: break-all;">${safeLink}</a>
                         </p>
                       </td>
                     </tr>
@@ -558,9 +590,14 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  redefinirSenha: (nome: string | null, linkRedefinir: string) => `
+  redefinirSenha: (nome: string | null, linkRedefinir: string) => {
+    const safeNome = escapeHtmlOptional(nome)
+    const safeLink = escapeHtml(linkRedefinir)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -607,7 +644,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá${nome ? ` <strong style="color: #ea580c;">${nome}</strong>` : ''}!
+                          Olá${safeNome ? ` <strong style="color: #ea580c;">${safeNome}</strong>` : ''}!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Recebemos uma solicitação para redefinir sua senha no <strong>Studio Gabi Rego</strong>.
@@ -622,7 +659,7 @@ export const emailTemplates = {
                               <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
                                   <td style="border-radius: 10px; background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);">
-                                    <a href="${linkRedefinir}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
+                                    <a href="${safeLink}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 10px;">
                                       Redefinir minha senha
                                     </a>
                                   </td>
@@ -659,7 +696,7 @@ export const emailTemplates = {
                         <!-- Alternative Link -->
                         <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #888888; text-align: center;">
                           Se o botão não funcionar, copie e cole este link no seu navegador:<br>
-                          <a href="${linkRedefinir}" style="color: #ea580c; word-break: break-all;">${linkRedefinir}</a>
+                          <a href="${safeLink}" style="color: #ea580c; word-break: break-all;">${safeLink}</a>
                         </p>
                       </td>
                     </tr>
@@ -680,9 +717,13 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  aniversario: (nome: string) => `
+  aniversario: (nome: string) => {
+    const safeNome = escapeHtml(nome)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -722,7 +763,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Querido(a) <strong style="color: #ea580c;">${nome}</strong>!
+                          Querido(a) <strong style="color: #ea580c;">${safeNome}</strong>!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Hoje e um dia muito especial e toda a equipe do <strong>Studio Gabi Rego</strong> quer desejar a voce um feliz aniversario!
@@ -775,9 +816,13 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 
-  boasVindas: (nome: string) => `
+  boasVindas: (nome: string) => {
+    const safeNome = escapeHtml(nome)
+
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -819,7 +864,7 @@ export const emailTemplates = {
                     <tr>
                       <td style="padding: 40px;">
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #1f1f1f;">
-                          Olá <strong style="color: #ea580c;">${nome}</strong>!
+                          Olá <strong style="color: #ea580c;">${safeNome}</strong>!
                         </p>
                         <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.6; color: #444444;">
                           Seja muito bem-vindo(a) ao <strong>Studio Gabi Rego</strong>!
@@ -890,5 +935,6 @@ export const emailTemplates = {
       </table>
     </body>
     </html>
-  `,
+  `
+  },
 }

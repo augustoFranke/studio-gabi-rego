@@ -13,13 +13,11 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
-import {
-  ScheduleHeader,
-  DailyView,
-  WeeklyView,
-  MonthlyView,
-  AgendamentoModal,
-} from '@/components/schedule'
+import { ScheduleHeader } from '@/components/schedule/schedule-header'
+import { DailyView } from '@/components/schedule/daily-view'
+import { WeeklyView } from '@/components/schedule/weekly-view'
+import { MonthlyView } from '@/components/schedule/monthly-view'
+import { AgendamentoModal } from '@/components/schedule/agendamento-modal'
 import { useSchedule } from '@/hooks/use-schedule'
 import { useAgendaInteractions } from '@/hooks/use-agenda-interactions'
 

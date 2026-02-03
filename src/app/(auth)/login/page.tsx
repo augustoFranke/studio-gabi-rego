@@ -38,11 +38,7 @@ function LoginContent() {
       })
 
       if (result?.error) {
-        if (result.error.includes("USER_NOT_FOUND")) {
-          toast.error("Nenhuma conta encontrada com este email")
-        } else if (result.error.includes("WRONG_PASSWORD")) {
-          toast.error("Senha incorreta")
-        } else if (result.error.includes("WEAK_PASSWORD")) {
+        if (result.error.includes("WEAK_PASSWORD")) {
           toast.error("A senha precisa ter no mínimo 8 caracteres, uma letra maiúscula e um número")
         } else {
           toast.error("Email ou senha incorretos")
