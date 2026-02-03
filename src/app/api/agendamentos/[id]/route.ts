@@ -115,14 +115,27 @@ export async function PATCH(
       const newHorarioId = horarioId || agendamento.horarioId
       const newData = data ? parseLocalDate(data) : agendamento.data
 
-      const existente = await prisma.agendamento.findFirst({
-        where: {
-          membroId: agendamento.membroId,
-          horarioId: newHorarioId,
-          data: newData,
-          id: { not: id },
-        },
-      })
+      // Parallelize all validation queries
+      const [existente, horario, agendamentosExistentes] = await Promise.all([
+        prisma.agendamento.findFirst({
+          where: {
+            membroId: agendamento.membroId,
+            horarioId: newHorarioId,
+            data: newData,
+            id: { not: id },
+          },
+        }),
+        prisma.horarioDisponivel.findUnique({
+          where: { id: newHorarioId },
+        }),
+        prisma.agendamento.count({
+          where: {
+            horarioId: newHorarioId,
+            data: newData,
+            id: { not: id },
+          },
+        }),
+      ])
 
       if (existente) {
         return NextResponse.json(
@@ -131,21 +144,9 @@ export async function PATCH(
         )
       }
 
-      const horario = await prisma.horarioDisponivel.findUnique({
-        where: { id: newHorarioId },
-      })
-
       if (!horario || !horario.ativo) {
         return NextResponse.json({ error: 'Horario nao disponivel' }, { status: 400 })
       }
-
-      const agendamentosExistentes = await prisma.agendamento.count({
-        where: {
-          horarioId: newHorarioId,
-          data: newData,
-          id: { not: id },
-        },
-      })
 
       if (agendamentosExistentes >= horario.vagasTotal) {
         return NextResponse.json(
