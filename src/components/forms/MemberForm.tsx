@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
+import useSWR from "swr"
 import * as z from "zod"
 import { toast } from "sonner"
+import { fetcher } from "@/lib/fetcher"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -99,7 +101,12 @@ export function MemberForm({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [sendingResetLink, setSendingResetLink] = useState(false)
-  const [planos, setPlanos] = useState<Plano[]>([])
+  // Use SWR for planos with long cache (rarely changes)
+  const { data: planos = [] } = useSWR<Plano[]>("/api/planos", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 300000, // 5 minutes - planos rarely change
+  })
+
   const { planosGabi, planosEstagiarios, planosOutros } = useMemo(
     () => groupPlansByCategory(planos),
     [planos]
@@ -127,34 +134,8 @@ export function MemberForm({
     name: "horariosFixos",
   })
 
-  // Remover validação obrigatória de senha na edição
-  useEffect(() => {
-    if (mode === 'edit') {
-      // Na edição, a senha é opcional. Se vazia, não altera.
-      // O schema original exige min(6). Precisamos ajustar o schema dinamicamente ou aceitar que
-      // para edição usamos um schema levemente diferente.
-      // Pela simplicidade, vamos manter a validação visual mas no submit removemos se vazio.
-      // Mas o zodResolver vai bloquear. 
-      // Solução: Criar schema dinâmico ou ignorar validação de senha se vazia na edição.
-    }
-  }, [mode])
-
-
-
-  useEffect(() => {
-    const fetchPlanos = async () => {
-      try {
-        const response = await fetch("/api/planos")
-        if (response.ok) {
-          const data = await response.json()
-          setPlanos(data)
-        }
-      } catch (error) {
-        console.error("Erro ao carregar planos:", error)
-      }
-    }
-    fetchPlanos()
-  }, [])
+  // Note: Password validation in edit mode is handled in onSubmit by removing empty password
+  // This comment replaces the previous useEffect that did nothing meaningful
 
   async function onSubmit(values: FormValues) {
     setLoading(true)

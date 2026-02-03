@@ -4,9 +4,18 @@ import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
+import { rateLimitByIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await rateLimitByIp(request, "auth:signup")
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, senha } = body
 
@@ -42,21 +51,24 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase().trim()
 
-    // Check if email already exists
-    const existingUser = await prisma.usuario.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        nome: true,
-        emailVerificado: true,
-        onboardingCompleto: true,
-        membro: { select: { id: true } },
-      },
-    })
-
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
       process.env.NEXTAUTH_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://studiogabirego.com")
+
+    // Parallelize user lookup and password hashing (hash takes ~100-300ms)
+    const [existingUser, hashedPassword] = await Promise.all([
+      prisma.usuario.findUnique({
+        where: { email: normalizedEmail },
+        select: {
+          id: true,
+          nome: true,
+          emailVerificado: true,
+          onboardingCompleto: true,
+          membro: { select: { id: true } },
+        },
+      }),
+      hash(senha, 12),
+    ])
 
     if (existingUser?.emailVerificado) {
       if (existingUser.membro || existingUser.onboardingCompleto) {
@@ -82,19 +94,12 @@ export async function POST(request: Request) {
       const completionLink = `${baseUrl}/completar-perfil?token=${profileToken}`
 
       if (isResendConfigured()) {
-        const emailResult = await enviarEmail({
+        // Fire-and-forget email sending (non-blocking)
+        enviarEmail({
           para: email,
           assunto: "Complete seu cadastro - Gabi Studio",
           html: emailTemplates.completarPerfil(existingUser.nome ?? null, completionLink),
-        })
-
-        if (!emailResult.success) {
-          console.error("Failed to send profile completion email:", emailResult.error)
-          return NextResponse.json(
-            { error: "Falha ao enviar email. Tente novamente." },
-            { status: 500 }
-          )
-        }
+        }).catch((err) => console.error("Failed to send profile completion email:", err))
       } else {
         console.warn("Resend not configured - skipping email send")
         return NextResponse.json(
@@ -112,10 +117,7 @@ export async function POST(request: Request) {
 
     // Generate verification token (needed for both paths)
     const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-    // Hash password (needed for both paths)
-    const hashedPassword = await hash(senha, 12)
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     if (existingUser) {
       // UNVERIFIED (ZOMBIE) USER: Update and resend
@@ -149,34 +151,28 @@ export async function POST(request: Request) {
     // Send verification email
     const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
 
-    console.log("Resend configured:", isResendConfigured())
-    console.log("Base URL:", baseUrl)
-    console.log("Verification link:", verificationLink)
-
-    if (isResendConfigured()) {
-      const emailResult = await enviarEmail({
-        para: email,
-        assunto: "Verifique seu email - Gabi Studio",
-        html: emailTemplates.verificacaoEmail(null, verificationLink),
-      })
-
-      if (!emailResult.success) {
-        console.error("Failed to send verification email:", emailResult.error)
-        return NextResponse.json(
-          { error: "Falha ao enviar email de verificação. Tente novamente." },
-          { status: 500 }
-        )
-      }
-
-      console.log("Verification email sent successfully:", emailResult.id)
-    } else {
+    if (!isResendConfigured()) {
       console.warn("Resend not configured - skipping email send")
-      // In production, this should probably return an error instead of success
       return NextResponse.json(
         { error: "Serviço de email não configurado. Contate o suporte." },
         { status: 500 }
       )
     }
+
+    // Fire-and-forget email sending (non-blocking)
+    enviarEmail({
+      para: email,
+      assunto: "Verifique seu email - Gabi Studio",
+      html: emailTemplates.verificacaoEmail(null, verificationLink),
+    })
+      .then((result) => {
+        if (result.success) {
+          console.log("Verification email sent successfully:", result.id)
+        } else {
+          console.error("Failed to send verification email:", result.error)
+        }
+      })
+      .catch((err) => console.error("Failed to send verification email:", err))
 
     return NextResponse.json({
       success: true,

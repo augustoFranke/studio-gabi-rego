@@ -110,37 +110,32 @@ export async function POST(request: Request) {
       const anamneseData = buildAnamneseData(body)
       const shouldSendWelcome = !membro.usuario.onboardingCompleto
 
-      await prisma.anamnese.upsert({
-        where: { membroId: membro.id },
-        create: {
-          membroId: membro.id,
-          ...anamneseData,
-        },
-        update: anamneseData,
-      })
+      // Parallelize database operations
+      await Promise.all([
+        prisma.anamnese.upsert({
+          where: { membroId: membro.id },
+          create: {
+            membroId: membro.id,
+            ...anamneseData,
+          },
+          update: anamneseData,
+        }),
+        prisma.usuario.update({
+          where: { id: session.user.id },
+          data: {
+            etapaOnboarding: 4,
+            onboardingCompleto: true,
+          },
+        }),
+      ])
 
-      await prisma.usuario.update({
-        where: { id: session.user.id },
-        data: {
-          etapaOnboarding: 4,
-          onboardingCompleto: true,
-        },
-      })
-
-      if (shouldSendWelcome && membro.usuario.email) {
-        if (isResendConfigured()) {
-          const emailResult = await enviarEmail({
-            para: membro.usuario.email,
-            assunto: "Bem-vindo(a) ao Studio Gabi Rego",
-            html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
-          })
-
-          if (!emailResult.success) {
-            console.error("Failed to send welcome email:", emailResult.error)
-          }
-        } else {
-          console.warn("Resend not configured - skipping welcome email send")
-        }
+      // Fire-and-forget email sending (non-blocking)
+      if (shouldSendWelcome && membro.usuario.email && isResendConfigured()) {
+        enviarEmail({
+          para: membro.usuario.email,
+          assunto: "Bem-vindo(a) ao Studio Gabi Rego",
+          html: emailTemplates.boasVindas(membro.usuario.nome || "Aluno(a)"),
+        }).catch((err) => console.error("Failed to send welcome email:", err))
       }
 
       return NextResponse.json({

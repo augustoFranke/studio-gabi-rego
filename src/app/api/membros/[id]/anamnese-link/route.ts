@@ -26,7 +26,7 @@ export async function POST(
       }
 
       const token = randomBytes(32).toString("hex")
-      const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000)
 
       await prisma.membro.update({
         where: { id },
