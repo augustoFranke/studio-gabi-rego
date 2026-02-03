@@ -16,6 +16,7 @@ ALTER TABLE public."usuarios" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."anamneses" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."treinos_template" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."treinos_template_exercicios" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."horarios_fixos" ENABLE ROW LEVEL SECURITY;
 
 -- 2) Baseline policy for privileged roles
 -- Use the current role and include service_role if it exists.
@@ -157,6 +158,15 @@ BEGIN
       role_list
     );
   EXCEPTION WHEN duplicate_object THEN NULL; END;
+
+  BEGIN
+    EXECUTE format(
+      'CREATE POLICY %I ON public.%I FOR ALL TO %s USING (true) WITH CHECK (true)',
+      'p_full_access_horarios_fixos',
+      'horarios_fixos',
+      role_list
+    );
+  EXCEPTION WHEN duplicate_object THEN NULL; END;
 END
 $$;
 
@@ -182,7 +192,8 @@ WHERE n.nspname = 'public'
     'usuarios',
     'anamneses',
     'treinos_template',
-    'treinos_template_exercicios'
+    'treinos_template_exercicios',
+    'horarios_fixos'
   )
 ORDER BY c.relname;
 

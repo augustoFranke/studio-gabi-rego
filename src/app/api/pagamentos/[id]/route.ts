@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
-import { Prisma } from '@prisma/client'
+import { ensureOwnerOrAdmin, validateRequest, withApiAuth } from '@/lib/api'
+import { parseLocalDate } from '@/lib/schedule'
+import { Prisma, StatusPagamento } from '@prisma/client'
+import { z } from 'zod'
+
+const pagamentoUpdateSchema = z.object({
+  membroId: z.string().min(1).optional(),
+  planoId: z.string().min(1).optional(),
+  valor: z.number().positive().optional(),
+  dataVencimento: z.string().min(1).optional(),
+  formaPagamento: z.string().min(1).nullable().optional(),
+  observacao: z.string().nullable().optional(),
+  status: z.nativeEnum(StatusPagamento).optional(),
+  dataPagamento: z.string().min(1).nullable().optional(),
+  comprovante: z.string().nullable().optional(),
+}).refine((data) => Object.values(data).some((value) => value !== undefined), {
+  message: 'Nenhum dado para atualizar',
+})
 
 // GET /api/pagamentos/[id] - Obter um pagamento específico
 export async function GET(
@@ -45,20 +61,43 @@ export async function PUT(
   return withApiAuth(async () => {
     try {
       const { id } = await params
-      const body = await request.json()
-      const { status, dataPagamento, formaPagamento, observacao, comprovante } = body
+      const validation = await validateRequest(request, pagamentoUpdateSchema)
+
+      if ('error' in validation) {
+        return validation.error
+      }
+
+      const {
+        membroId,
+        planoId,
+        valor,
+        dataVencimento,
+        formaPagamento,
+        observacao,
+        status,
+        dataPagamento,
+        comprovante,
+      } = validation.data
 
       const updateData: Prisma.PagamentoUpdateInput = {}
 
+      if (membroId !== undefined) updateData.membroId = membroId
+      if (planoId !== undefined) updateData.planoId = planoId
+      if (valor !== undefined) updateData.valor = valor
+      if (dataVencimento !== undefined) updateData.dataVencimento = parseLocalDate(dataVencimento)
       if (status !== undefined) updateData.status = status
       if (formaPagamento !== undefined) updateData.formaPagamento = formaPagamento
       if (observacao !== undefined) updateData.observacao = observacao
       if (comprovante !== undefined) updateData.comprovante = comprovante
 
       if (status === 'PAGO') {
-        updateData.dataPagamento = dataPagamento ? new Date(dataPagamento) : new Date()
+        updateData.dataPagamento = new Date()
       } else if (status === 'PENDENTE' || status === 'CANCELADO') {
         updateData.dataPagamento = null
+      }
+
+      if (dataPagamento !== undefined) {
+        updateData.dataPagamento = dataPagamento ? new Date(dataPagamento) : null
       }
 
       const pagamento = await prisma.pagamento.update({
