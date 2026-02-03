@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useSyncExternalStore } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -13,17 +13,57 @@ import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { ArrowRight, User } from "lucide-react"
 import Image from "next/image"
 
+const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
+const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
+
 function CompletarPerfilContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
-  const profileToken = searchParams.get("token")
+  const tokenFromUrl = searchParams.get("token")
+  const profileTokenFromStorage = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof window === "undefined") return null
+      try {
+        return localStorage.getItem(PROFILE_TOKEN_STORAGE_KEY)
+      } catch {
+        return null
+      }
+    },
+    () => null
+  )
+  const profileToken = status === "authenticated"
+    ? null
+    : (tokenFromUrl ?? profileTokenFromStorage)
   const [isLoading, setIsLoading] = useState(false)
   const [cpf, setCpf] = useState("")
   const [telefone, setTelefone] = useState("")
   const router = useRouter()
 
+  useEffect(() => {
+    if (tokenFromUrl) {
+      try {
+        localStorage.setItem(PROFILE_TOKEN_STORAGE_KEY, tokenFromUrl)
+      } catch {
+        // Ignore storage errors (private mode / blocked storage)
+      }
+      return
+    }
+
+    if (status === "authenticated") {
+      try {
+        localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
+      } catch {
+        // Ignore storage errors (private mode / blocked storage)
+      }
+    }
+  }, [tokenFromUrl, status])
+
   // Redirect if not authenticated AND no profile token
   useEffect(() => {
+    if (status === "loading") {
+      return
+    }
     if (status === "unauthenticated" && !profileToken) {
       router.push("/login")
     }
@@ -136,6 +176,14 @@ function CompletarPerfilContent() {
       const anamneseUrl = profileToken && data.anamneseToken
         ? `/anamnese?token=${encodeURIComponent(data.anamneseToken)}`
         : "/anamnese"
+      if (profileToken && data.anamneseToken) {
+        try {
+          localStorage.setItem(ANAMNESE_TOKEN_STORAGE_KEY, data.anamneseToken)
+          localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
+        } catch {
+          // Ignore storage errors (private mode / blocked storage)
+        }
+      }
       router.push(anamneseUrl)
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar o perfil")

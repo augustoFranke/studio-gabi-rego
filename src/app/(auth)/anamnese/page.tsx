@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useSyncExternalStore } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import Image from "next/image"
+
+const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
+const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
 
 interface AnamneseData {
   altura?: string
@@ -54,7 +57,22 @@ interface AnamneseData {
 function AnamneseContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+  const tokenFromUrl = searchParams.get("token")
+  const tokenFromStorage = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof window === "undefined") return null
+      try {
+        return localStorage.getItem(ANAMNESE_TOKEN_STORAGE_KEY)
+      } catch {
+        return null
+      }
+    },
+    () => null
+  )
+  const token = status === "authenticated"
+    ? null
+    : (tokenFromUrl ?? tokenFromStorage)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseData>({})
@@ -68,6 +86,25 @@ function AnamneseContent() {
   })
   const [submissionSuccessful, setSubmissionSuccessful] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    if (tokenFromUrl) {
+      try {
+        localStorage.setItem(ANAMNESE_TOKEN_STORAGE_KEY, tokenFromUrl)
+      } catch {
+        // Ignore storage errors (private mode / blocked storage)
+      }
+      return
+    }
+
+    if (status === "authenticated") {
+      try {
+        localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
+      } catch {
+        // Ignore storage errors (private mode / blocked storage)
+      }
+    }
+  }, [tokenFromUrl, status])
 
   // Load user data on mount
   useEffect(() => {
@@ -101,6 +138,11 @@ function AnamneseContent() {
               setTokenError(data.error || "Link inválido ou expirado.")
               setLoadingData(false)
             }
+            try {
+              localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
+            } catch {
+              // Ignore storage errors (private mode / blocked storage)
+            }
             return
           }
           if (response.status === 404) {
@@ -122,7 +164,8 @@ function AnamneseContent() {
       }
     }
 
-    if (token || status !== "loading") {
+    const shouldLoad = Boolean(token) || status === "authenticated"
+    if (shouldLoad) {
       loadData()
     }
 
@@ -133,6 +176,9 @@ function AnamneseContent() {
 
   // Redirect if not authenticated
   useEffect(() => {
+    if (status === "loading") {
+      return
+    }
     if (status === "unauthenticated" && !token) {
       router.push("/login")
     }
@@ -173,6 +219,14 @@ function AnamneseContent() {
       setSubmissionSuccessful(true)
       toast.success(token ? "Anamnese enviada com sucesso!" : "Cadastro concluído!")
       setIsLoading(false)
+      if (token) {
+        try {
+          localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
+          localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
+        } catch {
+          // Ignore storage errors (private mode / blocked storage)
+        }
+      }
       router.replace("/inicio")
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar")

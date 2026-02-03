@@ -9,12 +9,12 @@ import {
   formatWeekdayShort,
   HOURS,
   formatDateISO,
-  parseDateFromAPI,
   isToday,
 } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
 import { cn } from '@/lib/utils'
 import { DayDetailModal } from './day-detail-modal'
+import { useScheduleData } from './use-schedule-data'
 
 interface WeeklyViewProps {
   date: Date
@@ -44,34 +44,7 @@ const WeeklyViewBase = function WeeklyView({
 
   const weekDays = useMemo(() => getWeekDays(date), [date])
 
-  // Pre-compute agendamentos by date to avoid recalculating on each render
-  const agendamentosByDate = useMemo(() => {
-    const byDate = new Map<string, Agendamento[]>()
-    for (const agendamento of agendamentos) {
-      // Use parseDateFromAPI to handle UTC->local conversion correctly
-      const dateKey = formatDateISO(parseDateFromAPI(agendamento.data))
-      if (!byDate.has(dateKey)) {
-        byDate.set(dateKey, [])
-      }
-      byDate.get(dateKey)!.push(agendamento)
-    }
-    return byDate
-  }, [agendamentos])
-
-  // Pre-compute agendamentos by date and hour for O(1) lookup
-  const agendamentosByDateAndHour = useMemo(() => {
-    const byDateAndHour = new Map<string, Agendamento[]>()
-    for (const agendamento of agendamentos) {
-      const dateKey = formatDateISO(parseDateFromAPI(agendamento.data))
-      const hour = parseInt(agendamento.horario.horaInicio.split(':')[0], 10)
-      const key = `${dateKey}-${hour}`
-      if (!byDateAndHour.has(key)) {
-        byDateAndHour.set(key, [])
-      }
-      byDateAndHour.get(key)!.push(agendamento)
-    }
-    return byDateAndHour
-  }, [agendamentos])
+  const { agendamentosByDate, agendamentosByDateAndHour } = useScheduleData(agendamentos)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
