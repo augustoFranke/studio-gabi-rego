@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -14,12 +15,27 @@ import {
 import { Button } from '@/components/ui/button'
 import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
 import { ScheduleHeader } from '@/components/schedule/schedule-header'
-import { DailyView } from '@/components/schedule/daily-view'
-import { WeeklyView } from '@/components/schedule/weekly-view'
-import { MonthlyView } from '@/components/schedule/monthly-view'
-import { AgendamentoModal } from '@/components/schedule/agendamento-modal'
 import { useSchedule } from '@/hooks/use-schedule'
 import { useAgendaInteractions } from '@/hooks/use-agenda-interactions'
+
+const viewLoadingFallback = <Skeleton className="h-[400px] w-full" />
+
+const DailyView = dynamic(
+  () => import('@/components/schedule/daily-view').then((mod) => mod.DailyView),
+  { loading: () => viewLoadingFallback, ssr: false }
+)
+const WeeklyView = dynamic(
+  () => import('@/components/schedule/weekly-view').then((mod) => mod.WeeklyView),
+  { loading: () => viewLoadingFallback, ssr: false }
+)
+const MonthlyView = dynamic(
+  () => import('@/components/schedule/monthly-view').then((mod) => mod.MonthlyView),
+  { loading: () => viewLoadingFallback, ssr: false }
+)
+const AgendamentoModal = dynamic(
+  () => import('@/components/schedule/agendamento-modal').then((mod) => mod.AgendamentoModal),
+  { ssr: false }
+)
 
 export default function AgendaPage() {
   const {
@@ -200,12 +216,12 @@ export default function AgendaPage() {
               date={currentDate}
               agendamentos={agendamentos}
               isEditable
-              onSlotClick={handleDailySlotClick}
+              onSlotClick={handleSlotClick}
               onMemberClick={handleMemberClick}
               draggingId={draggingId}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
-              onDrop={handleDailyDrop}
+              onDrop={handleDrop}
             />
           )}
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense, useSyncExternalStore } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -14,7 +14,6 @@ import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } fro
 import Image from "next/image"
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
-const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
 
 interface AnamneseData {
   altura?: string
@@ -58,21 +57,8 @@ function AnamneseContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
-  const tokenFromStorage = useSyncExternalStore(
-    () => () => {},
-    () => {
-      if (typeof window === "undefined") return null
-      try {
-        return localStorage.getItem(ANAMNESE_TOKEN_STORAGE_KEY)
-      } catch {
-        return null
-      }
-    },
-    () => null
-  )
-  const token = status === "authenticated"
-    ? null
-    : (tokenFromUrl ?? tokenFromStorage)
+  const [token, setToken] = useState<string | null>(null)
+  const [tokenChecked, setTokenChecked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseData>({})
@@ -88,23 +74,47 @@ function AnamneseContent() {
   const router = useRouter()
 
   useEffect(() => {
-    if (tokenFromUrl) {
-      try {
-        localStorage.setItem(ANAMNESE_TOKEN_STORAGE_KEY, tokenFromUrl)
-      } catch {
-        // Ignore storage errors (private mode / blocked storage)
-      }
-      return
+    const schedule = (fn: () => void) => {
+      setTimeout(fn, 0)
     }
 
     if (status === "authenticated") {
-      try {
-        localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
-      } catch {
-        // Ignore storage errors (private mode / blocked storage)
+      schedule(() => {
+        setToken(null)
+        setTokenChecked(true)
+      })
+      return
+    }
+
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash
+      if (hash) {
+        const params = new URLSearchParams(hash.replace(/^#/, ""))
+        const tokenFromHash = params.get("token")
+        if (tokenFromHash) {
+          schedule(() => {
+            setToken(tokenFromHash)
+            setTokenChecked(true)
+          })
+          window.history.replaceState(null, "", window.location.pathname)
+          return
+        }
       }
     }
-  }, [tokenFromUrl, status])
+
+    if (tokenFromUrl) {
+      schedule(() => {
+        setToken(tokenFromUrl)
+        setTokenChecked(true)
+      })
+      router.replace("/anamnese")
+      return
+    }
+
+    schedule(() => {
+      setTokenChecked(true)
+    })
+  }, [status, tokenFromUrl, router])
 
   // Load user data on mount
   useEffect(() => {
@@ -116,10 +126,11 @@ function AnamneseContent() {
 
       try {
         setTokenError(null)
-        const endpoint = token
-          ? `/api/anamnese-token?token=${encodeURIComponent(token)}`
-          : "/api/minha-anamnese"
-        const response = await fetch(endpoint)
+        const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
+        const response = await fetch(endpoint, {
+          headers: token ? { "X-Anamnese-Token": token } : undefined,
+          credentials: "include",
+        })
         if (response.ok) {
           const data = await response.json()
           if (isMounted) {
@@ -138,11 +149,7 @@ function AnamneseContent() {
               setTokenError(data.error || "Link inválido ou expirado.")
               setLoadingData(false)
             }
-            try {
-              localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
-            } catch {
-              // Ignore storage errors (private mode / blocked storage)
-            }
+            setToken(null)
             return
           }
           if (response.status === 404) {
@@ -179,10 +186,10 @@ function AnamneseContent() {
     if (status === "loading") {
       return
     }
-    if (status === "unauthenticated" && !token) {
+    if (status === "unauthenticated" && tokenChecked && !token) {
       router.push("/login")
     }
-  }, [status, router, token])
+  }, [status, router, token, tokenChecked])
 
   const updateField = (field: keyof AnamneseData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -199,14 +206,16 @@ function AnamneseContent() {
     setIsLoading(true)
 
     try {
-      const endpoint = token
-        ? `/api/anamnese-token?token=${encodeURIComponent(token)}`
-        : "/api/minha-anamnese"
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
+    const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "X-Anamnese-Token": token } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(formData),
+    })
 
       const data = await response.json()
 
@@ -220,8 +229,8 @@ function AnamneseContent() {
       toast.success(token ? "Anamnese enviada com sucesso!" : "Cadastro concluído!")
       setIsLoading(false)
       if (token) {
+        setToken(null)
         try {
-          localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
           localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
         } catch {
           // Ignore storage errors (private mode / blocked storage)

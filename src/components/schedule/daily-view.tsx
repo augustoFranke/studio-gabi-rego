@@ -17,12 +17,12 @@ interface DailyViewProps {
   date: Date
   agendamentos: Agendamento[]
   isEditable?: boolean
-  onSlotClick?: (hour: number) => void
+  onSlotClick?: (date: Date, hour: number) => void
   onMemberClick?: (agendamento: Agendamento) => void
   draggingId?: string | null
   onDragStart?: (agendamento: Agendamento) => void
   onDragEnd?: () => void
-  onDrop?: (hour: number, agendamentoId: string) => void
+  onDrop?: (date: Date, hour: number, agendamentoId: string) => void
 }
 
 const DailyViewBase = function DailyView({
@@ -43,14 +43,6 @@ const DailyViewBase = function DailyView({
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
   }, [])
-
-  const handleDrop = useCallback((hour: number) => (e: React.DragEvent) => {
-    e.preventDefault()
-    const agendamentoId = e.dataTransfer.getData('agendamentoId')
-    if (agendamentoId && onDrop) {
-      onDrop(hour, agendamentoId)
-    }
-  }, [onDrop])
 
   return (
     <Card>
@@ -80,16 +72,17 @@ const DailyViewBase = function DailyView({
             return (
               <TimeSlot
                 key={hour}
+                date={date}
                 hour={hour}
                 agendamentos={hourAgendamentos}
                 isEditable={isEditable}
-                onSlotClick={() => onSlotClick?.(hour)}
+                onSlotClick={onSlotClick}
                 onMemberClick={onMemberClick}
                 draggingId={draggingId}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 onDragOver={handleDragOver}
-                onDrop={handleDrop(hour)}
+                onDrop={onDrop}
               />
             )
           })}

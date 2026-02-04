@@ -9,12 +9,13 @@ import { getSlotCapacityInfo } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
 
 interface TimeSlotProps {
+  date?: Date
   hour: number
   agendamentos: Agendamento[]
   isEditable?: boolean
-  onSlotClick?: () => void
+  onSlotClick?: (date: Date, hour: number) => void
   onMemberClick?: (agendamento: Agendamento) => void
-  onDrop?: (e: React.DragEvent) => void
+  onDrop?: (date: Date, hour: number, agendamentoId: string) => void
   onDragOver?: (e: React.DragEvent) => void
   onDragLeave?: (e: React.DragEvent) => void
   isDragOver?: boolean
@@ -25,6 +26,7 @@ interface TimeSlotProps {
 }
 
 const TimeSlotBase = function TimeSlot({
+  date,
   hour,
   agendamentos,
   isEditable = false,
@@ -55,6 +57,20 @@ const TimeSlotBase = function TimeSlot({
     onDragEnd?.()
   }, [onDragEnd])
 
+  const handleSlotClick = useCallback(() => {
+    if (!date || !onSlotClick) return
+    onSlotClick(date, hour)
+  }, [date, hour, onSlotClick])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    if (!date || !onDrop) return
+    e.preventDefault()
+    const agendamentoId = e.dataTransfer.getData('agendamentoId')
+    if (agendamentoId) {
+      onDrop(date, hour, agendamentoId)
+    }
+  }, [date, hour, onDrop])
+
   if (compact) {
     return (
       <div
@@ -63,7 +79,7 @@ const TimeSlotBase = function TimeSlot({
           capacityBackground,
           isDragOver && 'bg-primary/10',
         )}
-        onDrop={onDrop}
+        onDrop={handleDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
       >
@@ -102,7 +118,7 @@ const TimeSlotBase = function TimeSlot({
             {isEditable && (
               <button
                 type="button"
-                onClick={onSlotClick}
+                onClick={handleSlotClick}
                 className="p-1 text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors flex items-center justify-center"
                 aria-label="Adicionar agendamento"
               >
@@ -113,7 +129,7 @@ const TimeSlotBase = function TimeSlot({
         ) : (
           isEditable && (
             <button
-              onClick={onSlotClick}
+              onClick={handleSlotClick}
               className="w-full h-full min-h-[32px] flex items-center justify-center text-muted-foreground hover:bg-accent rounded transition-colors"
             >
               <Plus className="h-3 w-3" />
@@ -130,7 +146,7 @@ const TimeSlotBase = function TimeSlot({
         'flex border-b last:border-b-0 transition-colors',
         isDragOver && 'bg-primary/10'
       )}
-      onDrop={onDrop}
+      onDrop={handleDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
     >
@@ -164,7 +180,7 @@ const TimeSlotBase = function TimeSlot({
             {isEditable && (
               <button
                 type="button"
-                onClick={onSlotClick}
+                onClick={handleSlotClick}
                 className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors"
               >
                 <Plus className="h-3 w-3" />
@@ -174,7 +190,7 @@ const TimeSlotBase = function TimeSlot({
           </div>
         ) : isEditable ? (
           <button
-            onClick={onSlotClick}
+            onClick={handleSlotClick}
             className="w-full h-full min-h-[44px] flex items-center justify-center text-muted-foreground hover:bg-accent rounded-lg border-2 border-dashed border-muted-foreground/20 transition-colors"
           >
             <Plus className="h-4 w-4 mr-1" />

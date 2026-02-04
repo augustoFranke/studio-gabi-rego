@@ -24,6 +24,7 @@ import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
 import { normalizeEmail } from "@/lib/email"
+import { unstable_cache } from "next/cache"
 
 export const dynamic = "force-dynamic"
 
@@ -60,6 +61,15 @@ export default async function MembrosPage({
       ? { usuario: { nome: "asc" } }
       : { criadoEm: "desc" }
 
+  const getPlanos = unstable_cache(
+    async () => prisma.plano.findMany({
+      where: { ativo: true },
+      select: { id: true, nome: true }
+    }),
+    ['planos-ativos'],
+    { revalidate: 60 }
+  )
+
   const [totalMembros, membros, planos] = await Promise.all([
     prisma.membro.count({ where }),
     prisma.membro.findMany({
@@ -86,10 +96,7 @@ export default async function MembrosPage({
       skip,
       take: itemsPerPage,
     }),
-    prisma.plano.findMany({
-      where: { ativo: true },
-      select: { id: true, nome: true }
-    })
+    getPlanos()
   ])
 
   const totalPages = Math.ceil(totalMembros / itemsPerPage)
