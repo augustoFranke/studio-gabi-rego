@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import { unstable_cache } from "next/cache"
 
 export const dynamic = "force-dynamic"
 
@@ -54,100 +55,123 @@ export default async function DashboardPage() {
 
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
-  // Fetch metrics
-  const [
+  const getDashboardData = unstable_cache(
+    async () => {
+      const [
+        membrosAtivos,
+        agendamentosHoje,
+        receitaMes,
+        totalVagasHoje,
+        todosAgendamentos,
+        pagamentosPendentes,
+      ] = await Promise.all([
+        prisma.membro.count({ where: { status: 'ATIVO' } }),
+        prisma.agendamento.count({
+          where: {
+            data: {
+              gte: today,
+              lt: tomorrow,
+            }
+          }
+        }),
+        prisma.pagamento.aggregate({
+          where: {
+            status: 'PAGO',
+            dataPagamento: {
+              gte: firstDayOfMonth,
+            }
+          },
+          _sum: {
+            valor: true
+          }
+        }),
+        prisma.horarioDisponivel.aggregate({
+          where: {
+            ativo: true,
+            // In a real scenario, we'd filter by day of week
+          },
+          _sum: {
+            vagasTotal: true
+          }
+        }),
+        // Fetch more to allow for filtering
+        prisma.agendamento.findMany({
+          where: {
+            data: {
+              gte: today,
+            }
+          },
+          select: {
+            id: true,
+            data: true,
+            presente: true,
+            membro: {
+              select: {
+                usuario: {
+                  select: { nome: true },
+                },
+              },
+            },
+            horario: {
+              select: {
+                horaInicio: true,
+                horaFim: true,
+              },
+            },
+          },
+          orderBy: [
+            { data: 'asc' },
+            { horario: { horaInicio: 'asc' } }
+          ],
+          take: 100 // Increased from 20 to ensure we get upcoming classes even if many passed
+        }),
+        prisma.pagamento.findMany({
+          where: {
+            status: {
+              in: ['PENDENTE', 'ATRASADO']
+            }
+          },
+          select: {
+            id: true,
+            status: true,
+            valor: true,
+            dataVencimento: true,
+            membro: {
+              select: {
+                usuario: {
+                  select: { nome: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            dataVencimento: 'asc'
+          },
+          take: 5
+        })
+      ])
+
+      return {
+        membrosAtivos,
+        agendamentosHoje,
+        receitaMes,
+        totalVagasHoje,
+        todosAgendamentos,
+        pagamentosPendentes,
+      }
+    },
+    ['dashboard-metrics', today.toISOString().slice(0, 10)],
+    { revalidate: 30 }
+  )
+
+  const {
     membrosAtivos,
     agendamentosHoje,
     receitaMes,
     totalVagasHoje,
     todosAgendamentos,
     pagamentosPendentes,
-  ] = await Promise.all([
-    prisma.membro.count({ where: { status: 'ATIVO' } }),
-    prisma.agendamento.count({
-      where: {
-        data: {
-          gte: today,
-          lt: tomorrow,
-        }
-      }
-    }),
-    prisma.pagamento.aggregate({
-      where: {
-        status: 'PAGO',
-        dataPagamento: {
-          gte: firstDayOfMonth,
-        }
-      },
-      _sum: {
-        valor: true
-      }
-    }),
-    prisma.horarioDisponivel.aggregate({
-      where: {
-        ativo: true,
-        // In a real scenario, we'd filter by day of week
-      },
-      _sum: {
-        vagasTotal: true
-      }
-    }),
-    // Fetch more to allow for filtering
-    prisma.agendamento.findMany({
-      where: {
-        data: {
-          gte: today,
-        }
-      },
-      select: {
-        id: true,
-        data: true,
-        presente: true,
-        membro: {
-          select: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-        horario: {
-          select: {
-            horaInicio: true,
-            horaFim: true,
-          },
-        },
-      },
-      orderBy: [
-        { data: 'asc' },
-        { horario: { horaInicio: 'asc' } }
-      ],
-      take: 100 // Increased from 20 to ensure we get upcoming classes even if many passed
-    }),
-    prisma.pagamento.findMany({
-      where: {
-        status: {
-          in: ['PENDENTE', 'ATRASADO']
-        }
-      },
-      select: {
-        id: true,
-        status: true,
-        valor: true,
-        dataVencimento: true,
-        membro: {
-          select: {
-            usuario: {
-              select: { nome: true },
-            },
-          },
-        },
-      },
-      orderBy: {
-        dataVencimento: 'asc'
-      },
-      take: 5
-    })
-  ])
+  } = await getDashboardData()
 
   // Filter appointments to show only upcoming classes (not classes that already happened today)
   const proximosAgendamentos = todosAgendamentos.filter((agendamento) => {

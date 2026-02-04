@@ -37,7 +37,7 @@ export async function POST(
       })
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-      const link = `${baseUrl}/anamnese?token=${token}`
+      const link = `${baseUrl}/anamnese#token=${token}`
 
       return NextResponse.json({ link, expiresAt: tokenExpiry })
     } catch (error) {

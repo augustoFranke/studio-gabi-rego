@@ -6,6 +6,7 @@ const { prismaMock, resendMock } = vi.hoisted(() => ({
   prismaMock: {
     membro: {
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
     anamnese: {
       upsert: vi.fn(),

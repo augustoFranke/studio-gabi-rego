@@ -72,10 +72,10 @@ export async function POST(request: Request) {
 
     if (existingUser?.emailVerificado) {
       if (existingUser.membro || existingUser.onboardingCompleto) {
-        return NextResponse.json(
-          { error: "Este email já está cadastrado. Faça login." },
-          { status: 400 }
-        )
+        return NextResponse.json({
+          success: true,
+          message: "Se o email existir, enviaremos instruções.",
+        })
       }
 
       const profileToken = randomBytes(32).toString("hex")
@@ -110,8 +110,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: "Já existe um cadastro em andamento. Enviamos um link para continuar.",
-        nextStep: "complete-profile",
+        message: "Se o email existir, enviaremos instruções.",
       })
     }
 
@@ -176,7 +175,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Conta criada com sucesso! Verifique seu email.",
+      message: "Se o email existir, enviaremos instruções.",
     })
   } catch (error) {
     console.error("Erro ao criar conta:", error)

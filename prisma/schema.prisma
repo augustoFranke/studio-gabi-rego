@@ -279,6 +279,7 @@ model Notificacao {
   tipo            TipoNotificacao
   titulo          String
   mensagem        String
+  refKey          String?         @unique @map("ref_key")
   enviada         Boolean         @default(false)
   enviadaEm       DateTime?       @map("enviada_em")
   agendadaPara    DateTime?       @map("agendada_para")

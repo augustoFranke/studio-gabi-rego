@@ -1,10 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { compare, hash } from "bcryptjs"
+import { compare } from "bcryptjs"
 import { cache } from "react"
-
-const isStrongPassword = (value: string) =>
-  value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value)
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -42,27 +39,12 @@ const nextAuth = NextAuth({
           throw new Error(authError("USER_NOT_FOUND"))
         }
 
+        if (!usuario.emailVerificado) {
+          throw new Error(authError("EMAIL_NOT_VERIFIED"))
+        }
+
         if (!usuario.senhaDefinida) {
-          if (!isStrongPassword(password)) {
-            throw new Error(authError("WEAK_PASSWORD"))
-          }
-
-          const senhaHash = await hash(password, 12)
-          await prisma.usuario.update({
-            where: { id: usuario.id },
-            data: {
-              senha: senhaHash,
-              senhaDefinida: true,
-            },
-          })
-
-          return {
-            id: usuario.id,
-            email: usuario.email,
-            name: usuario.nome,
-            role: usuario.role,
-            membroId: usuario.membro?.id,
-          }
+          throw new Error(authError("PASSWORD_SETUP_REQUIRED"))
         }
 
         const senhaCorreta = await compare(password, usuario.senha)

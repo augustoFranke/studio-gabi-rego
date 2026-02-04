@@ -92,6 +92,7 @@ export const MonthlyView = memo(function MonthlyView({
                     index >= calendarDays.length - 6 && 'border-b-0',
                     !isCurrentMonth && 'bg-muted/20 text-muted-foreground'
                   )}
+                  style={{ contentVisibility: 'auto', containIntrinsicSize: '100px' }}
                 >
                   <div className="flex flex-col h-full">
                     {/* Day number */}

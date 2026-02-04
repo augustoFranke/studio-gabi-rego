@@ -51,14 +51,6 @@ const WeeklyViewBase = function WeeklyView({
     e.dataTransfer.dropEffect = 'move'
   }, [])
 
-  const handleDrop = useCallback((dayDate: Date, hour: number) => (e: React.DragEvent) => {
-    e.preventDefault()
-    const agendamentoId = e.dataTransfer.getData('agendamentoId')
-    if (agendamentoId && onDrop) {
-      onDrop(dayDate, hour, agendamentoId)
-    }
-  }, [onDrop])
-
   const handleDayHeaderClick = useCallback((day: Date) => {
     setSelectedDay(day)
     setDetailModalOpen(true)
@@ -128,6 +120,7 @@ const WeeklyViewBase = function WeeklyView({
                 <div
                   key={hour}
                   className="grid grid-cols-[64px_repeat(6,1fr)] border-b last:border-b-0"
+                  style={{ contentVisibility: 'auto', containIntrinsicSize: '44px 800px' }}
                 >
                   {/* Hour label */}
                   <div className="p-2 text-sm text-muted-foreground font-medium border-r bg-muted/30 flex items-start">
@@ -142,16 +135,17 @@ const WeeklyViewBase = function WeeklyView({
                     return (
                       <TimeSlot
                         key={`${dateKey}-${hour}`}
+                        date={day}
                         hour={hour}
                         agendamentos={hourAgendamentos}
                         isEditable={isEditable}
-                        onSlotClick={() => onSlotClick?.(day, hour)}
+                        onSlotClick={onSlotClick}
                         onMemberClick={onMemberClick}
                         draggingId={draggingId}
                         onDragStart={onDragStart}
                         onDragEnd={onDragEnd}
                         onDragOver={handleDragOver}
-                        onDrop={handleDrop(day, hour)}
+                        onDrop={onDrop}
                         compact
                       />
                     )
