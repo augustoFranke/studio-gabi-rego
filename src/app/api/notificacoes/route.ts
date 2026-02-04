@@ -6,6 +6,10 @@ import { Prisma } from '@prisma/client'
 // GET /api/notificacoes - Listar notificações
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
+    if (session.user.role === 'MEMBRO' && !session.user.membroId) {
+      return NextResponse.json({ error: 'Perfil incompleto' }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const membroId = searchParams.get('membroId')
     const enviada = searchParams.get('enviada')

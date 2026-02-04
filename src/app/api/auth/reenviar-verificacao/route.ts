@@ -53,10 +53,10 @@ export async function POST(request: Request) {
 
     if (usuario.emailVerificado) {
       if (usuario.membro || usuario.onboardingCompleto) {
-        return NextResponse.json(
-          { error: "Este email já foi verificado. Faça login." },
-          { status: 400 }
-        )
+        return NextResponse.json({
+          success: true,
+          message: "Se o email existir, um novo link será enviado.",
+        })
       }
 
       const profileToken = randomBytes(32).toString("hex")
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: "Link para continuar o cadastro enviado!",
+        message: "Se o email existir, um novo link será enviado.",
       })
     }
 
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Email de verificação reenviado!",
+      message: "Se o email existir, um novo link será enviado.",
     })
   } catch (error) {
     console.error("Erro ao reenviar verificação:", error)

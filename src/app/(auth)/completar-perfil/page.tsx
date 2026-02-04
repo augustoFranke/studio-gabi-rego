@@ -14,7 +14,6 @@ import { ArrowRight, User } from "lucide-react"
 import Image from "next/image"
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
-const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
 
 function CompletarPerfilContent() {
   const { status } = useSession()
@@ -177,18 +176,14 @@ function CompletarPerfilContent() {
       }
 
       toast.success("Perfil salvo com sucesso!")
-      const anamneseUrl = profileToken && data.anamneseToken
-        ? `/anamnese?token=${encodeURIComponent(data.anamneseToken)}`
-        : "/anamnese"
-      if (profileToken && data.anamneseToken) {
+      if (profileToken) {
         try {
-          localStorage.setItem(ANAMNESE_TOKEN_STORAGE_KEY, data.anamneseToken)
           localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
         } catch {
           // Ignore storage errors (private mode / blocked storage)
         }
       }
-      router.push(anamneseUrl)
+      router.push("/anamnese")
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar o perfil")
       console.error(error)

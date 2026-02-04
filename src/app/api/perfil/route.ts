@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
 
+const isProduction = process.env.NODE_ENV === "production"
+
 const perfilSchema = z.object({
   token: z.string().optional().nullable(),
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -165,11 +167,22 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "Perfil salvo com sucesso!",
-      ...(isTokenFlow ? { anamneseToken } : {}),
     })
+
+    if (isTokenFlow && anamneseToken) {
+      response.cookies.set("anamnese_token", anamneseToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        path: "/anamnese",
+        maxAge: 60 * 60,
+      })
+    }
+
+    return response
   } catch (error) {
     console.error("Erro ao salvar perfil:", error)
     return NextResponse.json(
