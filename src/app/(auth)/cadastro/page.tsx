@@ -63,12 +63,12 @@ export default function CadastroPage() {
       }
 
       if (data.nextStep === "complete-profile") {
-        toast.success(data.message || "Enviamos um link para continuar seu cadastro.")
+        toast.success(data.message || "Se o email existir, enviaremos instruções.")
         router.push("/verificar-email?email=" + encodeURIComponent(email) + "&modo=perfil")
         return
       }
 
-      toast.success("Conta criada! Verifique seu email.")
+      toast.success(data.message || "Se o email existir, enviaremos instruções.")
       router.push("/verificar-email?email=" + encodeURIComponent(email))
     } catch (error) {
       toast.error("Ocorreu um erro ao criar sua conta")

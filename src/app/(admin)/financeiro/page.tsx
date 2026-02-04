@@ -275,9 +275,10 @@ export default function FinanceiroPage() {
         setMembros(membrosData)
       }
 
-      // Fetch first page of pagamentos
-      await fetchPagamentos(1, undefined, undefined, sortPagamento)
-      await fetchStats()
+      await Promise.all([
+        fetchPagamentos(1, undefined, undefined, sortPagamento),
+        fetchStats(),
+      ])
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       toast.error("Erro ao carregar dados")

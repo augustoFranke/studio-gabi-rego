@@ -85,7 +85,7 @@ describe('Perfil API', () => {
     expect(json.error).toContain('CPF inválido')
   })
 
-  it('creates new member and returns anamnese token for token flow', async () => {
+  it('creates new member and sets anamnese cookie for token flow', async () => {
     prismaMock.usuario.findUnique.mockResolvedValueOnce({
       id: 'u-1',
       tokenResetExpira: new Date(Date.now() + 60 * 60 * 1000),
@@ -99,8 +99,6 @@ describe('Perfil API', () => {
     const res = await POST(
       createRequest({ token: 'token', nome: 'Aluno', cpf: '123.456.789-00', telefone: '11999999999' })
     )
-    const json = await res.json()
-
     expect(res.status).toBe(200)
     expect(prismaMock.membro.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -117,6 +115,7 @@ describe('Perfil API', () => {
         data: expect.objectContaining({ nome: 'Aluno', etapaOnboarding: 3 }),
       })
     )
-    expect(json.anamneseToken).toBe('746f6b656e')
+    const setCookie = res.headers.get('set-cookie') || ''
+    expect(setCookie).toContain('anamnese_token=')
   })
 })

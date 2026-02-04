@@ -67,7 +67,7 @@ describe('Membros Anamnese Link API', () => {
         }),
       })
     )
-    expect(json.link).toContain('/anamnese?token=')
+    expect(json.link).toContain('/anamnese#token=')
     expect(json.expiresAt).toBeTruthy()
   })
 })

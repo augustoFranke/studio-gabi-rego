@@ -19,6 +19,10 @@ const pagamentoSchema = z.object({
 // GET /api/pagamentos - Listar pagamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
+    if (session.user.role === 'MEMBRO' && !session.user.membroId) {
+      return NextResponse.json({ error: 'Perfil incompleto' }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const membroId = searchParams.get('membroId')
     const status = searchParams.get('status')

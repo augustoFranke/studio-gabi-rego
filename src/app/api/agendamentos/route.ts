@@ -43,6 +43,10 @@ const agendamentoSelect = {
 // GET /api/agendamentos - Listar agendamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
+    if (session.user.role === 'MEMBRO' && !session.user.membroId) {
+      return NextResponse.json({ error: 'Perfil incompleto' }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const dataInicio = searchParams.get('dataInicio')
     const dataFim = searchParams.get('dataFim')
