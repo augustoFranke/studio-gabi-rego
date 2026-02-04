@@ -103,44 +103,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'O CPF informado é inválido.' }, { status: 400 })
     }
 
-    // Check if email already exists (only if provided)
-    if (normalizedEmail) {
-      const emailExiste = await prisma.usuario.findUnique({ where: { email: normalizedEmail } })
-      if (emailExiste) {
-        return NextResponse.json({ error: 'Este email já está cadastrado no sistema.' }, { status: 400 })
-      }
+    // Prepare CPF for validation
+    const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null
+
+    // Run all existence checks in parallel for better performance
+    const [emailExiste, cpfExiste, plano] = await Promise.all([
+      normalizedEmail
+        ? prisma.usuario.findUnique({ where: { email: normalizedEmail } })
+        : null,
+      cpfLimpo
+        ? prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+        : null,
+      horariosFixos?.length && planoId
+        ? prisma.plano.findUnique({ where: { id: planoId }, select: { aulasSemanais: true } })
+        : null,
+    ])
+
+    // Check email uniqueness
+    if (normalizedEmail && emailExiste) {
+      return NextResponse.json({ error: 'Este email já está cadastrado no sistema.' }, { status: 400 })
     }
 
-    // Check if CPF already exists (only if provided)
-    let cpfLimpo: string | null = null
-    if (cpf) {
-      cpfLimpo = cpf.replace(/\D/g, '')
-      const cpfExiste = await prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
-      if (cpfExiste) {
-        return NextResponse.json({ error: 'Este CPF já está cadastrado para outro membro.' }, { status: 400 })
-      }
+    // Check CPF uniqueness
+    if (cpfLimpo && cpfExiste) {
+      return NextResponse.json({ error: 'Este CPF já está cadastrado para outro membro.' }, { status: 400 })
     }
 
-    if (horariosFixos?.length && planoId) {
-      const plano = await prisma.plano.findUnique({
-        where: { id: planoId },
-        select: { aulasSemanais: true },
-      })
+    // Validate horarios fixos against plan limit
+    if (horariosFixos?.length && planoId && plano && plano.aulasSemanais !== 7) {
+      const uniqueSlots = new Set(
+        horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
+      )
+      const totalSlots = uniqueSlots.size
 
-      if (plano && plano.aulasSemanais !== 7) {
-        const uniqueSlots = new Set(
-          horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
+      if (totalSlots > plano.aulasSemanais) {
+        return NextResponse.json(
+          {
+            error: `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
+          },
+          { status: 400 }
         )
-        const totalSlots = uniqueSlots.size
-
-        if (totalSlots > plano.aulasSemanais) {
-          return NextResponse.json(
-            {
-              error: `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
-            },
-            { status: 400 }
-          )
-        }
       }
     }
 

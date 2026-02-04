@@ -120,37 +120,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Data não informada' }, { status: 400 })
     }
 
-    // Verificar se o horário existe e está ativo
-    const horario = await prisma.horarioDisponivel.findUnique({
-      where: { id: horarioId },
-    })
+    // Parse date once for all queries
+    const dataAgendamento = parseLocalDate(data)
 
+    // Run all validation queries in parallel for better performance
+    const [horario, agendamentosExistentes, jaAgendado] = await Promise.all([
+      prisma.horarioDisponivel.findUnique({
+        where: { id: horarioId },
+      }),
+      prisma.agendamento.count({
+        where: {
+          horarioId,
+          data: dataAgendamento,
+        },
+      }),
+      prisma.agendamento.findFirst({
+        where: {
+          membroId: membroIdFinal,
+          horarioId,
+          data: dataAgendamento,
+        },
+      }),
+    ])
+
+    // Verificar se o horário existe e está ativo
     if (!horario || !horario.ativo) {
       return NextResponse.json({ error: 'Horário não disponível' }, { status: 400 })
     }
 
     // Verificar vagas disponíveis
-    const dataAgendamento = parseLocalDate(data)
-    const agendamentosExistentes = await prisma.agendamento.count({
-      where: {
-        horarioId,
-        data: dataAgendamento,
-      },
-    })
-
     if (agendamentosExistentes >= horario.vagasTotal) {
       return NextResponse.json({ error: 'Não há vagas disponíveis neste horário' }, { status: 400 })
     }
 
     // Verificar se o membro já tem agendamento neste horário/data
-    const jaAgendado = await prisma.agendamento.findFirst({
-      where: {
-        membroId: membroIdFinal,
-        horarioId,
-        data: dataAgendamento,
-      },
-    })
-
     if (jaAgendado) {
       return NextResponse.json({ error: 'Você já tem um agendamento neste horário' }, { status: 400 })
     }
