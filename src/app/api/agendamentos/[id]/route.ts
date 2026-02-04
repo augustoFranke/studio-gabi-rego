@@ -156,28 +156,31 @@ export async function PATCH(
       }
 
       if (updateScope === 'future' && newHorarioId !== agendamento.horarioId) {
-        const horarioAtual = await prisma.horarioDisponivel.findUnique({
-          where: { id: agendamento.horarioId },
-        })
+        // Run independent queries in parallel for better performance
+        const [horarioAtual, horarioFixoNovo] = await Promise.all([
+          prisma.horarioDisponivel.findUnique({
+            where: { id: agendamento.horarioId },
+          }),
+          prisma.horarioFixo.findFirst({
+            where: {
+              membroId: agendamento.membroId,
+              diaSemana: horario.diaSemana,
+              hora: horario.horaInicio,
+            },
+            select: { id: true },
+          }),
+        ])
 
         if (!horarioAtual) {
           return NextResponse.json({ error: 'Horario atual nao encontrado' }, { status: 400 })
         }
 
+        // This query depends on horarioAtual, so it runs after
         const horarioFixoAtual = await prisma.horarioFixo.findFirst({
           where: {
             membroId: agendamento.membroId,
             diaSemana: horarioAtual.diaSemana,
             hora: horarioAtual.horaInicio,
-          },
-          select: { id: true },
-        })
-
-        const horarioFixoNovo = await prisma.horarioFixo.findFirst({
-          where: {
-            membroId: agendamento.membroId,
-            diaSemana: horario.diaSemana,
-            hora: horario.horaInicio,
           },
           select: { id: true },
         })
