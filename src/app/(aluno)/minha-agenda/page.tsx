@@ -48,31 +48,35 @@ export default function MinhaAgendaPage() {
 
   const weekDays = getWeekDays(currentDate)
 
-  // Group agendamentos by date
-  const agendamentosByDate = new Map<string, Agendamento[]>()
-  for (const agendamento of agendamentos) {
-    try {
-      const parsedDate = parseDateFromAPI(agendamento.data)
-      if (isNaN(parsedDate.getTime())) {
-        console.error('Invalid date for agendamento:', agendamento)
-        continue
+  // Group and sort agendamentos by date - memoized to prevent recreation on every render
+  const agendamentosByDate = useMemo(() => {
+    const map = new Map<string, Agendamento[]>()
+    for (const agendamento of agendamentos) {
+      try {
+        const parsedDate = parseDateFromAPI(agendamento.data)
+        if (isNaN(parsedDate.getTime())) {
+          console.error('Invalid date for agendamento:', agendamento)
+          continue
+        }
+        const dateKey = formatDateISO(parsedDate)
+        if (!map.has(dateKey)) {
+          map.set(dateKey, [])
+        }
+        map.get(dateKey)!.push(agendamento)
+      } catch (e) {
+        console.error('Error parsing date for agendamento:', agendamento, e)
       }
-      const dateKey = formatDateISO(parsedDate)
-      if (!agendamentosByDate.has(dateKey)) {
-        agendamentosByDate.set(dateKey, [])
-      }
-      agendamentosByDate.get(dateKey)!.push(agendamento)
-    } catch (e) {
-      console.error('Error parsing date for agendamento:', agendamento, e)
     }
-  }
 
-  // Sort agendamentos by hour within each day
-  for (const [, dayAgendamentos] of agendamentosByDate) {
-    dayAgendamentos.sort((a, b) =>
-      a.horario.horaInicio.localeCompare(b.horario.horaInicio)
-    )
-  }
+    // Sort agendamentos by hour within each day
+    for (const [, dayAgendamentos] of map) {
+      dayAgendamentos.sort((a, b) =>
+        a.horario.horaInicio.localeCompare(b.horario.horaInicio)
+      )
+    }
+
+    return map
+  }, [agendamentos])
 
   const getPresenceStatus = (presente: boolean | null) => {
     if (presente === true) {
