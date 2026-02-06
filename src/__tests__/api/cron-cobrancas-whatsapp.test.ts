@@ -7,7 +7,7 @@ const { prismaMock } = vi.hoisted(() => {
   return {
     prismaMock: createPrismaMock({
       pagamento: ['findMany'],
-      notificacao: ['upsert', 'update'],
+      notificacao: ['findFirst', 'create', 'update'],
     }),
   }
 })
@@ -89,8 +89,9 @@ describe('Cron cobrancas WhatsApp', () => {
     ]
 
     prismaMock.pagamento.findMany.mockResolvedValueOnce(pagamentos)
-    prismaMock.notificacao.upsert.mockResolvedValue({ id: 'n-1', enviada: false })
-    prismaMock.notificacao.update.mockResolvedValue({ id: 'n-1' })
+    prismaMock.notificacao.findFirst.mockResolvedValue(null)
+    prismaMock.notificacao.create.mockResolvedValue({ id: 'n-1', enviada: false })
+    prismaMock.notificacao.update.mockResolvedValue({ id: 'n-1', enviada: false })
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -104,7 +105,8 @@ describe('Cron cobrancas WhatsApp', () => {
     expect(res.status).toBe(200)
     expect(json.sent).toBe(2)
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(prismaMock.notificacao.upsert).toHaveBeenCalledTimes(2)
+    expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
+    expect(prismaMock.notificacao.create).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(2)
   })
 
@@ -135,8 +137,9 @@ describe('Cron cobrancas WhatsApp', () => {
         },
       },
     ])
-    prismaMock.notificacao.upsert.mockResolvedValue({ id: 'n-1', enviada: false })
-    prismaMock.notificacao.update.mockResolvedValue({ id: 'n-1' })
+    prismaMock.notificacao.findFirst.mockResolvedValue(null)
+    prismaMock.notificacao.create.mockResolvedValue({ id: 'n-1', enviada: false })
+    prismaMock.notificacao.update.mockResolvedValue({ id: 'n-1', enviada: false })
 
     const fetchMock = vi
       .fn()
