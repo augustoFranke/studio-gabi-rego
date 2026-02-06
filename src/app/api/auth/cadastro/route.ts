@@ -94,12 +94,19 @@ export async function POST(request: Request) {
       const completionLink = `${baseUrl}/completar-perfil?token=${profileToken}`
 
       if (isResendConfigured()) {
-        // Fire-and-forget email sending (non-blocking)
-        enviarEmail({
+        const emailResult = await enviarEmail({
           para: email,
           assunto: "Complete seu cadastro - Gabi Studio",
           html: emailTemplates.completarPerfil(existingUser.nome ?? null, completionLink),
-        }).catch((err) => console.error("Failed to send profile completion email:", err))
+        })
+
+        if (!emailResult.success) {
+          console.error("Failed to send profile completion email:", emailResult.error)
+          return NextResponse.json(
+            { error: "Não foi possível enviar o email agora. Tente novamente." },
+            { status: 500 }
+          )
+        }
       } else {
         console.warn("Resend not configured - skipping email send")
         return NextResponse.json(
@@ -158,20 +165,19 @@ export async function POST(request: Request) {
       )
     }
 
-    // Fire-and-forget email sending (non-blocking)
-    enviarEmail({
+    const emailResult = await enviarEmail({
       para: email,
       assunto: "Verifique seu email - Gabi Studio",
       html: emailTemplates.verificacaoEmail(null, verificationLink),
     })
-      .then((result) => {
-        if (result.success) {
-          console.log("Verification email sent successfully:", result.id)
-        } else {
-          console.error("Failed to send verification email:", result.error)
-        }
-      })
-      .catch((err) => console.error("Failed to send verification email:", err))
+
+    if (!emailResult.success) {
+      console.error("Failed to send verification email:", emailResult.error)
+      return NextResponse.json(
+        { error: "Não foi possível enviar o email agora. Tente novamente." },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
