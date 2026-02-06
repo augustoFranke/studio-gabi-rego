@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import { isValidTreinoDate } from "@/lib/dates"
 
 export const dynamic = "force-dynamic"
 
@@ -99,7 +100,12 @@ export default async function TreinosPage() {
             <TableBody>
               {treinos.map((treino) => {
                 const sessions = groupExercisesBySession(treino.exercicios)
-                const displayDate = new Date(treino.data ?? treino.criadoEm).toLocaleDateString('pt-BR')
+                const parsedDate = treino.data ? new Date(treino.data) : new Date(treino.criadoEm)
+                const displayDate = treino.data && isValidTreinoDate(treino.data)
+                  ? treino.data
+                  : Number.isNaN(parsedDate.getTime())
+                    ? new Date(treino.criadoEm).toLocaleDateString('pt-BR')
+                    : parsedDate.toLocaleDateString('pt-BR')
                 return (
                   <TableRow key={treino.id} className="hover:bg-primary/5">
                     <TableCell className="whitespace-normal">
