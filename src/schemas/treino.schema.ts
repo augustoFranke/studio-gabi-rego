@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+/**
+ * Date format: MM/AAAA (e.g., 01/2025)
+ * Validates month (01-12) and year (4 digits)
+ */
+const treinoDateSchema = z
+  .string()
+  .regex(/^(0[1-9]|1[0-2])\/\d{4}$/, 'Data deve estar no formato MM/AAAA')
+
 export const exercicioSchema = z.object({
   id: z.string().optional(),
   sessao: z.string().default('A'),
@@ -14,7 +22,7 @@ export const exercicioSchema = z.object({
 export const fichaCreateSchema = z.object({
   membroId: z.string().optional(),
   nome: z.string().optional(),
-  data: z.string().optional(),
+  data: treinoDateSchema.optional(),
   objetivo: z.string().optional(),
   observacoes: z.string().optional(),
   exercicios: z.array(exercicioSchema).optional(),
@@ -22,7 +30,7 @@ export const fichaCreateSchema = z.object({
 
 export const fichaUpdateSchema = z.object({
   nome: z.string().optional(),
-  data: z.string().optional(),
+  data: treinoDateSchema.optional(),
   objetivo: z.string().optional(),
   observacoes: z.string().optional(),
   exercicios: z.array(exercicioSchema).optional(),

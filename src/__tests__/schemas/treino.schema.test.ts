@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exercicioSchema, treinoTemplateSchema, trainingPdfSchema } from '@/schemas/treino.schema'
+import { exercicioSchema, fichaCreateSchema, fichaUpdateSchema, treinoTemplateSchema, trainingPdfSchema } from '@/schemas/treino.schema'
 
 describe('treino schemas', () => {
   it('exercicioSchema coerces series to string and defaults sessao', () => {
@@ -31,5 +31,31 @@ describe('treino schemas', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+
+  describe('date format MM/AAAA validation', () => {
+    it('fichaCreateSchema accepts valid MM/AAAA format', () => {
+      expect(fichaCreateSchema.safeParse({ data: '01/2025' }).success).toBe(true)
+      expect(fichaCreateSchema.safeParse({ data: '12/2030' }).success).toBe(true)
+    })
+
+    it('fichaCreateSchema rejects invalid date formats', () => {
+      expect(fichaCreateSchema.safeParse({ data: '1/2025' }).success).toBe(false)
+      expect(fichaCreateSchema.safeParse({ data: '13/2025' }).success).toBe(false)
+      expect(fichaCreateSchema.safeParse({ data: '00/2025' }).success).toBe(false)
+      expect(fichaCreateSchema.safeParse({ data: '01/25' }).success).toBe(false)
+      expect(fichaCreateSchema.safeParse({ data: '2025/01' }).success).toBe(false)
+      expect(fichaCreateSchema.safeParse({ data: '01-2025' }).success).toBe(false)
+    })
+
+    it('fichaCreateSchema allows empty/undefined data', () => {
+      expect(fichaCreateSchema.safeParse({}).success).toBe(true)
+      expect(fichaCreateSchema.safeParse({ data: undefined }).success).toBe(true)
+    })
+
+    it('fichaUpdateSchema validates date format the same way', () => {
+      expect(fichaUpdateSchema.safeParse({ data: '06/2025' }).success).toBe(true)
+      expect(fichaUpdateSchema.safeParse({ data: 'invalid' }).success).toBe(false)
+    })
   })
 })

@@ -34,6 +34,7 @@ import {
     saveExerciseHistory,
     updateExercise as updateExerciseEditor,
 } from '@/lib/treino/editor';
+import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
 
 type Exercise = {
     id: string;
@@ -452,7 +453,8 @@ export default function TrainingPlanGeneratorPage() {
     if (!mounted) return null;
 
     const hasExercises = sessions.some(s => s.exercises.some(e => e.name.trim()));
-    const isValid = selectedMemberId && date.trim().length > 0 && hasExercises;
+    const isValidDate = isValidTreinoDate(date);
+    const isValid = selectedMemberId && isValidDate && hasExercises;
 
     return (
         <div className="container mx-auto max-w-5xl py-8 space-y-8">
@@ -621,9 +623,18 @@ export default function TrainingPlanGeneratorPage() {
                                 id="date"
                                 placeholder="MM/AAAA"
                                 value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="bg-background"
+                                onChange={(e) => setDate(formatTreinoDate(e.target.value))}
+                                className={cn(
+                                    "bg-background",
+                                    date && !isValidDate && "border-destructive focus-visible:ring-destructive"
+                                )}
+                                maxLength={7}
                             />
+                            {date && !isValidDate && (
+                                <p className="text-xs text-destructive mt-1">
+                                    Formato inválido. Use MM/AAAA (ex: 01/2025)
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="mt-6 space-y-2">

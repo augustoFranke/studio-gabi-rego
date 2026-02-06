@@ -28,3 +28,23 @@ export function formatBrFromYmd(ymd: string): string {
   const [year, month, day] = ymd.split('-')
   return `${day}/${month}/${year}`
 }
+
+/**
+ * Format input as MM/AAAA (treino date format)
+ * Auto-inserts slash after 2 digits
+ */
+export function formatTreinoDate(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 6)
+  if (digits.length <= 2) {
+    return digits
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`
+}
+
+/**
+ * Validates treino date format MM/AAAA
+ * Returns true if valid (month 01-12, 4-digit year)
+ */
+export function isValidTreinoDate(value: string): boolean {
+  return /^(0[1-9]|1[0-2])\/\d{4}$/.test(value)
+}

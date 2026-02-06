@@ -114,25 +114,39 @@ export async function runCobrancaWhatsappT1(): Promise<JobSummary> {
 
     const mensagem = buildMensagem(nome, items, vencimento)
     const titulo = 'Lembrete de Pagamento'
-    const refKey = `cobranca:${membroId}:${targetYmd}:whatsapp`
-
-    const notificacao = await prisma.notificacao.upsert({
-      where: { refKey },
-      update: {
-        titulo,
-        mensagem,
-        canalWhatsapp: true,
-      },
-      create: {
+    const existingNotificacao = await prisma.notificacao.findFirst({
+      where: {
         membroId,
         tipo: TipoNotificacao.COBRANCA,
-        titulo,
-        mensagem,
         canalWhatsapp: true,
-        canalEmail: false,
-        refKey,
+        agendadaPara: targetDate,
       },
+      select: { id: true, enviada: true },
     })
+
+    const notificacao = existingNotificacao
+      ? await prisma.notificacao.update({
+          where: { id: existingNotificacao.id },
+          data: {
+            titulo,
+            mensagem,
+            canalWhatsapp: true,
+            agendadaPara: targetDate,
+          },
+          select: { id: true, enviada: true },
+        })
+      : await prisma.notificacao.create({
+          data: {
+            membroId,
+            tipo: TipoNotificacao.COBRANCA,
+            titulo,
+            mensagem,
+            canalWhatsapp: true,
+            canalEmail: false,
+            agendadaPara: targetDate,
+          },
+          select: { id: true, enviada: true },
+        })
 
     if (notificacao.enviada) {
       summary.skipped += 1
