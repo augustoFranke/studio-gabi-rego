@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
+import { sanitizeAnamnesePayload } from "@/lib/anamnese"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 const TOKEN_COOKIE_NAME = "anamnese_token"
@@ -149,50 +150,23 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    let body
+    let body: unknown
     try {
       body = await request.json()
     } catch {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
     }
 
-    const anamneseData = {
-      altura: body.altura || null,
-      pesoAtual: body.pesoAtual || null,
-      objetivo: body.objetivo || null,
-      praticaAtividade: body.praticaAtividade || null,
-      praticaAtividadeQual: body.praticaAtividadeQual || null,
-      tempoSedentario: body.tempoSedentario || null,
-      condicaoMedica: body.condicaoMedica || null,
-      condicaoMedicaQual: body.condicaoMedicaQual || null,
-      lesao: body.lesao || null,
-      lesaoQual: body.lesaoQual || null,
-      restricaoMovimento: body.restricaoMovimento || null,
-      restricaoMovimentoQual: body.restricaoMovimentoQual || null,
-      desconfortoMovimento: body.desconfortoMovimento || null,
-      desconfortoMovimentoQual: body.desconfortoMovimentoQual || null,
-      problemasOrtopedicos: body.problemasOrtopedicos || null,
-      problemasOrtopedicosQual: body.problemasOrtopedicosQual || null,
-      medicamentoControlado: body.medicamentoControlado || null,
-      medicamentoControladoQual: body.medicamentoControladoQual || null,
-      obesoSobrepeso: body.obesoSobrepeso || null,
-      colesterolElevado: body.colesterolElevado || null,
-      taquicardia: body.taquicardia || null,
-      doencasCardiacas: body.doencasCardiacas || null,
-      diabetes: body.diabetes || null,
-      dificuldadeExercicio: body.dificuldadeExercicio || null,
-      cicloMenstrual: body.cicloMenstrual || null,
-      experienciaMusculacao: body.experienciaMusculacao || null,
-      ondeConheceu: body.ondeConheceu || null,
-      expectativas: body.expectativas || null,
-      parq1: body.parq1 || null,
-      parq2: body.parq2 || null,
-      parq3: body.parq3 || null,
-      parq4: body.parq4 || null,
-      parq5: body.parq5 || null,
-      parq6: body.parq6 || null,
-      parq7: body.parq7 || null,
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
     }
+
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
+    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+      return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
+    }
+
+    const anamneseData = sanitized.data
     const shouldSendWelcome = !membro.usuario.onboardingCompleto
 
     // Parallelize database operations

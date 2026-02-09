@@ -104,7 +104,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       reqWithToken('t-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ altura: 165, pesoAtual: 60, objetivo: 'Força' }),
+        body: JSON.stringify({ altura: '165', pesoAtual: '60', objetivo: 'Força' }),
       })
     )
     const json = await res.json()
@@ -113,7 +113,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     expect(prismaMock.anamnese.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { membroId: 'm-1' },
-        create: expect.objectContaining({ membroId: 'm-1', altura: 165 }),
+        create: expect.objectContaining({ membroId: 'm-1', altura: '165' }),
       })
     )
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
@@ -138,7 +138,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       reqWithToken('t-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ altura: 165 }),
+        body: JSON.stringify({ altura: '165' }),
       })
     )
 
@@ -159,7 +159,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       reqWithToken('t-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pesoAtual: 61 }),
+        body: JSON.stringify({ pesoAtual: '61' }),
       })
     )
 

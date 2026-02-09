@@ -95,7 +95,7 @@ export async function POST(request: Request) {
 
       if (isResendConfigured()) {
         const emailResult = await enviarEmail({
-          para: email,
+          para: normalizedEmail,
           assunto: "Complete seu cadastro - Gabi Studio",
           html: emailTemplates.completarPerfil(existingUser.nome ?? null, completionLink),
         })
@@ -166,7 +166,7 @@ export async function POST(request: Request) {
     }
 
     const emailResult = await enviarEmail({
-      para: email,
+      para: normalizedEmail,
       assunto: "Verifique seu email - Gabi Studio",
       html: emailTemplates.verificacaoEmail(null, verificationLink),
     })

@@ -16,6 +16,26 @@ const escapeHtml = (value: string) =>
 const escapeHtmlOptional = (value?: string | null) =>
   value ? escapeHtml(value) : ""
 
+const stripHtml = (html: string) =>
+  html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+
+const decodeHtmlEntities = (value: string) =>
+  value
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+
+const buildTextFallback = (html: string) =>
+  decodeHtmlEntities(stripHtml(html))
+    .replace(/\s+/g, " ")
+    .trim()
+
 interface EnviarEmailParams {
   para: string
   assunto: string
@@ -51,6 +71,8 @@ export async function enviarEmail({
   }
 
   try {
+    const plainText = texto?.trim() ? texto : buildTextFallback(html)
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -59,10 +81,11 @@ export async function enviarEmail({
       },
       body: JSON.stringify({
         from: 'Studio Gabi Rego <suporte@studiogabirego.com>',
+        reply_to: 'suporte@studiogabirego.com',
         to: para,
         subject: assunto,
         html,
-        text: texto,
+        text: plainText,
       }),
     })
 
@@ -121,10 +144,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <rect x="3" y="5" width="18" height="16" rx="2" stroke="#ffffff" stroke-width="2"></rect>
-                                  <path d="M8 3v4M16 3v4M3 9h18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1;">A</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Lembrete de aula</h1>
                             </td>
@@ -248,9 +268,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 3v18M6 7h12M6 17h12" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1;">$</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Lembrete de pagamento</h1>
                             </td>
@@ -385,10 +403,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#ffffff" stroke-width="2"></rect>
-                                  <path d="M4 7l8 6 8-6" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1;">@</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Verifique seu email</h1>
                             </td>
@@ -509,9 +524,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 3a4 4 0 100 8 4 4 0 000-8zM6 21a6 6 0 0112 0" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 18px; font-weight: 700; color: #ffffff; line-height: 1;">ID</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Complete seu cadastro</h1>
                             </td>
@@ -629,10 +642,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <rect x="5" y="10" width="14" height="10" rx="2" stroke="#ffffff" stroke-width="2"></rect>
-                                  <path d="M8 10V7a4 4 0 118 0v3" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 16px; font-weight: 700; color: #ffffff; line-height: 1;">PW</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Redefinir Senha</h1>
                             </td>
@@ -851,9 +861,7 @@ export const emailTemplates = {
                           <tr>
                             <td align="center">
                               <div style="width: 56px; height: 56px; background-color: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="display: block;" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
-                                </svg>
+                                <span style="display: inline-block; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1;">+</span>
                               </div>
                               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Bem-vindo(a)</h1>
                             </td>
