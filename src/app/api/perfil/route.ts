@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { withApiAuth, validateRequest } from "@/lib/api"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
 
@@ -16,6 +18,101 @@ const perfilSchema = z.object({
   dataNascimento: z.string().optional().nullable().or(z.literal("")),
   sexo: z.enum(["MASCULINO", "FEMININO"]).optional().or(z.literal("")),
 })
+
+const perfilUpdateSchema = z.object({
+  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  telefone: z.string().optional().nullable().or(z.literal("")),
+  dataNascimento: z.string().optional().nullable().or(z.literal("")),
+  sexo: z.enum(["MASCULINO", "FEMININO"]).optional().nullable().or(z.literal("")),
+})
+
+export async function GET() {
+  return withApiAuth(async (session) => {
+    const membro = await prisma.membro.findUnique({
+      where: { usuarioId: session.user.id },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    if (!membro) {
+      return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      id: membro.id,
+      nome: membro.usuario.nome || "",
+      email: membro.usuario.email,
+      cpf: membro.cpf,
+      rg: membro.rg,
+      telefone: membro.telefone,
+      dataNascimento: membro.dataNascimento,
+      sexo: membro.sexo,
+    })
+  })
+}
+
+export async function PUT(request: NextRequest) {
+  return withApiAuth(async (session) => {
+    const validation = await validateRequest(request, perfilUpdateSchema)
+    if ("error" in validation) {
+      return validation.error
+    }
+
+    const { nome, telefone, dataNascimento, sexo } = validation.data
+    const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
+    const normalizedDataNascimento =
+      dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
+    const normalizedSexo: "MASCULINO" | "FEMININO" | null =
+      sexo === "" ? null : (sexo ?? null)
+
+    if (normalizedTelefone && normalizedTelefone.length < 10) {
+      return NextResponse.json({ error: "Telefone inválido" }, { status: 400 })
+    }
+
+    if (
+      normalizedDataNascimento &&
+      Number.isNaN(normalizedDataNascimento.getTime())
+    ) {
+      return NextResponse.json(
+        { error: "Data de nascimento inválida" },
+        { status: 400 }
+      )
+    }
+
+    const membro = await prisma.membro.findUnique({
+      where: { usuarioId: session.user.id },
+      select: { id: true },
+    })
+
+    if (!membro) {
+      return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 })
+    }
+
+    await prisma.$transaction([
+      prisma.usuario.update({
+        where: { id: session.user.id },
+        data: { nome },
+      }),
+      prisma.membro.update({
+        where: { id: membro.id },
+        data: {
+          telefone: normalizedTelefone,
+          dataNascimento: normalizedDataNascimento,
+          sexo: normalizedSexo,
+        },
+      }),
+    ])
+
+    return NextResponse.json({ success: true })
+  })
+}
 
 export async function POST(request: Request) {
   try {

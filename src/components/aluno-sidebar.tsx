@@ -24,9 +24,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Calendar,
   Dumbbell,
+  DollarSign,
   ChevronUp,
   LogOut,
   Home,
+  User,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
@@ -48,6 +50,16 @@ const menuItems = [
     title: "Meu Treino",
     url: "/meu-treino",
     icon: Dumbbell,
+  },
+  {
+    title: "Pagamentos",
+    url: "/pagamentos",
+    icon: DollarSign,
+  },
+  {
+    title: "Meu Perfil",
+    url: "/meu-perfil",
+    icon: User,
   },
 ]
 
