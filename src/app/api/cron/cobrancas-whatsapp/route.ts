@@ -8,7 +8,7 @@ function getToken(request: NextRequest) {
     return authHeader.slice(7).trim()
   }
 
-  return request.nextUrl.searchParams.get('secret') || ''
+  return ''
 }
 
 export async function POST(request: NextRequest) {
