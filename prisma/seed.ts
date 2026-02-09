@@ -10,13 +10,14 @@ async function main() {
   const senhaAdmin = await hash('admin123', 12)
   const admin = await prisma.usuario.upsert({
     where: { email: 'admin@gabistudio.com.br' },
-    update: {},
+    update: { emailVerificado: new Date() },
     create: {
       email: 'admin@gabistudio.com.br',
       senha: senhaAdmin,
       senhaDefinida: true,
       nome: 'Administrador',
       role: Role.ADMIN,
+      emailVerificado: new Date(),
     },
   })
   console.log('✅ Usuário admin criado:', admin.email)
