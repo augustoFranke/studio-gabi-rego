@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { unstable_cache } from "next/cache"
+import { DiaSemana } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -14,6 +15,16 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 })
 
 const formatCurrency = (value: number) => currencyFormatter.format(value)
+
+const dayMap: DiaSemana[] = [
+  DiaSemana.DOMINGO,
+  DiaSemana.SEGUNDA,
+  DiaSemana.TERCA,
+  DiaSemana.QUARTA,
+  DiaSemana.QUINTA,
+  DiaSemana.SEXTA,
+  DiaSemana.SABADO,
+]
 
 // Helper function to check if a time string (HH:MM) is before the current time
 const isTimeInPast = (timeString: string, currentHour: number, currentMinute: number): boolean => {
@@ -49,6 +60,7 @@ export default async function DashboardPage() {
   // Construct "today" as UTC midnight for the current day in Brazil
   // This matches how Prisma reads @db.Date columns (UTC midnight)
   const today = new Date(Date.UTC(year, month, day))
+  const diaSemanaHoje = dayMap[today.getUTCDay()]
 
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -88,7 +100,7 @@ export default async function DashboardPage() {
         prisma.horarioDisponivel.aggregate({
           where: {
             ativo: true,
-            // In a real scenario, we'd filter by day of week
+            diaSemana: diaSemanaHoje,
           },
           _sum: {
             vagasTotal: true
