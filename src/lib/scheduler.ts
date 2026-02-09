@@ -17,12 +17,18 @@ import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
 import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import { Prisma, TipoNotificacao } from '@prisma/client'
+import {
+  formatWhatsappNumber,
+  isEvolutionConfigured,
+  sendWhatsappText,
+} from '@/lib/whatsapp/evolution'
 
 type NotificationProcessOptions<T> = {
   items: T[]
   shouldSkipWhere: (item: T) => Prisma.NotificacaoWhereInput
   buildNotification: (item: T) => Prisma.NotificacaoCreateInput
   sendEmail?: (item: T) => Promise<void>
+  sendWhatsapp?: (item: T) => Promise<void>
 }
 
 async function processNotifications<T>({
@@ -30,6 +36,7 @@ async function processNotifications<T>({
   shouldSkipWhere,
   buildNotification,
   sendEmail,
+  sendWhatsapp,
 }: NotificationProcessOptions<T>) {
   for (const item of items) {
     const jaEnviou = await prisma.notificacao.findFirst({
@@ -44,6 +51,10 @@ async function processNotifications<T>({
 
     if (sendEmail) {
       await sendEmail(item)
+    }
+
+    if (sendWhatsapp) {
+      await sendWhatsapp(item)
     }
 
     await prisma.notificacao.update({
@@ -77,6 +88,7 @@ export async function processarLembretesAula() {
   const agora = new Date()
   const limite = new Date(agora.getTime() + horasAntecedencia * 60 * 60 * 1000)
   const resendEnabled = isResendConfigured()
+  const whatsappEnabled = isEvolutionConfigured()
   const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
 
   // Buscar agendamentos das próximas horas que ainda não receberam lembrete
@@ -123,7 +135,7 @@ export async function processarLembretesAula() {
         tipo: TipoNotificacao.LEMBRETE_AULA,
         titulo: 'Lembrete de Aula',
         mensagem: `Sua aula está agendada para ${horario.horaInicio} em ${dataFormatada}`,
-        canalWhatsapp: false,
+        canalWhatsapp: whatsappEnabled,
         canalEmail: resendEnabled,
       }
     },
@@ -135,6 +147,20 @@ export async function processarLembretesAula() {
             para: membro.usuario.email,
             assunto: '📅 Lembrete: Sua aula está chegando!',
             html,
+          })
+        }
+      : undefined,
+    sendWhatsapp: whatsappEnabled
+      ? async (agendamento) => {
+          const { membro, horario, nome, dataFormatada } = getContext(agendamento)
+          const to = formatWhatsappNumber(membro.telefone || '')
+          if (!to) {
+            return
+          }
+
+          await sendWhatsappText({
+            to,
+            text: `Oi ${nome}! Lembrete: sua aula esta agendada para ${horario.horaInicio} em ${dataFormatada}.`,
           })
         }
       : undefined,
@@ -215,13 +241,14 @@ export async function processarCobrancas() {
 }
 
 /**
- * Processa aniversariantes do dia (email only)
+ * Processa aniversariantes do dia
  */
 export async function processarAniversarios() {
   const hoje = new Date()
   const mes = hoje.getMonth() + 1
   const dia = hoje.getDate()
   const resendEnabled = isResendConfigured()
+  const whatsappEnabled = isEvolutionConfigured()
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
@@ -262,7 +289,7 @@ export async function processarAniversarios() {
         tipo: TipoNotificacao.ANIVERSARIO,
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
-        canalWhatsapp: false,
+        canalWhatsapp: whatsappEnabled,
         canalEmail: resendEnabled,
       }
     },
@@ -274,6 +301,20 @@ export async function processarAniversarios() {
             para: membro.usuario.email,
             assunto: '🎂 Feliz Aniversário!',
             html,
+          })
+        }
+      : undefined,
+    sendWhatsapp: whatsappEnabled
+      ? async (membro) => {
+          const { nome } = getContext(membro)
+          const to = formatWhatsappNumber(membro.telefone || '')
+          if (!to) {
+            return
+          }
+
+          await sendWhatsappText({
+            to,
+            text: `Feliz aniversario, ${nome}! Que seu dia seja incrivel. Parabens!`,
           })
         }
       : undefined,

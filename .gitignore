@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (secrets - never commit)
 .env
+.env.development
 .env.local
 .env.development.local
 .env.test.local
@@ -67,10 +68,16 @@ lista.md
 TO-DO.md
 SUGGESTED_CHANGES.md
 simplifications.md
+implementation_plan.md
 
 # Temporary/generated files
 /tmp/
 *.log
+
+# Generated/sensitive data exports
+backups/
+utility/logs/
+utility/csv/
 
 # Local assistant artifacts
 .claude/
