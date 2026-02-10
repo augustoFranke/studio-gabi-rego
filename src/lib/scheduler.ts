@@ -38,35 +38,48 @@ async function processNotifications<T>({
   sendEmail,
   sendWhatsapp,
 }: NotificationProcessOptions<T>) {
-  for (const item of items) {
-    const jaEnviou = await prisma.notificacao.findFirst({
-      where: shouldSkipWhere(item),
-    })
+  if (!items.length) return 0
 
-    if (jaEnviou) continue
+  // Batch skip-check: single query instead of N findFirst calls
+  const skipFilters = items.map(shouldSkipWhere)
+  const existing = await prisma.notificacao.findMany({
+    where: { OR: skipFilters },
+    select: { membroId: true, tipo: true },
+  })
+  const alreadySent = new Set(
+    existing.map((n) => `${n.membroId}-${n.tipo}`)
+  )
 
-    const notificacao = await prisma.notificacao.create({
-      data: buildNotification(item),
-    })
+  const toProcess = items.filter((item) => {
+    const where = shouldSkipWhere(item)
+    const key = `${(where as Record<string, unknown>).membroId}-${(where as Record<string, unknown>).tipo}`
+    return !alreadySent.has(key)
+  })
 
-    if (sendEmail) {
-      await sendEmail(item)
-    }
+  // Process in parallel batches of 5 to avoid overwhelming external APIs
+  const BATCH_SIZE = 5
+  let processed = 0
+  for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
+    const batch = toProcess.slice(i, i + BATCH_SIZE)
+    const results = await Promise.allSettled(
+      batch.map(async (item) => {
+        const notificacao = await prisma.notificacao.create({
+          data: buildNotification(item),
+        })
 
-    if (sendWhatsapp) {
-      await sendWhatsapp(item)
-    }
+        if (sendEmail) await sendEmail(item)
+        if (sendWhatsapp) await sendWhatsapp(item)
 
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: {
-        enviada: true,
-        enviadaEm: new Date(),
-      },
-    })
+        await prisma.notificacao.update({
+          where: { id: notificacao.id },
+          data: { enviada: true, enviadaEm: new Date() },
+        })
+      })
+    )
+    processed += results.filter((r) => r.status === 'fulfilled').length
   }
 
-  return items.length
+  return processed
 }
 
 type RecurringAppointmentsParams = {
@@ -101,11 +114,13 @@ export async function processarLembretesAula() {
     },
     include: {
       membro: {
-        include: {
-          usuario: true,
+        select: {
+          id: true,
+          telefone: true,
+          usuario: { select: { nome: true, email: true } },
         },
       },
-      horario: true,
+      horario: { select: { horaInicio: true, horaFim: true } },
     },
   })
 
@@ -252,21 +267,21 @@ export async function processarAniversarios() {
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
-  // Buscar membros que fazem aniversário hoje
-  const membros = await prisma.membro.findMany({
-    where: {
-      status: 'ATIVO',
-    },
-    include: {
-      usuario: true,
-    },
-  })
+  // Filter birthdays at the database level instead of loading all members
+  const birthdayIds = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT m.id FROM "Membro" m
+    WHERE m.status = 'ATIVO'
+      AND m."dataNascimento" IS NOT NULL
+      AND EXTRACT(MONTH FROM m."dataNascimento") = ${mes}
+      AND EXTRACT(DAY FROM m."dataNascimento") = ${dia}
+  `
 
-  const aniversariantes = membros.filter((membro) => {
-    if (!membro.dataNascimento) return false
-    const dataNasc = new Date(membro.dataNascimento)
-    return dataNasc.getMonth() + 1 === mes && dataNasc.getDate() === dia
-  })
+  const aniversariantes = birthdayIds.length
+    ? await prisma.membro.findMany({
+        where: { id: { in: birthdayIds.map((b) => b.id) } },
+        include: { usuario: true },
+      })
+    : []
 
   const getContext = (membro: typeof aniversariantes[number]) => ({
     membro,
@@ -350,12 +365,15 @@ export async function atualizarPagamentosAtrasados() {
  * Útil para ser chamado por um cron job ou endpoint de API
  */
 export async function executarTodasTarefas() {
-  const resultados = {
-    pagamentosAtualizados: await atualizarPagamentosAtrasados(),
-    lembretesAula: await processarLembretesAula(),
-    cobrancas: await processarCobrancas(),
-    aniversarios: await processarAniversarios(),
-  }
+  // Run atualizarPagamentosAtrasados first (changes PENDENTE -> ATRASADO),
+  // then run the rest in parallel (they query non-overlapping date windows)
+  const pagamentosAtualizados = await atualizarPagamentosAtrasados()
 
-  return resultados
+  const [lembretesAula, cobrancas, aniversarios] = await Promise.all([
+    processarLembretesAula(),
+    processarCobrancas(),
+    processarAniversarios(),
+  ])
+
+  return { pagamentosAtualizados, lembretesAula, cobrancas, aniversarios }
 }
