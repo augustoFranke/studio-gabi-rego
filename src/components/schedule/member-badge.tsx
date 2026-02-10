@@ -61,7 +61,7 @@ const MemberBadgeBase = function MemberBadge({
     return (
       <div
         className={cn(
-          'flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border transition-all',
+          'flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border transition-[opacity,transform,box-shadow]',
           presenceColor,
           isDragging && 'opacity-50 scale-95',
           isDragOver && 'ring-2 ring-primary',
@@ -82,7 +82,7 @@ const MemberBadgeBase = function MemberBadge({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all',
+        'flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-[opacity,transform,box-shadow]',
         presenceColor,
         isDragging && 'opacity-50 scale-95',
         isDragOver && 'ring-2 ring-primary',
