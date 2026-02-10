@@ -280,7 +280,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
 
             <Button
               type="submit"
-              className="w-full h-10 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-all border-0 mt-2"
+              className="w-full h-10 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-shadow border-0 mt-2"
               disabled={isLoading || !hasMinLength || !hasUppercase || !hasNumber || !passwordsMatch}
             >
               {isLoading ? (

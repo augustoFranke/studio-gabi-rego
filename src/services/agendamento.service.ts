@@ -145,7 +145,7 @@ export async function syncAgendamentosRecorrentes({
   )
 
   if (missingSlots.length) {
-    await prisma.$transaction(
+    const createdHorarios = await prisma.$transaction(
       missingSlots.map((slot) =>
         prisma.horarioDisponivel.create({
           data: {
@@ -154,23 +154,12 @@ export async function syncAgendamentosRecorrentes({
             horaFim: buildHoraFim(slot.hora),
             vagasTotal: MAX_CAPACITY_PER_SLOT,
           },
-          select: { id: true },
+          select: { id: true, diaSemana: true, horaInicio: true, vagasTotal: true },
         })
       )
     )
 
-    const horariosAtualizados = await prisma.horarioDisponivel.findMany({
-      where: { OR: slotFilters },
-      select: {
-        id: true,
-        diaSemana: true,
-        horaInicio: true,
-        vagasTotal: true,
-      },
-    })
-
-    horariosMap.clear()
-    for (const horario of horariosAtualizados) {
+    for (const horario of createdHorarios) {
       horariosMap.set(slotKey(horario.diaSemana, horario.horaInicio), {
         id: horario.id,
         vagasTotal: horario.vagasTotal,
