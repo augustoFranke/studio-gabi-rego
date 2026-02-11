@@ -15,7 +15,6 @@
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
-import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import { Prisma, TipoNotificacao } from '@prisma/client'
 import {
   formatWhatsappNumber,
@@ -23,9 +22,14 @@ import {
   sendWhatsappText,
 } from '@/lib/whatsapp/evolution'
 
+type NotificationSkipWhere = Prisma.NotificacaoWhereInput & {
+  membroId: string
+  tipo: TipoNotificacao
+}
+
 type NotificationProcessOptions<T> = {
   items: T[]
-  shouldSkipWhere: (item: T) => Prisma.NotificacaoWhereInput
+  shouldSkipWhere: (item: T) => NotificationSkipWhere
   buildNotification: (item: T) => Prisma.NotificacaoCreateInput
   sendEmail?: (item: T) => Promise<void>
   sendWhatsapp?: (item: T) => Promise<void>
@@ -51,9 +55,8 @@ async function processNotifications<T>({
   )
 
   const toProcess = items.filter((item) => {
-    const where = shouldSkipWhere(item)
-    const key = `${(where as Record<string, unknown>).membroId}-${(where as Record<string, unknown>).tipo}`
-    return !alreadySent.has(key)
+    const { membroId, tipo } = shouldSkipWhere(item)
+    return !alreadySent.has(`${membroId}-${tipo}`)
   })
 
   // Process in parallel batches of 5 to avoid overwhelming external APIs
@@ -80,16 +83,6 @@ async function processNotifications<T>({
   }
 
   return processed
-}
-
-type RecurringAppointmentsParams = {
-  startDate: Date
-  endDate: Date
-  membroId?: string
-}
-
-export async function generateRecurringAppointments(params: RecurringAppointmentsParams) {
-  return syncAgendamentosRecorrentes(params)
 }
 
 /**
