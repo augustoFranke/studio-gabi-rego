@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://studiogabirego.com")
 
     if (usuario.emailVerificado) {
+      // Already verified - if they have a membro or completed onboarding, just return success silently
       if (usuario.membro || usuario.onboardingCompleto) {
         return NextResponse.json({
           success: true,
@@ -59,38 +60,14 @@ export async function POST(request: Request) {
         })
       }
 
-      const profileToken = randomBytes(32).toString("hex")
-      const profileTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-      await prisma.usuario.update({
-        where: { id: usuario.id },
-        data: {
-          tokenReset: profileToken,
-          tokenResetExpira: profileTokenExpiry,
-          etapaOnboarding: 2,
-          onboardingCompleto: false,
-        },
-      })
-
-      const completionLink = `${baseUrl}/completar-perfil?token=${profileToken}`
-
-      if (isResendConfigured()) {
-        await enviarEmail({
-          para: normalizedEmail,
-          assunto: "Complete seu cadastro - Gabi Studio",
-          html: emailTemplates.completarPerfil(usuario.nome ?? null, completionLink),
-        })
-      } else {
-        console.warn("Resend não configurado - envio de email ignorado.")
-      }
-
+      // Verified but no membro and not complete - mark as complete if possible, or redirect to register
       return NextResponse.json({
         success: true,
         message: "Se o email existir, um novo link será enviado.",
       })
     }
 
-    // Generate new token
+    // Generate new verification token
     const verificationToken = randomBytes(32).toString("hex")
     const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
