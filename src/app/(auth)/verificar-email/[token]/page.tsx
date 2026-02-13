@@ -11,9 +11,6 @@ import Image from "next/image"
 
 type VerificationStatus = "loading" | "success" | "error" | "expired"
 
-const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
-const ANAMNESE_TOKEN_STORAGE_KEY = "onboarding_anamnese_token"
-
 export default function VerificarTokenPage({
   params,
 }: {
@@ -22,7 +19,6 @@ export default function VerificarTokenPage({
   const resolvedParams = use(params)
   const [status, setStatus] = useState<VerificationStatus>("loading")
   const [message, setMessage] = useState("")
-  const [profileToken, setProfileToken] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
@@ -40,19 +36,8 @@ export default function VerificarTokenPage({
         if (response.ok) {
           setStatus("success")
           setMessage("Email verificado com sucesso!")
-          // Check if user is admin
           if (data.isAdmin) {
             setIsAdmin(true)
-          }
-          // Store profile token for next step (regular users only)
-          if (data.profileToken) {
-            setProfileToken(data.profileToken)
-            try {
-              localStorage.setItem(PROFILE_TOKEN_STORAGE_KEY, data.profileToken)
-              localStorage.removeItem(ANAMNESE_TOKEN_STORAGE_KEY)
-            } catch {
-              // Ignore storage errors (private mode / blocked storage)
-            }
           }
         } else if (data.error === "Token expirado") {
           setStatus("expired")
@@ -73,10 +58,8 @@ export default function VerificarTokenPage({
   function handleContinue() {
     if (isAdmin) {
       router.push("/admin")
-    } else if (profileToken) {
-      router.push(`/completar-perfil?token=${profileToken}`)
     } else {
-      router.push("/login?next=/completar-perfil")
+      router.push("/login")
     }
   }
 
@@ -139,9 +122,9 @@ export default function VerificarTokenPage({
 
           {status === "success" && (
             <CardDescription className="text-muted-foreground mt-2">
-              {isAdmin 
+              {isAdmin
                 ? "Você foi adicionado como administrador."
-                : "Agora vamos completar seu perfil para finalizar o cadastro."}
+                : "Seu cadastro está completo! Faça login para acessar."}
             </CardDescription>
           )}
 
@@ -159,7 +142,7 @@ export default function VerificarTokenPage({
               className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-shadow border-0"
             >
               <span className="flex items-center gap-2">
-                {isAdmin ? "Acessar painel admin" : "Completar perfil"}
+                {isAdmin ? "Acessar painel admin" : "Fazer login"}
                 <ArrowRight className="h-4 w-4" />
               </span>
             </Button>
