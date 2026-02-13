@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -113,7 +113,7 @@ function clearState() {
 }
 
 export default function CadastroPage() {
-  const [state, setState] = useState<WizardState>(defaultState)
+  const [state, setState] = useState<WizardState>(loadState)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -124,15 +124,14 @@ export default function CadastroPage() {
     experience: false,
   })
   const router = useRouter()
+  const isFirstRender = useRef(true)
 
-  // Load state from sessionStorage on mount
+  // Persist state to sessionStorage on changes (except passwords), skip initial render
   useEffect(() => {
-    const saved = loadState()
-    setState(prev => ({ ...prev, ...saved }))
-  }, [])
-
-  // Persist state to sessionStorage on changes (except passwords)
-  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     saveState(state)
   }, [state])
 
