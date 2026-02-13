@@ -19,20 +19,24 @@ export default async function HomePage() {
   // For regular users, check onboarding status
   const usuario = await prisma.usuario.findUnique({
     where: { id: session.user.id },
-    select: { etapaOnboarding: true, onboardingCompleto: true },
+    select: {
+      etapaOnboarding: true,
+      onboardingCompleto: true,
+      membro: { select: { id: true } },
+    },
   });
 
-  // Redirect based on onboarding stage
+  // Redirect based on onboarding stage (legacy users only - new users complete everything before login)
   if (!usuario?.onboardingCompleto) {
-    const stage = usuario?.etapaOnboarding ?? 1;
-
-    if (stage < 3) {
-      // Profile not completed yet
-      redirect("/completar-perfil");
-    } else if (stage === 3) {
-      // Profile done, anamnese pending
-      redirect("/anamnese");
+    if (!usuario?.membro) {
+      // No membro record - redirect to registration
+      redirect("/cadastro");
     }
+    // Has membro but onboarding not complete - mark as complete (legacy user who has data)
+    await prisma.usuario.update({
+      where: { id: session.user.id },
+      data: { etapaOnboarding: 4, onboardingCompleto: true },
+    });
   }
 
   // Onboarding complete - go to member dashboard
