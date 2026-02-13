@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
+import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     // Find user with this token
     const usuario = await prisma.usuario.findUnique({
       where: { tokenVerificacao: token },
+      include: { membro: { select: { id: true } } },
     })
 
     if (!usuario) {
@@ -34,27 +35,30 @@ export async function POST(request: Request) {
       )
     }
 
-    // Regular member flow: generate profile completion token
-    const profileToken = randomBytes(32).toString("hex")
-    const profileTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    // Mark email as verified, generate profile token, and advance to next step
+    // Mark email as verified and complete onboarding
     await prisma.usuario.update({
       where: { id: usuario.id },
       data: {
         emailVerificado: new Date(),
         tokenVerificacao: null,
         tokenVerificacaoExpira: null,
-        tokenReset: profileToken, // Reuse reset token field for profile completion
-        tokenResetExpira: profileTokenExpiry,
-        etapaOnboarding: 2, // Move to profile completion step
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
       },
     })
+
+    // Send welcome email (fire-and-forget)
+    if (isResendConfigured() && usuario.nome) {
+      enviarEmail({
+        para: usuario.email,
+        assunto: "Bem-vindo(a) ao Gabi Studio!",
+        html: emailTemplates.boasVindas(usuario.nome),
+      }).catch((err) => console.error("Failed to send welcome email:", err))
+    }
 
     return NextResponse.json({
       success: true,
       message: "Email verificado com sucesso!",
-      profileToken, // Return token for profile completion
       isAdmin: false,
     })
   } catch (error) {
