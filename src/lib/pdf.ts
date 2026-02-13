@@ -135,7 +135,12 @@ function createTableDrawer(options: {
 
     // Rows
     exercises.forEach((ex) => {
-      drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''])
+      drawRow(cursorY, [
+        ex.name.toUpperCase(),
+        ex.sets.toUpperCase(),
+        ex.reps.toUpperCase(),
+        ex.observacoes?.toUpperCase() || ''
+      ])
       cursorY += rowHeight
     })
 
