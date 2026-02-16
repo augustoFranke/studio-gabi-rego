@@ -35,6 +35,7 @@ describe('Membros Server Actions', () => {
 
   describe('toggleMembroStatus', () => {
     it('should toggle status from ATIVO to INATIVO', async () => {
+      const { revalidatePath } = await import('next/cache')
       const mockId = '123'
       const currentStatus = 'ATIVO'
 
@@ -44,10 +45,12 @@ describe('Membros Server Actions', () => {
         where: { id: mockId },
         data: { status: 'INATIVO' },
       })
+      expect(revalidatePath).toHaveBeenCalledWith('/alunos')
       expect(result).toEqual({ success: true, message: 'Status alterado com sucesso' })
     })
 
     it('should toggle status from INATIVO to ATIVO', async () => {
+      const { revalidatePath } = await import('next/cache')
       const mockId = '123'
       const currentStatus = 'INATIVO'
 
@@ -57,6 +60,7 @@ describe('Membros Server Actions', () => {
         where: { id: mockId },
         data: { status: 'ATIVO' },
       })
+      expect(revalidatePath).toHaveBeenCalledWith('/alunos')
       expect(result).toEqual({ success: true, message: 'Status alterado com sucesso' })
     })
 
@@ -82,6 +86,7 @@ describe('Membros Server Actions', () => {
 
   describe('deleteMembro', () => {
     it('should delete usuario associated with membro', async () => {
+      const { revalidatePath } = await import('next/cache')
       const mockMembroId = 'membro-123'
       const mockUsuarioId = 'user-123'
 
@@ -98,6 +103,7 @@ describe('Membros Server Actions', () => {
       expect(prisma.usuario.delete).toHaveBeenCalledWith({
         where: { id: mockUsuarioId },
       })
+      expect(revalidatePath).toHaveBeenCalledWith('/alunos')
       expect(result).toEqual({ success: true, message: 'Membro excluído com sucesso' })
     })
 
