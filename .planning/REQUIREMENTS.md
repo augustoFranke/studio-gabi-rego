@@ -9,10 +9,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Security
 
-- [ ] **SEC-01**: Server actions verify caller session and require ADMIN role before executing
-- [ ] **SEC-02**: Rate limiter returns `{ success: false }` when Redis is unavailable in production
-- [ ] **SEC-03**: Cron endpoints use `crypto.timingSafeEqual` for secret comparison
-- [ ] **SEC-04**: Shared password policy (8+ chars, uppercase, number) used in both registration and member update flows
+- [x] **SEC-01**: Server actions verify caller session and require ADMIN role before executing
+- [x] **SEC-02**: Rate limiter returns `{ success: false }` when Redis is unavailable in production
+- [x] **SEC-03**: Cron endpoints use `crypto.timingSafeEqual` for secret comparison
+- [x] **SEC-04**: Shared password policy (8+ chars, uppercase, number) used in both registration and member update flows
 - [ ] **SEC-05**: Unused dependencies removed from production bundle (pdf-lib to devDeps, dompurify + isomorphic-dompurify removed)
 
 ### Bug Fixes
@@ -87,10 +87,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
-| SEC-04 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Complete |
+| SEC-02 | Phase 1 | Complete |
+| SEC-03 | Phase 1 | Complete |
+| SEC-04 | Phase 1 | Complete |
 | BUG-01 | Phase 2 | Pending |
 | BUG-02 | Phase 2 | Pending |
 | SEC-05 | Phase 2 | Pending |
@@ -116,4 +116,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after roadmap creation — traceability complete*
+*Last updated: 2026-02-16 after Phase 1 execution — SEC-01..SEC-04 complete*

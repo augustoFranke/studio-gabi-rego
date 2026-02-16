@@ -12,7 +12,7 @@ This milestone transforms the Studio Gabi Rego gym management system from a func
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Security Hardening** - Close three active exploits in server actions, rate limiter, and cron endpoints; unify password policy
+- [x] **Phase 1: Security Hardening** - Close three active exploits in server actions, rate limiter, and cron endpoints; unify password policy
 - [ ] **Phase 2: Bug Fixes and Dependency Cleanup** - Fix broken revalidatePath calls, remove gender heuristic, verify and remove unused dependencies
 - [ ] **Phase 3: Data Integrity** - Centralize duplicated ANAMNESE_FIELDS and placeholder email generation to single sources of truth
 - [ ] **Phase 4: Database Performance** - Add composite indexes on high-query fields; push birthday filtering to the database
@@ -138,7 +138,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 0/TBD | Not started | - |
+| 1. Security Hardening | 4/4 | Complete | 2026-02-16 |
 | 2. Bug Fixes and Dependency Cleanup | 0/TBD | Not started | - |
 | 3. Data Integrity | 0/TBD | Not started | - |
 | 4. Database Performance | 0/TBD | Not started | - |

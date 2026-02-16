@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** The app must become production-hardened: secure against authorization bypasses, free of known bugs, performant under real usage, and protected by meaningful test coverage — without breaking any existing functionality.
-**Current focus:** Phase 1 — Security Hardening
+**Current focus:** Phase 2 — Bug Fixes and Dependency Cleanup
 
 ## Current Position
 
-Phase: 1 of 10 (Security Hardening)
-Plan: 0 of 4 in current phase
-Status: Planned, ready to execute
-Last activity: 2026-02-16 — Phase 1 planning completed
+Phase: 2 of 10 (Bug Fixes and Dependency Cleanup)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-16 — Phase 1 executed and verified (12/12 must-haves)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 4
+- Average duration: ~29 min
+- Total execution time: ~1.9 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1 | 4 | ~1.9h | ~29m |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 4 plans: 01-01, 01-02, 01-03, 01-04
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -46,6 +46,10 @@ Recent decisions affecting current work:
 - [Roadmap]: Component split (Phase 7) must precede SWR caching (Phase 8) — SWR cannot be added to a 1,612-line monolith
 - [Roadmap]: Test coverage (Phase 6) must precede structural refactoring (Phase 7-10) — tests are the safety net for those changes
 - [Roadmap]: pdf-lib moves to devDependencies (not deleted) — confirmed used in test fixtures
+- [Phase 1]: Server actions now use shared ADMIN-only guard and generic Unauthorized response contract
+- [Phase 1]: Rate limiter is fail-closed in production outages with standardized payload
+- [Phase 1]: Cron auth now uses shared `timingSafeEqual` validator across both cron routes
+- [Phase 1]: Password policy is centralized in shared schema and enforced across registration/member flows
 
 ### Pending Todos
 
@@ -61,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Phase 1 planned and verified — ready to run gsd:execute-phase 1
+Stopped at: Phase 1 complete — ready to run gsd:plan-phase 2
 Resume file: None
