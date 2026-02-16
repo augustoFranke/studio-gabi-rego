@@ -55,7 +55,7 @@ describe('Membros API - POST /api/membros', () => {
       nome: 'John Doe',
       email: 'john@example.com',
       cpf: '123.456.789-00',
-      senha: 'password123',
+      senha: 'Senha123',
     }
 
     vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null) // Email check

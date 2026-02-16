@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { membroCreateSchema, membroUpdateSchema } from '@/schemas/membro.schema'
+import { PASSWORD_POLICY_MESSAGE } from '@/schemas/password-policy.schema'
 
 describe('membro schemas', () => {
   it('membroCreateSchema normalizes precoCustomizado and sexo', () => {
@@ -30,6 +31,15 @@ describe('membro schemas', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.senha).toBe('')
+    }
+  })
+
+  it('membroUpdateSchema rejects weak non-empty passwords', () => {
+    const result = membroUpdateSchema.safeParse({ senha: 'weakpass' })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(PASSWORD_POLICY_MESSAGE)
     }
   })
 
