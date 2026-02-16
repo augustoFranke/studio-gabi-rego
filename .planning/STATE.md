@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 2 of 10 (Bug Fixes and Dependency Cleanup)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-16 — Phase 1 executed and verified (12/12 must-haves)
+Plan: 2 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-16 — Completed 02-02 plan (BUG-02 explicit-null sexo contract)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [█░░░░░░░░░] 13%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: ~29 min
-- Total execution time: ~1.9 hours
+- Total plans completed: 5
+- Average duration: ~23 min
+- Total execution time: ~1.95 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | ~1.9h | ~29m |
+| 2 | 1 | ~2m | ~2m |
 
 **Recent Trend:**
-- Last 4 plans: 01-01, 01-02, 01-03, 01-04
+- Last 4 plans: 01-02, 01-03, 01-04, 02-02
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -50,6 +51,7 @@ Recent decisions affecting current work:
 - [Phase 1]: Rate limiter is fail-closed in production outages with standardized payload
 - [Phase 1]: Cron auth now uses shared `timingSafeEqual` validator across both cron routes
 - [Phase 1]: Password policy is centralized in shared schema and enforced across registration/member flows
+- [Phase 2]: Anamnese GET endpoints now return explicit null for missing sexo and never infer from member names — prevents incorrect demographic data and keeps API behavior consistent across admin and token entry points
 
 ### Pending Todos
 
@@ -65,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Phase 1 complete — ready to run gsd:plan-phase 2
+Stopped at: Completed 02-02-PLAN.md — ready for remaining Phase 2 plans
 Resume file: None
