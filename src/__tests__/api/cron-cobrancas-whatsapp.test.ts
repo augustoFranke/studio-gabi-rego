@@ -43,8 +43,24 @@ describe('Cron cobrancas WhatsApp', () => {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
 
+  const createMalformedRequest = () =>
+    new NextRequest(baseUrl, {
+      method: 'POST',
+      headers: { Authorization: 'Token malformed' },
+    })
+
   it('returns 401 when unauthorized', async () => {
     const res = await POST(createRequest())
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 401 when authorization header is malformed', async () => {
+    const res = await POST(createMalformedRequest())
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 401 when bearer token is invalid', async () => {
+    const res = await POST(createRequest('wrong-secret'))
     expect(res.status).toBe(401)
   })
 
