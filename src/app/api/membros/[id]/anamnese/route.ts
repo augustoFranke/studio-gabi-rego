@@ -33,10 +33,10 @@ export async function GET(
       return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
     }
 
-    // Use actual sexo field from database, fall back to heuristic if not set
+    // Use explicit DB-backed sexo; null when unset.
     const sexo = membro.sexo
       ? (membro.sexo === 'FEMININO' ? 'Feminino' : 'Masculino')
-      : determineSexo(membro)
+      : null
 
     return NextResponse.json({
       member: {
@@ -93,43 +93,4 @@ export async function POST(
 
     return NextResponse.json(anamnese)
   }, { requiredRole: 'ADMIN' })
-}
-
-// Module-level Set for O(1) lookups instead of O(n) array.includes()
-const FEMALE_NAMES = new Set([
-  'maria', 'ana', 'julia', 'gabriela', 'fernanda', 'amanda', 'bruna', 'camila', 'carla', 'claudia', 'cristina',
-  'daniela', 'elaine', 'fabiana', 'juliana', 'larissa', 'leticia', 'luciana', 'marcia', 'patricia', 'priscila',
-  'renata', 'sandra', 'tatiana', 'vanessa', 'adriana', 'aline', 'beatriz', 'bianca', 'carolina', 'debora',
-  'denise', 'eduarda', 'eliana', 'elisabete', 'flavia', 'franciele', 'gisele', 'helena', 'isabela', 'jessica',
-  'joana', 'jussara', 'karen', 'karina', 'lais', 'lilian', 'livia', 'luana', 'lucia', 'luciane', 'luiza',
-  'mara', 'marcela', 'mariana', 'marina', 'marta', 'michele', 'milena', 'monica', 'natalia', 'paula',
-  'rafaela', 'raquel', 'regina', 'roberta', 'rosana', 'sabrina', 'samantha', 'simone', 'solange', 'sonia',
-  'suzana', 'tais', 'thais', 'vera', 'vivian', 'viviane',
-])
-
-const FEMALE_ENDINGS = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
-
-// Helper function to determine gender
-// Fallback heuristic when sexo is not set.
-function determineSexo(membro: { usuario: { nome: string | null } }): "Masculino" | "Feminino" {
-  const nome = membro.usuario.nome?.toLowerCase().trim()
-
-  if (!nome) {
-    return "Masculino"
-  }
-
-  const firstName = nome.split(' ')[0]
-
-  if (FEMALE_NAMES.has(firstName)) {
-    return "Feminino"
-  }
-
-  // Check name endings
-  for (const ending of FEMALE_ENDINGS) {
-    if (firstName.endsWith(ending) && !firstName.endsWith('o')) {
-      return "Feminino"
-    }
-  }
-
-  return "Masculino"
 }
