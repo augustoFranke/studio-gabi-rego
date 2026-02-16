@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executarTodasTarefas } from '@/lib/scheduler'
-
-function getToken(request: NextRequest) {
-  const authHeader = request.headers.get('authorization') || ''
-  if (authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7).trim()
-  }
-
-  return ''
-}
+import { validateCronRequest } from '@/lib/security/cron-auth'
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
-  }
+  const authResult = validateCronRequest(request, process.env.CRON_SECRET)
+  if (!authResult.ok) {
+    if (authResult.reason === 'missing_secret') {
+      return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
+    }
 
-  const token = getToken(request)
-  if (!token || token !== secret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
