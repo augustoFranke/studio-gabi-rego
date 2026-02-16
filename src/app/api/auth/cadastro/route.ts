@@ -3,8 +3,9 @@ import { hash } from "bcryptjs"
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
-import { validarEmail } from "@/lib/validators"
 import { rateLimitByIp } from "@/lib/rate-limit"
+import { cadastroSchema } from "@/schemas/auth.schema"
+import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
 
 export async function POST(request: Request) {
   try {
@@ -17,37 +18,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { email, senha } = body
-
-    // Validate email format
-    if (!email || !validarEmail(email)) {
+    const parsed = cadastroSchema.safeParse(body)
+    if (!parsed.success) {
+      const hasEmailIssue = parsed.error.issues.some((issue) => issue.path[0] === "email")
       return NextResponse.json(
-        { error: "Email inválido" },
+        { error: hasEmailIssue ? "Email inválido" : PASSWORD_POLICY_MESSAGE },
         { status: 400 }
       )
     }
 
-    // Validate password
-    if (!senha || senha.length < 8) {
-      return NextResponse.json(
-        { error: "A senha deve ter no mínimo 8 caracteres" },
-        { status: 400 }
-      )
-    }
-
-    if (!/[A-Z]/.test(senha)) {
-      return NextResponse.json(
-        { error: "A senha deve conter pelo menos uma letra maiúscula" },
-        { status: 400 }
-      )
-    }
-
-    if (!/[0-9]/.test(senha)) {
-      return NextResponse.json(
-        { error: "A senha deve conter pelo menos um número" },
-        { status: 400 }
-      )
-    }
+    const { email, senha } = parsed.data
 
     const normalizedEmail = email.toLowerCase().trim()
 
