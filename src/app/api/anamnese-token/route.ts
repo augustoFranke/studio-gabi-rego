@@ -7,42 +7,6 @@ const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 const TOKEN_COOKIE_NAME = "anamnese_token"
 const isProduction = process.env.NODE_ENV === "production"
 
-// Module-level Set for O(1) lookups instead of O(n) array.includes()
-const FEMALE_NAMES = new Set([
-  "maria", "ana", "julia", "gabriela", "fernanda", "amanda", "bruna", "camila", "carla", "claudia", "cristina",
-  "daniela", "elaine", "fabiana", "juliana", "larissa", "leticia", "luciana", "marcia", "patricia", "priscila",
-  "renata", "sandra", "tatiana", "vanessa", "adriana", "aline", "beatriz", "bianca", "carolina", "debora",
-  "denise", "eduarda", "eliana", "elisabete", "flavia", "franciele", "gisele", "helena", "isabela", "jessica",
-  "joana", "jussara", "karen", "karina", "lais", "lilian", "livia", "luana", "lucia", "luciane", "luiza",
-  "mara", "marcela", "mariana", "marina", "marta", "michele", "milena", "monica", "natalia", "paula",
-  "rafaela", "raquel", "regina", "roberta", "rosana", "sabrina", "samantha", "simone", "solange", "sonia",
-  "suzana", "tais", "thais", "vera", "vivian", "viviane",
-])
-
-const FEMALE_ENDINGS = ["a", "e", "ia", "ana", "ine", "ene"]
-
-function determineSexoEnum(nome?: string | null): "FEMININO" | "MASCULINO" {
-  const normalized = nome?.toLowerCase().trim()
-
-  if (!normalized) {
-    return "MASCULINO"
-  }
-
-  const firstName = normalized.split(" ")[0]
-
-  if (FEMALE_NAMES.has(firstName)) {
-    return "FEMININO"
-  }
-
-  for (const ending of FEMALE_ENDINGS) {
-    if (firstName.endsWith(ending) && !firstName.endsWith("o")) {
-      return "FEMININO"
-    }
-  }
-
-  return "MASCULINO"
-}
-
 async function findMemberByToken(token: string) {
   return prisma.membro.findFirst({
     where: {
@@ -111,7 +75,7 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    const sexo = membro.sexo ?? determineSexoEnum(membro.usuario.nome)
+    const sexo = membro.sexo ?? null
 
     const response = NextResponse.json({
       sexo,
