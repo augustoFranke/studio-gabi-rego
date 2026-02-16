@@ -46,7 +46,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
         toast.success("Aluno ativado")
         router.refresh()
       } else {
-        toast.error(result.error || "Erro ao alterar status")
+        toast.error(result.message || "Erro ao alterar status")
       }
     })
   }
@@ -59,7 +59,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
         setShowConfirmDialog(false)
         router.refresh()
       } else {
-        toast.error(result.error || "Erro ao excluir aluno")
+        toast.error(result.message || "Erro ao excluir aluno")
       }
     })
   }
@@ -142,7 +142,7 @@ export function MemberDeactivateItem({
         toast.success("Aluno desativado")
         router.refresh()
       } else {
-        toast.error(result.error || "Erro ao desativar aluno")
+        toast.error(result.message || "Erro ao desativar aluno")
       }
     })
   }
