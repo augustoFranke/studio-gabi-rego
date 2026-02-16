@@ -54,7 +54,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     expect(res.status).toBe(404)
   })
 
-  it('GET infers sexo from name when not set', async () => {
+  it('GET returns null sexo when not set', async () => {
     prismaMock.membro.findFirst.mockResolvedValue({
       id: 'm-1',
       usuarioId: 'u-1',
@@ -67,7 +67,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     const json = await res.json()
 
     expect(res.status).toBe(200)
-    expect(json.sexo).toBe('FEMININO')
+    expect(json.sexo).toBeNull()
     expect(json.anamnese).toBeNull()
   })
 

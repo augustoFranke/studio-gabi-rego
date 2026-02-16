@@ -56,7 +56,7 @@ describe('Membros Anamnese API', () => {
     expect(json.member.sexo).toBe('Feminino')
   })
 
-  it('GET falls back to name heuristic when sexo is missing', async () => {
+  it('GET returns null when sexo is missing', async () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce({
       id: 'm-1',
       sexo: null,
@@ -68,7 +68,7 @@ describe('Membros Anamnese API', () => {
     const json = await res.json()
 
     expect(res.status).toBe(200)
-    expect(json.member.sexo).toBe('Feminino')
+    expect(json.member.sexo).toBeNull()
   })
 
   it('POST returns 404 when membro not found', async () => {
