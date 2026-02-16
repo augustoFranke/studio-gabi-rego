@@ -18,7 +18,7 @@ export async function toggleMembroStatus(id: string, currentStatus: string) {
       data: { status: newStatus }
     })
 
-    revalidatePath('/membros')
+    revalidatePath('/alunos')
     return { success: true, message: 'Status alterado com sucesso' }
   } catch (error) {
     console.error('Erro ao alterar status do membro:', error)
@@ -47,7 +47,7 @@ export async function deleteMembro(id: string) {
       where: { id: membro.usuarioId }
     })
 
-    revalidatePath('/membros')
+    revalidatePath('/alunos')
     return { success: true, message: 'Membro excluído com sucesso' }
   } catch (error) {
     console.error('Erro ao excluir membro:', error)
