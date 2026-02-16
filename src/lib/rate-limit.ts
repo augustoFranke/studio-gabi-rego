@@ -36,8 +36,14 @@ export async function rateLimitByIp(request: Request, keyPrefix: string) {
 
   if (!rateLimiter) {
     if (process.env.NODE_ENV === "production") {
-      console.error("CRITICAL: Rate limiter not configured in production — failing open. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.")
+      console.error("CRITICAL: Rate limiter unavailable in production. Denying request. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.")
+      return { success: false, error: "Rate limit unavailable" }
     }
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn("WARNING: Rate limiter unavailable in development. Allowing request (fail-open). Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.")
+    }
+
     return { success: true }
   }
 
