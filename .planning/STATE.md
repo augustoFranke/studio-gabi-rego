@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 3 of 10 (Data Integrity)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing phase
-Last activity: 2026-02-20 — Completed Phase 3 Plan 01 (canonical anamnese normalization + self-healing reads)
+Last activity: 2026-02-20 — Completed Phase 3 Plan 02 (nullable email migration + null-safe outbound guards)
 
-Progress: [███░░░░░░░] 23%
+Progress: [███░░░░░░░] 27%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~15 min
-- Total execution time: ~2.1 hours
+- Total plans completed: 9
+- Average duration: ~14 min
+- Total execution time: ~2.2 hours
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███░░░░░░░] 23%
 |-------|-------|-------|----------|
 | 1 | 4 | ~1.9h | ~29m |
 | 2 | 3 | ~6m | ~2m |
-| 3 | 1 | ~2m | ~2m |
+| 3 | 2 | ~3m | ~2m |
 
 **Recent Trend:**
-- Last 4 plans: 02-01, 02-02, 02-03, 03-01
+- Last 4 plans: 02-02, 02-03, 03-01, 03-02
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -57,6 +57,8 @@ Recent decisions affecting current work:
 - [Phase 2]: Dependency cleanup moved `pdf-lib` to devDependencies and removed unused dompurify packages, with successful test/build verification
 - [Phase 03]: Use fillMissingFields + ignoreUnknownFields to enforce tolerant canonical anamnese writes
 - [Phase 03]: Persist anamnese self-heal updates only when normalization reports changed=true
+- [Phase 03]: Missing member email is persisted as null in create/update routes instead of synthetic placeholder addresses
+- [Phase 03]: Outbound email flows must guard nullable recipients and skip send attempts when email is absent
 
 ### Pending Todos
 
@@ -72,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 03-01-PLAN.md
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
