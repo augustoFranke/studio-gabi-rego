@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** The app must become production-hardened: secure against authorization bypasses, free of known bugs, performant under real usage, and protected by meaningful test coverage — without breaking any existing functionality.
-**Current focus:** Phase 4 — Database Performance
+**Current focus:** Phase 5 — API Pagination
 
 ## Current Position
 
 Phase: 4 of 10 (Database Performance)
-Plan: 2 of 3 in current phase
-Status: Phase 4 in progress; PERF-01 and PERF-02 executed
-Last activity: 2026-02-20 — Completed 04-01 execution (Prisma performance indexes)
+Plan: 3 of 3 in current phase
+Status: Phase 4 complete; PERF-01 and PERF-02 now have regression and verification coverage
+Last activity: 2026-02-20 — Completed 04-03 execution (scheduler regressions + post-migration verification gate)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: ~11 min
-- Total execution time: ~2.2 hours
+- Total plans completed: 13
+- Average duration: ~10 min
+- Total execution time: ~2.3 hours
 
 **By Phase:**
 
@@ -30,15 +30,16 @@ Progress: [███░░░░░░░] 30%
 | 1 | 4 | ~1.9h | ~29m |
 | 2 | 3 | ~6m | ~2m |
 | 3 | 3 | ~4m | ~1m |
-| 4 | 2 | ~7m | ~4m |
+| 4 | 3 | ~9m | ~3m |
 
 **Recent Trend:**
-- Last 4 plans: 03-02, 03-03, 04-02, 04-01
+- Last 4 plans: 03-03, 04-01, 04-02, 04-03
 - Trend: Stable
 
 *Updated after each plan completion*
 
 **Recent executions:**
+- Phase 04 P03 | 2 min | 2 tasks | 1 file
 - Phase 04 P02 | 2 min | 2 tasks | 1 file
 - Phase 04 P01 | 5 min | 2 tasks | 2 files
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Birthday SQL rows are mapped back to the existing membro.usuario shape to keep notification dedupe/send behavior unchanged.
 - [Phase 04-database-performance]: Used Prisma datamodel diff fallback to generate scoped PERF-01 migration SQL when local DB was unavailable.
 - [Phase 04-database-performance]: Deploy Phase 4 index migration during off-hours to reduce impact of brief CREATE INDEX write locks.
+- [Phase 04-database-performance]: Scheduler PERF regressions now assert prisma.$queryRaw usage, same-day dedupe, and send guards.
 
 ### Pending Todos
 
@@ -84,5 +86,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 04-database-performance-01-PLAN.md
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
