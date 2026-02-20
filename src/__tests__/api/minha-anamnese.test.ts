@@ -98,10 +98,38 @@ describe('Minha Anamnese API', () => {
         update: expect.objectContaining({ pesoAtual: null, objetivo: 'Saude' }),
       })
     )
+    const upsertPayload = vi.mocked(prismaMock.anamnese.upsert).mock.calls[0][0]
+    expect(upsertPayload.create).toMatchObject({
+      altura: null,
+      parq7: null,
+    })
     expect(prismaMock.usuario.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ etapaOnboarding: 4 }) })
     )
     expect(resendMock.enviarEmail).toHaveBeenCalled()
     expect(json.success).toBe(true)
+  })
+
+  it('POST ignores unknown fields and keeps canonical null defaults', async () => {
+    prismaMock.membro.findUnique.mockResolvedValueOnce({
+      id: 'm-1',
+      usuario: { email: 'user@example.com', nome: 'Aluno', onboardingCompleto: true },
+    })
+
+    const req = new NextRequest('http://localhost:3000/api/minha-anamnese', {
+      method: 'POST',
+      body: JSON.stringify({ objetivo: 'Saude', role: 'ADMIN' }),
+    })
+    const res = await POST(req)
+
+    expect(res.status).toBe(200)
+    expect(prismaMock.anamnese.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          objetivo: 'Saude',
+          altura: null,
+        }),
+      })
+    )
   })
 })
