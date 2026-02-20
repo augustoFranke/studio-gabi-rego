@@ -142,6 +142,9 @@ export async function processarLembretesAula() {
     sendEmail: resendEnabled
       ? async (agendamento) => {
           const { membro, horario, nome, dataFormatada } = getContext(agendamento)
+          if (!membro.usuario.email) {
+            return
+          }
           const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
           await enviarEmail({
             para: membro.usuario.email,
@@ -229,6 +232,9 @@ export async function processarCobrancas() {
     sendEmail: resendEnabled
       ? async (pagamento) => {
           const { membro, nome, valor, vencimento } = getContext(pagamento)
+          if (!membro.usuario.email) {
+            return
+          }
           const html = emailTemplates.cobranca(nome, valor, vencimento)
           await enviarEmail({
             para: membro.usuario.email,
@@ -296,6 +302,9 @@ export async function processarAniversarios() {
     sendEmail: resendEnabled
       ? async (membro) => {
           const { nome } = getContext(membro)
+          if (!membro.usuario.email) {
+            return
+          }
           const html = emailTemplates.aniversario(nome)
           await enviarEmail({
             para: membro.usuario.email,
