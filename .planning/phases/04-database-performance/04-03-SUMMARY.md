@@ -62,10 +62,23 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] `gsd-tools` state parser could not update all STATE sections**
+- **Found during:** Plan finalization (STATE update protocol)
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` failed because this repo's `STATE.md` format did not match parser expectations.
+- **Fix:** Kept successful `gsd-tools` updates (metrics + decisions), then manually normalized Current Position, progress, recent executions, and session continuity in `STATE.md`.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** `STATE.md` now reflects completion of `04-03-PLAN.md`, updated metrics, and current focus for next phase.
+- **Committed in:** `b9959b7`
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** No scope creep; deviation only affected metadata automation and was resolved without impacting code or regression outcomes.
 
 ## Issues Encountered
-None.
+- `gsd-tools` state parser mismatch required manual STATE normalization for position/session fields.
 
 ## User Setup Required
 None - no external service configuration required.
