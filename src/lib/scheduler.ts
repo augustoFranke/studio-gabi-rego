@@ -266,7 +266,7 @@ export async function processarAniversarios() {
     usuarioEmail: string | null
   }
 
-  const aniversariantes = await prisma.$queryRaw<AniversarianteRow[]>(
+  const aniversariantesRows = await prisma.$queryRaw<AniversarianteRow[]>(
     Prisma.sql`
       SELECT
         m.id,
@@ -275,16 +275,25 @@ export async function processarAniversarios() {
         u.email AS "usuarioEmail"
       FROM membros m
       INNER JOIN usuarios u ON u.id = m.usuario_id
-      WHERE m.status = CAST(${String('ATIVO')} AS "StatusMembro")
+      WHERE m.status = CAST(${'ATIVO'} AS "StatusMembro")
         AND m.data_nascimento IS NOT NULL
         AND EXTRACT(MONTH FROM m.data_nascimento) = ${mes}
         AND EXTRACT(DAY FROM m.data_nascimento) = ${dia}
     `
   )
 
+  const aniversariantes = aniversariantesRows.map((membro) => ({
+    id: membro.id,
+    telefone: membro.telefone,
+    usuario: {
+      nome: membro.usuarioNome,
+      email: membro.usuarioEmail,
+    },
+  }))
+
   const getContext = (membro: typeof aniversariantes[number]) => ({
     membro,
-    nome: membro.usuarioNome || 'Aluno(a)',
+    nome: membro.usuario.nome || 'Aluno(a)',
   })
 
   return processNotifications({
@@ -310,12 +319,12 @@ export async function processarAniversarios() {
     sendEmail: resendEnabled
       ? async (membro) => {
           const { nome } = getContext(membro)
-          if (!membro.usuarioEmail) {
+          if (!membro.usuario.email) {
             return
           }
           const html = emailTemplates.aniversario(nome)
           await enviarEmail({
-            para: membro.usuarioEmail,
+            para: membro.usuario.email,
             assunto: '🎂 Feliz Aniversário!',
             html,
           })
