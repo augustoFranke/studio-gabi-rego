@@ -22,8 +22,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Data Integrity
 
-- [ ] **DATA-01**: Single canonical `ANAMNESE_FIELDS` definition used across all routes
-- [ ] **DATA-02**: Centralized `generatePlaceholderEmail()` function used by all member creation paths
+- [x] **DATA-01**: Single canonical anamnese field-key source in `src/lib/anamnese.ts` used across all anamnese routes
+- [x] **DATA-02**: Missing member email persists as `null` (no placeholder generation), with deterministic placeholder-email migration tooling and report artifacts
 
 ### Database Performance
 
@@ -94,8 +94,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUG-01 | Phase 2 | Complete |
 | BUG-02 | Phase 2 | Complete |
 | SEC-05 | Phase 2 | Complete |
-| DATA-01 | Phase 3 | Pending |
-| DATA-02 | Phase 3 | Pending |
+| DATA-01 | Phase 3 | Complete |
+| DATA-02 | Phase 3 | Complete |
 | PERF-01 | Phase 4 | Pending |
 | PERF-02 | Phase 4 | Pending |
 | PERF-03 | Phase 5 | Pending |
@@ -116,4 +116,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-20 after Phase 2 execution — BUG-01, BUG-02, SEC-05 complete*
+*Last updated: 2026-02-20 after Phase 3 execution — DATA-01, DATA-02 complete*
