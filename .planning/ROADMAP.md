@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Security Hardening** - Close three active exploits in server actions, rate limiter, and cron endpoints; unify password policy
 - [x] **Phase 2: Bug Fixes and Dependency Cleanup** - Fix broken revalidatePath calls, remove gender heuristic, verify and remove unused dependencies
-- [ ] **Phase 3: Data Integrity** - Centralize duplicated ANAMNESE_FIELDS and placeholder email generation to single sources of truth
+- [ ] **Phase 3: Data Integrity** - Centralize ANAMNESE canonical fields and migrate placeholder-email behavior to explicit nullable-email integrity
 - [ ] **Phase 4: Database Performance** - Add composite indexes on high-query fields; push birthday filtering to the database
 - [ ] **Phase 5: API Pagination** - Add pagination to all currently unpaginated list endpoints
 - [ ] **Phase 6: Test Coverage** - Add middleware route protection tests and scheduler core logic tests
@@ -51,14 +51,18 @@ Plans:
 - [x] 02-03-PLAN.md — Deliver SEC-05 by removing unused runtime deps and moving pdf-lib to devDependencies with build/test verification.
 
 ### Phase 3: Data Integrity
-**Goal**: ANAMNESE_FIELDS is defined in exactly one place; placeholder email generation uses exactly one function — adding or removing a field or changing the placeholder pattern requires a single code change
+**Goal**: ANAMNESE field behavior is defined in exactly one place; missing member email is represented as `null` (not placeholders) with deterministic legacy cleanup — adding/removing a field or changing email-missing handling requires one canonical change path
 **Depends on**: Phase 2
 **Requirements**: DATA-01, DATA-02
 **Success Criteria** (what must be TRUE):
   1. The minha-anamnese route uses sanitizeAnamnesePayload from src/lib/anamnese.ts — there is no separate ANAMNESE_FIELDS array in the route file
-  2. Both member creation paths (POST /api/membros and PUT /api/membros/[id]) call generatePlaceholderEmail() from a single shared location — neither implements its own placeholder pattern
+  2. Both member creation paths (POST /api/membros and PUT /api/membros/[id]) persist missing email as `null` and no route generates `@placeholder.local` values
   3. Adding a new anamnese field to src/lib/anamnese.ts automatically propagates to all anamnese routes without any other code change
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 03-01-PLAN.md — Consolidate canonical anamnese sanitize/normalize logic in `src/lib/anamnese.ts` and remove route-local field duplication with self-healing read behavior.
+- [ ] 03-02-PLAN.md — Make `Usuario.email` nullable and remove placeholder generation from member create/update flows while guarding email-dependent operations.
+- [ ] 03-03-PLAN.md — Add deterministic one-time placeholder-email migration script with preview/execute modes and JSON report artifacts.
 
 ### Phase 4: Database Performance
 **Goal**: Financial and scheduling queries no longer scan full tables; the birthday notification job filters at the database level rather than loading all members into memory
@@ -144,7 +148,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Security Hardening | 4/4 | Complete | 2026-02-16 |
 | 2. Bug Fixes and Dependency Cleanup | 3/3 | Complete | 2026-02-20 |
-| 3. Data Integrity | 0/TBD | Not started | - |
+| 3. Data Integrity | 0/3 | Not started | - |
 | 4. Database Performance | 0/TBD | Not started | - |
 | 5. API Pagination | 0/TBD | Not started | - |
 | 6. Test Coverage | 0/TBD | Not started | - |
