@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { sanitizeAnamnesePayload } from '@/lib/anamnese'
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+} from '@/lib/anamnese'
 
 interface Params {
   params: Promise<{
@@ -38,13 +42,27 @@ export async function GET(
       ? (membro.sexo === 'FEMININO' ? 'Feminino' : 'Masculino')
       : null
 
+    const normalized = normalizeAnamneseRecord(
+      extractCanonicalAnamneseData(membro.anamnese)
+    )
+    if ('error' in normalized) {
+      return NextResponse.json({ error: 'Dados de anamnese inválidos' }, { status: 500 })
+    }
+
+    if (membro.anamnese && normalized.changed) {
+      await prisma.anamnese.update({
+        where: { membroId: id },
+        data: normalized.data,
+      })
+    }
+
     return NextResponse.json({
       member: {
         id: membro.id,
         nome: membro.usuario.nome,
         sexo,
       },
-      anamnese: membro.anamnese,
+      anamnese: membro.anamnese ? normalized.data : null,
     })
   }, { requiredRole: 'ADMIN' })
 }
@@ -68,9 +86,15 @@ export async function POST(
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
 
-    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
-    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>, {
+      ignoreUnknownFields: true,
+      fillMissingFields: true,
+    })
+    if ('error' in sanitized) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
+    if (sanitized.ignoredKeys.length > 0) {
+      console.warn('[anamnese_sanitize] Campos ignorados em membros/[id]/anamnese:', sanitized.ignoredKeys)
     }
 
     const membro = await prisma.membro.findUnique({
