@@ -57,7 +57,7 @@ enum Sexo {
 
 model Usuario {
   id            String    @id @default(cuid())
-  email         String    @unique
+  email         String?   @unique
   senha         String
   senhaDefinida Boolean   @default(false) @map("senha_definida")
   nome          String?
