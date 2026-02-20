@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 4 of 10 (Database Performance)
-Plan: 0 of TBD in current phase
-Status: Phase 3 complete; ready to plan next phase
-Last activity: 2026-02-20 — Completed Phase 3 execution and verification (03-03 + 03-VERIFICATION)
+Plan: 2 of 3 in current phase
+Status: Phase 4 in progress; PERF-02 executed
+Last activity: 2026-02-20 — Completed 04-02 execution (birthday scheduler SQL filtering)
 
 Progress: [███░░░░░░░] 30%
 
@@ -37,6 +37,9 @@ Progress: [███░░░░░░░] 30%
 
 *Updated after each plan completion*
 
+**Recent executions:**
+- Phase 04 P02 | 2 min | 2 tasks | 1 file
+
 ## Accumulated Context
 
 ### Decisions
@@ -60,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Missing member email is persisted as null in create/update routes instead of synthetic placeholder addresses
 - [Phase 03]: Outbound email flows must guard nullable recipients and skip send attempts when email is absent
 - [Phase 03]: Placeholder-email cleanup uses deterministic preview/execute modes with JSON reports and non-destructive inspection behavior
+- [Phase 04]: Birthday member filtering now runs in parameterized SQL using EXTRACT(MONTH/DAY) instead of in-memory JS filtering.
+- [Phase 04]: Birthday SQL rows are mapped back to the existing membro.usuario shape to keep notification dedupe/send behavior unchanged.
 
 ### Pending Todos
 
@@ -75,5 +80,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed Phase 3 execution (03-01, 03-02, 03-03) and phase verification
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
