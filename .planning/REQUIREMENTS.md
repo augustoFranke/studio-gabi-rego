@@ -13,12 +13,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **SEC-02**: Rate limiter returns `{ success: false }` when Redis is unavailable in production
 - [x] **SEC-03**: Cron endpoints use `crypto.timingSafeEqual` for secret comparison
 - [x] **SEC-04**: Shared password policy (8+ chars, uppercase, number) used in both registration and member update flows
-- [ ] **SEC-05**: Unused dependencies removed from production bundle (pdf-lib to devDeps, dompurify + isomorphic-dompurify removed)
+- [x] **SEC-05**: Unused dependencies removed from production bundle (pdf-lib to devDeps, dompurify + isomorphic-dompurify removed)
 
 ### Bug Fixes
 
-- [ ] **BUG-01**: `revalidatePath` calls in server actions target `/alunos` instead of non-existent `/membros`
-- [ ] **BUG-02**: Gender heuristic removed from anamnese route — returns null when `sexo` is not set
+- [x] **BUG-01**: `revalidatePath` calls in server actions target `/alunos` instead of non-existent `/membros`
+- [x] **BUG-02**: Gender heuristic removed from anamnese route — returns null when `sexo` is not set
 
 ### Data Integrity
 
@@ -91,9 +91,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-02 | Phase 1 | Complete |
 | SEC-03 | Phase 1 | Complete |
 | SEC-04 | Phase 1 | Complete |
-| BUG-01 | Phase 2 | Pending |
-| BUG-02 | Phase 2 | Pending |
-| SEC-05 | Phase 2 | Pending |
+| BUG-01 | Phase 2 | Complete |
+| BUG-02 | Phase 2 | Complete |
+| SEC-05 | Phase 2 | Complete |
 | DATA-01 | Phase 3 | Pending |
 | DATA-02 | Phase 3 | Pending |
 | PERF-01 | Phase 4 | Pending |
@@ -116,4 +116,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after Phase 1 execution — SEC-01..SEC-04 complete*
+*Last updated: 2026-02-20 after Phase 2 execution — BUG-01, BUG-02, SEC-05 complete*

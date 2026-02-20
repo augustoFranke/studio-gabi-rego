@@ -13,7 +13,7 @@ This milestone transforms the Studio Gabi Rego gym management system from a func
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Security Hardening** - Close three active exploits in server actions, rate limiter, and cron endpoints; unify password policy
-- [ ] **Phase 2: Bug Fixes and Dependency Cleanup** - Fix broken revalidatePath calls, remove gender heuristic, verify and remove unused dependencies
+- [x] **Phase 2: Bug Fixes and Dependency Cleanup** - Fix broken revalidatePath calls, remove gender heuristic, verify and remove unused dependencies
 - [ ] **Phase 3: Data Integrity** - Centralize duplicated ANAMNESE_FIELDS and placeholder email generation to single sources of truth
 - [ ] **Phase 4: Database Performance** - Add composite indexes on high-query fields; push birthday filtering to the database
 - [ ] **Phase 5: API Pagination** - Add pagination to all currently unpaginated list endpoints
@@ -44,7 +44,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. After toggling a member's status or deleting a member, the /alunos page reflects the change without a manual browser refresh
   2. The anamnese API returns null for the sexo field when it is not set in the database — no guessing from names
   3. dompurify and isomorphic-dompurify are absent from package.json dependencies; pdf-lib is present only in devDependencies
-**Plans**: TBD
+**Plans**: 3/3 plans complete
+Plans:
+- [x] 02-01-PLAN.md — Fix BUG-01 by correcting member action revalidatePath targets to /alunos with regression assertions.
+- [x] 02-02-PLAN.md — Fix BUG-02 by removing sexo heuristics in both anamnese GET endpoints and enforcing null fallback.
+- [x] 02-03-PLAN.md — Deliver SEC-05 by removing unused runtime deps and moving pdf-lib to devDependencies with build/test verification.
 
 ### Phase 3: Data Integrity
 **Goal**: ANAMNESE_FIELDS is defined in exactly one place; placeholder email generation uses exactly one function — adding or removing a field or changing the placeholder pattern requires a single code change
@@ -139,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Hardening | 4/4 | Complete | 2026-02-16 |
-| 2. Bug Fixes and Dependency Cleanup | 0/TBD | Not started | - |
+| 2. Bug Fixes and Dependency Cleanup | 3/3 | Complete | 2026-02-20 |
 | 3. Data Integrity | 0/TBD | Not started | - |
 | 4. Database Performance | 0/TBD | Not started | - |
 | 5. API Pagination | 0/TBD | Not started | - |
