@@ -11,17 +11,17 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 Phase: 4 of 10 (Database Performance)
 Plan: 2 of 3 in current phase
-Status: Phase 4 in progress; PERF-02 executed
-Last activity: 2026-02-20 — Completed 04-02 execution (birthday scheduler SQL filtering)
+Status: Phase 4 in progress; PERF-01 and PERF-02 executed
+Last activity: 2026-02-20 — Completed 04-01 execution (Prisma performance indexes)
 
 Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: ~13 min
-- Total execution time: ~2.1 hours
+- Total plans completed: 12
+- Average duration: ~11 min
+- Total execution time: ~2.2 hours
 
 **By Phase:**
 
@@ -30,15 +30,17 @@ Progress: [███░░░░░░░] 30%
 | 1 | 4 | ~1.9h | ~29m |
 | 2 | 3 | ~6m | ~2m |
 | 3 | 3 | ~4m | ~1m |
+| 4 | 2 | ~7m | ~4m |
 
 **Recent Trend:**
-- Last 4 plans: 02-03, 03-01, 03-02, 03-03
+- Last 4 plans: 03-02, 03-03, 04-02, 04-01
 - Trend: Stable
 
 *Updated after each plan completion*
 
 **Recent executions:**
 - Phase 04 P02 | 2 min | 2 tasks | 1 file
+- Phase 04 P01 | 5 min | 2 tasks | 2 files
 
 ## Accumulated Context
 
@@ -65,6 +67,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Placeholder-email cleanup uses deterministic preview/execute modes with JSON reports and non-destructive inspection behavior
 - [Phase 04]: Birthday member filtering now runs in parameterized SQL using EXTRACT(MONTH/DAY) instead of in-memory JS filtering.
 - [Phase 04]: Birthday SQL rows are mapped back to the existing membro.usuario shape to keep notification dedupe/send behavior unchanged.
+- [Phase 04-database-performance]: Used Prisma datamodel diff fallback to generate scoped PERF-01 migration SQL when local DB was unavailable.
+- [Phase 04-database-performance]: Deploy Phase 4 index migration during off-hours to reduce impact of brief CREATE INDEX write locks.
 
 ### Pending Todos
 
@@ -80,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 04-02-PLAN.md
+Stopped at: Completed 04-database-performance-01-PLAN.md
 Resume file: None
