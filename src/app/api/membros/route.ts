@@ -5,6 +5,7 @@ import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { Prisma, StatusMembro } from '@prisma/client'
 import { membroCreateSchema } from '@/schemas/membro.schema'
+import { normalizeEmailForStorage } from '@/lib/email'
 
 // GET /api/membros - Listar todos os membros
 export async function GET(request: NextRequest) {
@@ -90,8 +91,7 @@ export async function POST(request: NextRequest) {
     const senhaValue = typeof senha === "string" ? senha.trim() : ""
     const senhaDefinida = Boolean(senhaValue)
 
-    // Normalize email to lowercase
-    const normalizedEmail = email ? email.toLowerCase().trim() : null
+    const normalizedEmail = normalizeEmailForStorage(email)
 
     // Validate email if provided
     if (normalizedEmail && !validarEmail(normalizedEmail)) {
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       const usuario = await tx.usuario.create({
         data: {
           nome: nome || 'Sem nome',
-          email: normalizedEmail || `temp_${Date.now()}@placeholder.local`,
+          email: normalizedEmail,
           senha: senhaHash,
           senhaDefinida,
           role: 'MEMBRO',

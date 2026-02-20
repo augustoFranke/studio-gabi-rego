@@ -94,4 +94,28 @@ describe('Membros API - PATCH /api/membros/[id]', () => {
 
     expect(res.status).toBe(404)
   })
+
+  it('should clear email to null when empty email is sent', async () => {
+    const existingMember = {
+      id: '123',
+      usuarioId: 'user-123',
+      cpf: '00000000000',
+      usuario: { email: 'old@example.com' },
+    } satisfies { id: string; usuarioId: string; cpf: string | null; usuario: { email: string } }
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(existingMember)
+    const updatedMember = {
+      id: '123',
+      usuarioId: 'user-123',
+    } satisfies { id: string; usuarioId: string }
+    vi.mocked(prisma.membro.update).mockResolvedValue(updatedMember)
+
+    const req = createRequest({ email: '' })
+    const res = await PATCH(req, { params })
+
+    expect(res.status).toBe(200)
+    expect(prisma.usuario.update).toHaveBeenCalledWith({
+      where: { id: 'user-123' },
+      data: { email: null },
+    })
+  })
 })
