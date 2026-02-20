@@ -162,6 +162,7 @@ async function executeMigration(safeSet: ClassifiedCandidate[], dryRun: boolean)
 async function writeReport(params: {
   mode: Mode
   dryRun: boolean
+  totalUsersScanned: number
   classified: ClassifiedCandidate[]
   migratedIds: string[]
   error?: string
@@ -174,9 +175,11 @@ async function writeReport(params: {
     executedAt: new Date().toISOString(),
     mode: params.mode,
     dryRun: params.dryRun,
+    totalUsersScanned: params.totalUsersScanned,
     placeholderCandidates: params.classified.length,
     safeCandidateCount: safeSet.length,
     blockedCandidateCount: blockedSet.length,
+    plannedMigrationCount: safeSet.length,
     migratedCount: params.migratedIds.length,
     migratedUserIds: params.migratedIds,
     safeCandidates: safeSet.map((item) => ({
@@ -221,7 +224,13 @@ async function main() {
       console.log('\nPreview only: nenhuma alteração foi aplicada.')
     }
 
-    await writeReport({ mode, dryRun, classified, migratedIds })
+    await writeReport({
+      mode,
+      dryRun,
+      totalUsersScanned: candidates.length,
+      classified,
+      migratedIds,
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error(`\nErro na migração: ${message}`)
@@ -229,6 +238,7 @@ async function main() {
     await writeReport({
       mode,
       dryRun,
+      totalUsersScanned: classified.length,
       classified,
       migratedIds,
       error: message,
