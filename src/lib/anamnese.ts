@@ -1,4 +1,6 @@
-export const ANAMNESE_FIELDS = new Set([
+const INVALID_ANAMNESE_ERROR = 'Dados inválidos'
+
+const ANAMNESE_FIELD_KEYS = [
   'altura',
   'pesoAtual',
   'objetivo',
@@ -34,28 +36,117 @@ export const ANAMNESE_FIELDS = new Set([
   'parq5',
   'parq6',
   'parq7',
-])
+] as const
 
-export function sanitizeAnamnesePayload(payload: Record<string, unknown>) {
-  const data: Record<string, string | null> = {}
+type AnamneseField = (typeof ANAMNESE_FIELD_KEYS)[number]
+
+export type CanonicalAnamneseData = Record<AnamneseField, string | null>
+
+export const ANAMNESE_FIELDS = new Set<string>(ANAMNESE_FIELD_KEYS)
+
+type AnamneseRecord = Record<string, unknown>
+
+type SanitizeOptions = {
+  ignoreUnknownFields?: boolean
+  fillMissingFields?: boolean
+}
+
+function isRecord(value: unknown): value is AnamneseRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function createCanonicalAnamneseData() {
+  return ANAMNESE_FIELD_KEYS.reduce<CanonicalAnamneseData>((acc, key) => {
+    acc[key] = null
+    return acc
+  }, {} as CanonicalAnamneseData)
+}
+
+function normalizeValue(value: unknown): { value: string | null } | { error: true } {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return { value: trimmed === '' ? null : trimmed }
+  }
+
+  if (value === null || value === undefined) {
+    return { value: null }
+  }
+
+  return { error: true }
+}
+
+export function sanitizeAnamnesePayload(payload: AnamneseRecord, options?: SanitizeOptions) {
+  if (!isRecord(payload)) {
+    return { error: INVALID_ANAMNESE_ERROR } as const
+  }
+
+  const ignoreUnknownFields = options?.ignoreUnknownFields ?? false
+  const fillMissingFields = options?.fillMissingFields ?? false
+  const data: Record<string, string | null> = fillMissingFields ? createCanonicalAnamneseData() : {}
+  const ignoredKeys: string[] = []
 
   for (const [key, value] of Object.entries(payload)) {
     if (!ANAMNESE_FIELDS.has(key)) {
-      return { error: 'Dados inválidos' } as const
+      if (ignoreUnknownFields) {
+        ignoredKeys.push(key)
+        continue
+      }
+      return { error: INVALID_ANAMNESE_ERROR } as const
     }
 
-    if (typeof value === 'string') {
-      data[key] = value.trim() === '' ? null : value
-      continue
+    const normalized = normalizeValue(value)
+    if ('error' in normalized) {
+      return { error: INVALID_ANAMNESE_ERROR } as const
     }
 
-    if (value === null) {
-      data[key] = null
-      continue
-    }
-
-    return { error: 'Dados inválidos' } as const
+    data[key] = normalized.value
   }
 
-  return { data } as const
+  if (fillMissingFields) {
+    for (const field of ANAMNESE_FIELD_KEYS) {
+      if (!(field in data)) {
+        data[field] = null
+      }
+    }
+  }
+
+  return { data, ignoredKeys } as const
+}
+
+export function normalizeAnamneseRecord(record: unknown) {
+  if (record === null || record === undefined) {
+    return { data: createCanonicalAnamneseData(), changed: false, ignoredKeys: [] } as const
+  }
+
+  if (!isRecord(record)) {
+    return { error: INVALID_ANAMNESE_ERROR } as const
+  }
+
+  const data = createCanonicalAnamneseData()
+  const ignoredKeys: string[] = []
+  let changed = false
+
+  for (const key of Object.keys(record)) {
+    if (!ANAMNESE_FIELDS.has(key)) {
+      ignoredKeys.push(key)
+      changed = true
+    }
+  }
+
+  for (const field of ANAMNESE_FIELD_KEYS) {
+    const rawValue = record[field]
+    const normalized = normalizeValue(rawValue)
+
+    if ('error' in normalized) {
+      return { error: INVALID_ANAMNESE_ERROR } as const
+    }
+
+    data[field] = normalized.value
+
+    if (rawValue === undefined || normalized.value !== rawValue) {
+      changed = true
+    }
+  }
+
+  return { data, changed, ignoredKeys } as const
 }
