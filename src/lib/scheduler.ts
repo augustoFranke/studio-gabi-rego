@@ -258,25 +258,33 @@ export async function processarAniversarios() {
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
-  // Buscar membros que fazem aniversário hoje
-  const membros = await prisma.membro.findMany({
-    where: {
-      status: 'ATIVO',
-    },
-    include: {
-      usuario: true,
-    },
-  })
+  // Buscar membros ativos que fazem aniversário hoje direto no banco
+  type AniversarianteRow = {
+    id: string
+    telefone: string | null
+    usuarioNome: string | null
+    usuarioEmail: string | null
+  }
 
-  const aniversariantes = membros.filter((membro) => {
-    if (!membro.dataNascimento) return false
-    const dataNasc = new Date(membro.dataNascimento)
-    return dataNasc.getMonth() + 1 === mes && dataNasc.getDate() === dia
-  })
+  const aniversariantes = await prisma.$queryRaw<AniversarianteRow[]>(
+    Prisma.sql`
+      SELECT
+        m.id,
+        m.telefone,
+        u.nome AS "usuarioNome",
+        u.email AS "usuarioEmail"
+      FROM membros m
+      INNER JOIN usuarios u ON u.id = m.usuario_id
+      WHERE m.status = CAST(${String('ATIVO')} AS "StatusMembro")
+        AND m.data_nascimento IS NOT NULL
+        AND EXTRACT(MONTH FROM m.data_nascimento) = ${mes}
+        AND EXTRACT(DAY FROM m.data_nascimento) = ${dia}
+    `
+  )
 
   const getContext = (membro: typeof aniversariantes[number]) => ({
     membro,
-    nome: membro.usuario.nome || 'Aluno(a)',
+    nome: membro.usuarioNome || 'Aluno(a)',
   })
 
   return processNotifications({
@@ -302,12 +310,12 @@ export async function processarAniversarios() {
     sendEmail: resendEnabled
       ? async (membro) => {
           const { nome } = getContext(membro)
-          if (!membro.usuario.email) {
+          if (!membro.usuarioEmail) {
             return
           }
           const html = emailTemplates.aniversario(nome)
           await enviarEmail({
-            para: membro.usuario.email,
+            para: membro.usuarioEmail,
             assunto: '🎂 Feliz Aniversário!',
             html,
           })
