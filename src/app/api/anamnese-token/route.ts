@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
-import { sanitizeAnamnesePayload } from "@/lib/anamnese"
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+} from "@/lib/anamnese"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 const TOKEN_COOKIE_NAME = "anamnese_token"
@@ -76,10 +80,26 @@ export async function GET(request: NextRequest) {
     }
 
     const sexo = membro.sexo ?? null
+    const normalized = normalizeAnamneseRecord(
+      extractCanonicalAnamneseData(membro.anamnese)
+    )
+    if ("error" in normalized) {
+      return NextResponse.json(
+        { error: "Dados de anamnese inválidos" },
+        { status: 500 }
+      )
+    }
+
+    if (membro.anamnese && normalized.changed) {
+      await prisma.anamnese.update({
+        where: { membroId: membro.id },
+        data: normalized.data,
+      })
+    }
 
     const response = NextResponse.json({
       sexo,
-      anamnese: membro.anamnese || null,
+      anamnese: membro.anamnese ? normalized.data : null,
     })
 
     if (source && source !== "cookie") {
@@ -125,9 +145,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
     }
 
-    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
-    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>, {
+      ignoreUnknownFields: true,
+      fillMissingFields: true,
+    })
+    if ('error' in sanitized) {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
+    }
+    if (sanitized.ignoredKeys.length > 0) {
+      console.warn("[anamnese_sanitize] Campos ignorados em anamnese-token:", sanitized.ignoredKeys)
     }
 
     const anamneseData = sanitized.data

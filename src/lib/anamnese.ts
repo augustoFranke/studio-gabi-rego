@@ -1,6 +1,6 @@
 const INVALID_ANAMNESE_ERROR = 'Dados inválidos'
 
-const ANAMNESE_FIELD_KEYS = [
+export const ANAMNESE_FIELD_KEYS = [
   'altura',
   'pesoAtual',
   'objetivo',
@@ -149,4 +149,17 @@ export function normalizeAnamneseRecord(record: unknown) {
   }
 
   return { data, changed, ignoredKeys } as const
+}
+
+export function extractCanonicalAnamneseData(source: unknown) {
+  if (!isRecord(source)) {
+    return null
+  }
+
+  const data: Record<string, unknown> = {}
+  for (const field of ANAMNESE_FIELD_KEYS) {
+    data[field] = source[field] ?? null
+  }
+
+  return data
 }

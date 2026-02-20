@@ -8,7 +8,7 @@ const { prismaMock, sessionRef, withApiAuthMock } = vi.hoisted(() => {
   return {
     prismaMock: createPrismaMock({
       membro: ['findUnique'],
-      anamnese: ['upsert'],
+      anamnese: ['upsert', 'update'],
     }),
     sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
@@ -71,6 +71,27 @@ describe('Membros Anamnese API', () => {
     expect(json.member.sexo).toBeNull()
   })
 
+  it('GET normalizes persisted anamnese and self-heals changed values', async () => {
+    prismaMock.membro.findUnique.mockResolvedValueOnce({
+      id: 'm-1',
+      sexo: 'MASCULINO',
+      usuario: { nome: 'Carlos' },
+      anamnese: { id: 'a-1', objetivo: '  Saude  ', pesoAtual: '70' },
+    })
+
+    const res = await GET(new NextRequest('http://localhost:3000/api/membros/m-1/anamnese'), params('m-1'))
+    const json = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(json.anamnese.objetivo).toBe('Saude')
+    expect(prismaMock.anamnese.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { membroId: 'm-1' },
+        data: expect.objectContaining({ objetivo: 'Saude' }),
+      })
+    )
+  })
+
   it('POST returns 404 when membro not found', async () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce(null)
 
@@ -83,8 +104,9 @@ describe('Membros Anamnese API', () => {
     expect(res.status).toBe(404)
   })
 
-  it('POST rejects unknown fields', async () => {
+  it('POST ignores unknown fields', async () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce({ id: 'm-1' })
+    prismaMock.anamnese.upsert.mockResolvedValueOnce({ id: 'a-1' })
 
     const req = new NextRequest('http://localhost:3000/api/membros/m-1/anamnese', {
       method: 'POST',
@@ -92,8 +114,15 @@ describe('Membros Anamnese API', () => {
     })
     const res = await POST(req, params('m-1'))
 
-    expect(res.status).toBe(400)
-    expect(prismaMock.anamnese.upsert).not.toHaveBeenCalled()
+    expect(res.status).toBe(200)
+    expect(prismaMock.anamnese.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          objetivo: 'Saude',
+          altura: null,
+        }),
+      })
+    )
   })
 
   it('POST upserts anamnese', async () => {
@@ -111,7 +140,7 @@ describe('Membros Anamnese API', () => {
       expect.objectContaining({
         where: { membroId: 'm-1' },
         create: expect.objectContaining({ membroId: 'm-1', objetivo: 'Saude' }),
-        update: { objetivo: 'Saude' },
+        update: expect.objectContaining({ objetivo: 'Saude' }),
       })
     )
   })
