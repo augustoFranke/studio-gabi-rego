@@ -112,6 +112,7 @@ model Membro {
   anamnese        Anamnese?
   horariosFixos   HorarioFixo[]
 
+  @@index([status])
   @@map("membros")
 }
 
@@ -163,6 +164,7 @@ model Agendamento {
   membro          Membro              @relation(fields: [membroId], references: [id], onDelete: Cascade)
   horario         HorarioDisponivel   @relation(fields: [horarioId], references: [id])
 
+  @@index([data])
   @@unique([membroId, horarioId, data])
   @@map("agendamentos")
 }
@@ -198,6 +200,7 @@ model Pagamento {
   membro          Membro          @relation(fields: [membroId], references: [id], onDelete: Cascade)
   plano           Plano           @relation(fields: [planoId], references: [id])
 
+  @@index([status, dataVencimento])
   @@map("pagamentos")
 }
 
