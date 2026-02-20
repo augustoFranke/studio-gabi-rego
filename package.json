@@ -37,6 +37,9 @@
     "cleanup:inactive:preview": "tsx utility/cleanup-inactive-members.ts --preview-only",
     "cleanup:inactive:dry": "tsx utility/cleanup-inactive-members.ts --dry-run",
     "cleanup:inactive": "tsx utility/cleanup-inactive-members.ts",
+    "migrate:placeholder-emails:preview": "node --import tsx utility/migrate-placeholder-emails.ts --preview",
+    "migrate:placeholder-emails:execute": "node --import tsx utility/migrate-placeholder-emails.ts --execute",
+    "migrate:placeholder-emails:execute:dry-run": "node --import tsx utility/migrate-placeholder-emails.ts --execute --dry-run",
     "prepare": "husky"
   },
   "prisma": {
