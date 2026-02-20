@@ -5,6 +5,7 @@ import { hash } from 'bcryptjs'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { Prisma } from '@prisma/client'
 import { membroUpdateSchema } from '@/schemas/membro.schema'
+import { normalizeEmailForStorage } from '@/lib/email'
 
 interface Params {
     params: Promise<{
@@ -57,12 +58,9 @@ export async function PATCH(
 
         const data = validation.data
 
-        const shouldClearEmail = data.email === ''
-        const normalizedEmail = shouldClearEmail
-            ? `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}@placeholder.local`
-            : data.email
-                ? data.email.toLowerCase().trim()
-                : undefined
+        const normalizedEmail = data.email === undefined
+            ? undefined
+            : normalizeEmailForStorage(data.email)
 
         const cpfLimpo = typeof data.cpf === 'string' && data.cpf
             ? data.cpf.replace(/\D/g, '')
@@ -136,10 +134,10 @@ export async function PATCH(
         // Atualizar dados em transação
         const membroAtualizado = await prisma.$transaction(async (tx) => {
             // Atualizar usuário se necessário
-            if (data.nome || normalizedEmail || data.senha) {
-                const usuarioUpdateData: { nome?: string; email?: string; senha?: string; senhaDefinida?: boolean } = {}
+            if (data.nome || normalizedEmail !== undefined || data.senha) {
+                const usuarioUpdateData: { nome?: string; email?: string | null; senha?: string; senhaDefinida?: boolean } = {}
                 if (data.nome) usuarioUpdateData.nome = data.nome
-                if (normalizedEmail) usuarioUpdateData.email = normalizedEmail
+                if (normalizedEmail !== undefined) usuarioUpdateData.email = normalizedEmail
                 if (data.senha) {
                     usuarioUpdateData.senha = await hash(data.senha, 12)
                     usuarioUpdateData.senhaDefinida = true

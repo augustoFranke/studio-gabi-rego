@@ -103,4 +103,29 @@ describe('Membros API - POST /api/membros', () => {
      expect(res.status).toBe(400)
      expect(json.error).toContain('CPF já está cadastrado')
   })
+
+  it('should create member with null email when email is missing', async () => {
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.membro.findUnique).mockResolvedValue(null)
+    const createdUser = { id: 'user-456' } satisfies { id: string }
+    vi.mocked(prisma.usuario.create).mockResolvedValue(createdUser)
+    const createdMember = {
+      id: 'membro-456',
+      usuarioId: 'user-456',
+      status: 'ATIVO',
+    } satisfies { id: string; usuarioId: string; status: string }
+    vi.mocked(prisma.membro.create).mockResolvedValue(createdMember)
+
+    const req = createRequest({ nome: 'Sem Email', cpf: '123.456.789-11' })
+    const res = await POST(req)
+
+    expect(res.status).toBe(201)
+    expect(prisma.usuario.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: null,
+        }),
+      })
+    )
+  })
 })
