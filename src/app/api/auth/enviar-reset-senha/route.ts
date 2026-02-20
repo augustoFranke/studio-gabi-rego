@@ -48,6 +48,12 @@ export async function POST(request: Request) {
         { status: 404 }
       )
     }
+    if (!usuario.email) {
+      return NextResponse.json(
+        { error: "Usuário sem email cadastrado" },
+        { status: 400 }
+      )
+    }
 
     // Generate reset token
     const resetToken = randomBytes(32).toString("hex")
