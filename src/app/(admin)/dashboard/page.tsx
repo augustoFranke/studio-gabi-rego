@@ -148,6 +148,7 @@ export default async function DashboardPage() {
             status: true,
             valor: true,
             dataVencimento: true,
+            payerNome: true,
             membro: {
               select: {
                 usuario: {
@@ -361,7 +362,7 @@ export default async function DashboardPage() {
                   <div key={pagamento.id} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 last:pb-0">
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">
-                        {pagamento.membro.usuario.nome}
+                        {pagamento.membro?.usuario?.nome || pagamento.payerNome || 'Pagador nao vinculado'}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Vence em {format(new Date(pagamento.dataVencimento), "dd/MM/yyyy")}
