@@ -1,334 +1,304 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-16
+**Analysis Date:** 2026-02-11
 
 ## Test Framework
 
 **Runner:**
-- Vitest 4.x
+- Vitest 4.0.17
 - Config: `vitest.config.ts`
-- Environment: `node`
-- Globals: `true` (describe, it, expect available without import, but tests still explicitly import them)
+- Environment: node (not browser)
 
 **Assertion Library:**
-- Vitest built-in `expect` (Chai-compatible)
+- Vitest built-in expect API (compatible with Jest)
+- Methods: `expect().toBe()`, `expect().toHaveBeenCalled()`, `expect().toContain()`
 
 **Run Commands:**
 ```bash
-npm test                # Run vitest in watch mode
-npm run test:run        # Run all tests once (CI/pre-commit)
-npm run test:coverage   # Run with v8 coverage
+npm run test              # Run tests in watch mode
+npm run test:run          # Run all tests once
+npm run test:coverage     # Run tests with coverage report
 ```
 
 ## Test File Organization
 
 **Location:**
-- All tests are in a centralized `src/__tests__/` directory (not co-located with source)
-- Organized by category subdirectories mirroring the source structure
+- Co-located in `src/__tests__/` directory at project root
+- Mirrors source structure: `src/__tests__/lib/`, `src/__tests__/api/`, `src/__tests__/schemas/`
+- Setup file: `src/__tests__/setup.ts`
 
 **Naming:**
-- `{name}.test.ts` (never `.spec.ts`)
+- Test files: `*.test.ts` or `*.test.tsx`
+- Spec files: `*.spec.ts` (also recognized)
+- Examples:
+  - `src/__tests__/lib/dates.test.ts`
+  - `src/__tests__/api/membros.test.ts`
+  - `src/__tests__/schemas/auth.schema.test.ts`
 
 **Structure:**
 ```
 src/__tests__/
-  setup.ts              # Global test setup
-  test-utils.ts         # Shared test utilities
-  globals.d.ts          # Global type declarations for test utils
-  api/                  # API route handler tests
-    membros.test.ts
-    membros-id.test.ts
-    agendamentos.test.ts
-    health.test.ts
-    planos.test.ts
-    treinos.test.ts
-    treinos-id.test.ts
-    treinos-gerar-pdf.test.ts
-    cron-cobrancas-whatsapp.test.ts
-    auth-cadastro.test.ts
-    auth-nextauth.test.ts
-    ... (25+ API test files)
-  actions/              # Server action tests
-    membros.test.ts
-  lib/                  # Library/utility tests
-    api.test.ts
-    dates.test.ts
-    schedule.test.ts
-    treino-editor.test.ts
-    whatsapp-evolution.test.ts
-  schemas/              # Zod schema validation tests
-    auth.schema.test.ts
-    membro.schema.test.ts
-    treino.schema.test.ts
-  services/             # Service layer tests
-    membro.service.test.ts
-    treino.service.test.ts
-  pdf/                  # PDF generation tests
-    generation.test.ts
-    fixtures.ts
-```
-
-## Test Setup
-
-**Global Setup File:** `src/__tests__/setup.ts`
-- Configured via `vitest.config.ts` > `setupFiles`
-- Registers shared test utilities on `globalThis.__testUtils`
-- Sets `NODE_ENV=test` and `VITEST=true`
-
-```typescript
-// src/__tests__/setup.ts
-import { createPrismaMock, createSessionRef, createValidateRequestMock, mockWithApiAuth } from '@/__tests__/test-utils'
-
-globalThis.__testUtils = {
-  createPrismaMock,
-  createSessionRef,
-  createValidateRequestMock,
-  mockWithApiAuth,
-}
-
-process.env.NODE_ENV = 'test'
-process.env.VITEST = 'true'
-```
-
-**Global Type Declarations:** `src/__tests__/globals.d.ts`
-```typescript
-import type * as testUtils from '@/__tests__/test-utils'
-
-declare global {
-  var __testUtils: typeof testUtils
-}
+├── setup.ts                           # Global setup, test utils registration
+├── test-utils.ts                      # Utility creators for mocking
+├── lib/
+│   ├── dates.test.ts
+│   ├── schedule.test.ts
+│   ├── treino-editor.test.ts
+│   └── ...
+├── api/
+│   ├── membros.test.ts
+│   ├── agendamentos.test.ts
+│   └── ...
+└── schemas/
+    ├── auth.schema.test.ts
+    └── membro.schema.test.ts
 ```
 
 ## Test Structure
 
 **Suite Organization:**
+
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-describe('Feature Name', () => {
+describe('Feature name', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('should do expected behavior', async () => {
-    // Arrange
-    vi.mocked(prisma.membro.findUnique).mockResolvedValue(null)
+  it('should do specific thing', () => {
+    // test body
+  })
 
-    // Act
-    const res = await GET(req)
-    const json = await res.json()
+  it('should handle edge case', () => {
+    // test body
+  })
 
-    // Assert
-    expect(res.status).toBe(200)
-    expect(json.id).toBe('expected-id')
+  describe('Nested feature', () => {
+    it('should do nested behavior', () => {
+      // test body
+    })
   })
 })
 ```
 
 **Patterns:**
-- Always call `vi.clearAllMocks()` in `beforeEach`
-- Use `vi.mocked()` for type-safe mock assertions
-- Test names use `should ...` or descriptive phrases
-- Nested `describe` blocks for grouping related tests within a suite
+- `describe()` blocks organize related tests
+- Nested `describe()` for grouped functionality
+- `beforeEach()` clears mocks between tests
+- Test names start with "should" for unit tests, "GET/POST scopes" for API tests
+
+**Setup:**
+- `setup.ts` registers global test utilities in `globalThis.__testUtils`
+- Mocks established in hoisted `vi.hoisted()` blocks
+- Mocks cleared explicitly in `beforeEach()` hooks
 
 ## Mocking
 
-**Framework:** Vitest built-in `vi.mock()`, `vi.fn()`, `vi.hoisted()`
+**Framework:** Vitest `vi` module
 
-### Pattern 1: Prisma Mock (Direct)
-Used for simple tests with few Prisma models:
+**Mocking Patterns:**
+
 ```typescript
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    membro: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-    },
-  },
-}))
-```
-
-### Pattern 2: Prisma Mock (Factory via `createPrismaMock`)
-Used for complex API tests with many models:
-```typescript
-const { prismaMock } = vi.hoisted(() => {
-  const { createPrismaMock } = globalThis.__testUtils
-  return {
-    prismaMock: createPrismaMock({
-      agendamento: ['findMany', 'count', 'findFirst', 'create'],
-      membro: ['findUnique'],
-      horarioDisponivel: ['findUnique'],
-    }),
-  }
-})
-
-vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }))
-```
-
-### Pattern 3: Auth Mock (via `mockWithApiAuth`)
-Simulates the `withApiAuth` wrapper with configurable session:
-```typescript
-const { withApiAuthMock, sessionRef } = vi.hoisted(() => {
-  const { createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+// Hoisted mock setup (runs at module load time)
+const { withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const { createSessionRef, createValidateRequestMock, mockWithApiAuth } = globalThis.__testUtils
   const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
+
   return {
-    sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
   }
 })
 
+// Mock modules
 vi.mock('@/lib/api', () => ({
   withApiAuth: withApiAuthMock,
   validateRequest: validateRequestMock,
 }))
 
-// In tests, change session dynamically:
-sessionRef.current = { user: { role: 'MEMBRO', membroId: 'm-1' } }
+// Mock functions
+vi.mocked(prisma.usuario.findUnique).mockResolvedValue(result)
 ```
 
-### Pattern 4: Validation Mock (via `createValidateRequestMock`)
-Replaces `validateRequest` with a mock that actually parses JSON and validates:
-```typescript
-const { validateRequestMock } = vi.hoisted(() => ({
-  validateRequestMock: globalThis.__testUtils.createValidateRequestMock(),
-}))
-```
+**Mocking Utilities (from `test-utils.ts`):**
 
-### Pattern 5: Simple Module Mocks
-```typescript
-vi.mock('bcryptjs', () => ({
-  hash: vi.fn((pwd) => Promise.resolve(`hashed_${pwd}`)),
-}))
+1. **createSessionRef()** - Create mutable session object for tests:
+   ```typescript
+   const sessionRef = createSessionRef({ user: { role: 'MEMBRO', membroId: 'm-1' } })
+   sessionRef.current = { user: { role: 'ADMIN' } } // Change mid-test
+   ```
 
-vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
-}))
-```
+2. **mockWithApiAuth()** - Wrap handler with authentication logic:
+   ```typescript
+   const mock = mockWithApiAuth(sessionRef).withApiAuth
+   // Enforces role checks, calls handler with session
+   ```
+
+3. **createPrismaMock()** - Create Prisma mock with specified models/methods:
+   ```typescript
+   const prismaMock = createPrismaMock({
+     membro: ['findUnique', 'create', 'findMany'],
+     usuario: ['findUnique', 'create'],
+   })
+   ```
+
+4. **createValidateRequestMock()** - Mock request validation helper:
+   ```typescript
+   const validateMock = createValidateRequestMock()
+   // Returns vi.fn() that handles JSON parsing and schema validation
+   ```
+
+5. **createJsonRequest()** - Create mock NextRequest with JSON body:
+   ```typescript
+   const req = createJsonRequest('http://localhost:3000/api/membros', { nome: 'John' })
+   ```
 
 **What to Mock:**
-- `@/lib/prisma` -- always mock, never hit real DB in unit tests
-- `@/lib/api` -- mock `withApiAuth` and `validateRequest` for API route tests
-- `@/lib/auth` -- mock `auth()` for direct auth testing
-- External services: `bcryptjs`, `next/cache`, WhatsApp API clients
-- `@/lib/validators` -- mock when testing schemas that depend on them
+- External dependencies: Prisma, authentication, email services
+- API handlers and middleware
+- Request/response objects
 
 **What NOT to Mock:**
-- The code under test (route handlers, services, schemas)
-- Zod schemas (test their actual validation logic)
-- Pure utility functions (`src/lib/dates.ts`, `src/lib/schedule.ts`)
-- PDF generation (`src/lib/pdf.ts`) -- tested with real output validation
+- Pure utility functions: date helpers, formatters, validators
+- Zod schema validation (use real schemas)
+- Business logic helpers
 
 ## Fixtures and Factories
 
 **Test Data:**
-PDF test fixtures in `src/__tests__/pdf/fixtures.ts`:
-```typescript
-export type PDFData = TrainingPDFData
 
-export const testPDFData: PDFData = {
-  aluno: 'Maria Silva',
-  date: '01/2026',
-  observacoes: 'Focar em postura durante agachamentos',
-  sessions: [
-    {
-      name: 'A',
-      exercises: [
-        { name: 'Supino Reto', sets: '4', reps: '12' },
-      ]
-    },
-  ]
-}
-```
+Factory pattern used in test-utils:
 
-**Request Factory:**
-`createJsonRequest()` from `src/__tests__/test-utils.ts`:
 ```typescript
-export function createJsonRequest(url: string, body: Record<string, unknown>, method: string = 'POST') {
-  return new NextRequest(url, {
-    method,
-    body: JSON.stringify(body),
-  })
+export function createSessionRef(initial?: TestSession): SessionRef {
+  return {
+    current: initial ?? { user: { role: 'ADMIN', membroId: 'm-admin' } },
+  }
 }
 
-// Usage:
-const req = createJsonRequest('http://localhost:3000/api/membros', { nome: 'John' })
+// Usage
+const sessionRef = createSessionRef() // Default admin
+const sessionRef = createSessionRef({ user: { role: 'MEMBRO', membroId: 'm-1' } })
 ```
 
 **Location:**
-- Shared utilities: `src/__tests__/test-utils.ts`
-- PDF fixtures: `src/__tests__/pdf/fixtures.ts`
-- No `__fixtures__` or `__mocks__` directories
+- `src/__tests__/test-utils.ts` - Reusable factory functions
+- Factories return mutable objects for test flexibility
+- Session reference objects allow mid-test mutations
+
+**Patterns:**
+- Default values provided for minimal test setup
+- Override specific values as needed
+- Factories return objects with clear types
 
 ## Coverage
 
-**Requirements:** No enforced minimums. Coverage is opt-in via `npm run test:coverage`.
-
-**Scope:** Coverage is currently scoped to `src/lib/pdf.ts` only (configured in `vitest.config.ts`).
+**Requirements:** Selective coverage enabled
 
 **View Coverage:**
 ```bash
-npm run test:coverage   # Generates text, json, html reports
+npm run test:coverage
 ```
 
-**Coverage Provider:** `@vitest/coverage-v8`
+**Configured:**
+- Provider: v8
+- Reporters: text, json, html
+- Include: only `src/lib/pdf.ts` (focused coverage target)
+- Output: `coverage/` directory with HTML reports
+
+**Coverage Strategy:**
+- Not all code requires 100% coverage
+- Focus on critical paths: APIs, schemas, utilities
+- Libraries like formatters get tested thoroughly
+- UI components tested for key behavior
 
 ## Test Types
 
 **Unit Tests:**
-- All 45+ test files are unit tests
-- Mock all external dependencies (DB, auth, external APIs)
-- Test individual route handlers, services, schemas, utilities
+- Scope: Single function or utility in isolation
+- Files: `src/__tests__/lib/*.test.ts`
+- Example: `src/__tests__/lib/dates.test.ts`
+- Approach: No mocks, test pure functions directly
+- Coverage: All branches and edge cases
+
+```typescript
+describe('formatTreinoDate', () => {
+  it('strips non-digits and auto-inserts slash', () => {
+    expect(formatTreinoDate('012025')).toBe('01/2025')
+  })
+
+  it('limits to 6 digits', () => {
+    expect(formatTreinoDate('0120251234')).toBe('01/2025')
+  })
+})
+```
 
 **Integration Tests:**
-- No dedicated integration test suite
-- CI runs tests against a real Postgres database in the `db` job (`.github/workflows/ci.yml`)
-- Same unit tests run in both `fast` and `db` CI jobs
+- Scope: API routes with mocked dependencies
+- Files: `src/__tests__/api/*.test.ts`
+- Example: `src/__tests__/api/membros.test.ts`
+- Approach: Mock Prisma, validate handler behavior with different inputs
+- Coverage: Request validation, role checks, database calls
+
+```typescript
+it('should create a new member successfully', async () => {
+  // Setup mocks
+  vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
+  vi.mocked(prisma.membro.findUnique).mockResolvedValue(null)
+  vi.mocked(prisma.usuario.create).mockResolvedValue(createdUser)
+  vi.mocked(prisma.membro.create).mockResolvedValue(createdMember)
+
+  // Create request
+  const req = createRequest({ nome: 'John', email: 'john@example.com', ... })
+  const res = await POST(req)
+
+  // Assert
+  expect(res.status).toBe(201)
+  expect(prisma.membro.create).toHaveBeenCalled()
+})
+```
+
+**Schema Tests:**
+- Scope: Zod schema validation with various inputs
+- Files: `src/__tests__/schemas/*.test.ts`
+- Example: `src/__tests__/schemas/auth.schema.test.ts`
+- Approach: Test valid and invalid inputs against schemas
+- Coverage: All validation rules
+
+```typescript
+describe('cadastroSchema', () => {
+  it('cadastroSchema validates email and password rules', () => {
+    vi.mocked(validarEmail).mockReturnValueOnce(true)
+    const result = cadastroSchema.safeParse({
+      email: 'user@example.com',
+      senha: 'Senha123',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects invalid email', () => {
+    vi.mocked(validarEmail).mockReturnValueOnce(false)
+    const result = cadastroSchema.safeParse({
+      email: 'bad-email',
+      senha: 'Senha123',
+    })
+    expect(result.success).toBe(false)
+  })
+})
+```
 
 **E2E Tests:**
-- `playwright` is in devDependencies but no test files or config detected
-- No E2E test suite currently implemented
+- Framework: Not currently used
+- Playwright dependency installed but not configured
+- Can be added by creating `*.e2e.ts` tests with Playwright
 
-## CI/CD Test Pipeline
+## Common Patterns
 
-**GitHub Actions:** `.github/workflows/ci.yml`
+**Async Testing:**
 
-**Triggers:** Pull requests and pushes to `main`
-
-**Two parallel jobs:**
-
-1. **`fast` (test-lint-build):**
-   - Node 20, no database
-   - `npm ci --legacy-peer-deps`
-   - `npx prisma generate`
-   - `npm run lint`
-   - `npm run test:run`
-   - `npm run build`
-
-2. **`db`:**
-   - Node 20 + PostgreSQL 16 service container
-   - `npx prisma migrate deploy` (validates migrations)
-   - `npm run test:run`
-   - `npm run build`
-
-**Pre-commit Hook:**
-- Husky pre-commit runs `npm run test:run` (all tests must pass)
-- Configured in `.husky/pre-commit`
-
-**Vercel Build:**
-- `vercel-build` script runs `npm run test:run` before `next build`
-- Tests gate production deployments
-
-## Common Test Patterns
-
-**Testing API Route Handlers:**
 ```typescript
-import { GET, POST } from '@/app/api/membros/route'
-
-it('should create a new member', async () => {
-  vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
-  vi.mocked(prisma.membro.create).mockResolvedValue({ id: 'membro-123' })
-
-  const req = createJsonRequest('http://localhost:3000/api/membros', { nome: 'John' })
+it('should create member successfully', async () => {
   const res = await POST(req)
   const json = await res.json()
 
@@ -337,90 +307,34 @@ it('should create a new member', async () => {
 })
 ```
 
-**Testing Server Actions:**
-```typescript
-import { toggleMembroStatus } from '@/app/actions/membros'
-
-it('should toggle status', async () => {
-  const result = await toggleMembroStatus('123', 'ATIVO')
-  expect(prisma.membro.update).toHaveBeenCalledWith({
-    where: { id: '123' },
-    data: { status: 'INATIVO' },
-  })
-  expect(result).toEqual({ success: true })
-})
-```
-
-**Testing Service Functions:**
-```typescript
-import { listMembros } from '@/services/membro.service'
-
-it('applies status filter', async () => {
-  vi.mocked(prisma.membro.findMany).mockResolvedValueOnce([])
-  await listMembros({ status: 'ATIVO', compact: true })
-  expect(prisma.membro.findMany).toHaveBeenCalledWith(
-    expect.objectContaining({
-      where: { status: 'ATIVO' },
-    })
-  )
-})
-```
-
-**Testing Zod Schemas:**
-```typescript
-import { cadastroSchema } from '@/schemas/auth.schema'
-
-it('rejects invalid email', () => {
-  vi.mocked(validarEmail).mockReturnValueOnce(false)
-  const result = cadastroSchema.safeParse({ email: 'bad', senha: 'Senha123' })
-  expect(result.success).toBe(false)
-})
-```
-
-**Testing Pure Utilities (no mocks):**
-```typescript
-import { addDaysYmd, formatBrFromYmd } from '@/lib/dates'
-
-it('adds days to ymd', () => {
-  expect(addDaysYmd('2026-02-04', 1)).toBe('2026-02-05')
-})
-```
+- All async operations awaited
+- Promise mocks: `mockResolvedValue(value)` for success, `mockRejectedValue(error)` for failures
 
 **Error Testing:**
+
 ```typescript
-it('should handle errors gracefully', async () => {
-  const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-  vi.mocked(prisma.membro.update).mockRejectedValueOnce(new Error('DB Error'))
+it('should return error if email already exists', async () => {
+  const existingUser = { id: 'existing' }
+  vi.mocked(prisma.usuario.findUnique).mockResolvedValue(existingUser)
 
-  const result = await toggleMembroStatus('123', 'ATIVO')
+  const req = createRequest({ email: 'exists@example.com' })
+  const res = await POST(req)
+  const json = await res.json()
 
-  expect(result).toEqual({ success: false, error: 'Falha ao alterar status' })
-  consoleSpy.mockRestore()
+  expect(res.status).toBe(400)
+  expect(json.error).toContain('email já está cadastrado')
 })
 ```
 
-**PDF Generation Testing (output validation):**
+- Test both status codes and error messages
+- Use `.toContain()` for substring matching in error messages
+
+**Role-Based Access Testing:**
+
 ```typescript
-import { PDFDocument } from 'pdf-lib'
-import { generateTrainingPDF } from '@/lib/pdf'
-
-it('generates valid PDF', async () => {
-  const pdfBuffer = await generateTrainingPDF(testPDFData)
-  expect(pdfBuffer).toBeInstanceOf(Buffer)
-  expect(pdfBuffer.length).toBeGreaterThan(500)
-
-  const pdfDoc = await PDFDocument.load(pdfBuffer)
-  expect(pdfDoc.getPages().length).toBeGreaterThanOrEqual(1)
-})
-```
-
-**Dynamic Session Testing:**
-```typescript
-it('scopes to membroId when session is MEMBRO', async () => {
+it('GET scopes to membroId when session is MEMBRO', async () => {
   sessionRef.current = { user: { role: 'MEMBRO', membroId: 'm-1' } }
-  prismaMock.agendamento.findMany.mockResolvedValue([])
 
-  const req = new NextRequest('http://localhost:3000/api/agendamentos?membroId=m-2')
   const res = await GET(req)
 
   expect(prismaMock.agendamento.findMany).toHaveBeenCalledWith(
@@ -431,6 +345,42 @@ it('scopes to membroId when session is MEMBRO', async () => {
 })
 ```
 
+- Mutate sessionRef.current between tests
+- Assert that queries are scoped to user's membroId
+
+**Mock Assertion:**
+
+```typescript
+expect(prismaMock.agendamento.create).toHaveBeenCalledWith(
+  expect.objectContaining({
+    data: expect.objectContaining({ membroId: 'm-session', horarioId: 'h-1' }),
+  })
+)
+```
+
+- Use `.toHaveBeenCalledWith()` for exact argument matching
+- Use `expect.objectContaining()` for partial object matching
+- Verify both that calls were made and with correct parameters
+
+## Test Execution
+
+**Setup Phase:**
+1. `setup.ts` registers utilities in `globalThis.__testUtils`
+2. Environment set to 'node'
+3. Global test helpers (describe, it, expect) available
+4. Each test file loads fresh
+
+**Per-Test Phase:**
+1. `beforeEach()` clears all mocks
+2. Mocks are hoisted (set up once per test file)
+3. Mocks can be configured per test
+4. Test runs and asserts
+
+**Coverage Report:**
+- Generated in `coverage/` directory
+- HTML report viewable in browser
+- Text report in console
+
 ---
 
-*Testing analysis: 2026-02-16*
+*Testing analysis: 2026-02-11*

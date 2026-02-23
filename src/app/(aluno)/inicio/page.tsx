@@ -201,7 +201,7 @@ export default async function MemberDashboard() {
               </p>
               <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
                 <div 
-                  className="bg-green-500 h-full transition-all duration-1000" 
+                  className="bg-green-500 h-full transition-[width] duration-1000" 
                   style={{ width: `${classesScheduled > 0 ? (classesAttended / classesScheduled) * 100 : 0}%` }}
                 />
               </div>
@@ -218,7 +218,7 @@ export default async function MemberDashboard() {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 Meu Treino
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
               </CardTitle>
               <CardDescription>Acesse sua ficha atual</CardDescription>
             </CardHeader>
@@ -230,7 +230,7 @@ export default async function MemberDashboard() {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 Histórico
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
               </CardTitle>
               <CardDescription>Veja suas aulas passadas</CardDescription>
             </CardHeader>

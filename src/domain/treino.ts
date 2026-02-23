@@ -73,6 +73,7 @@ export type TrainingPDFExercise = {
   name: string
   sets: string
   reps: string
+  observacoes?: string
 }
 
 export type TrainingPDFSession = {

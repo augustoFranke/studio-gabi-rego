@@ -1,371 +1,356 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-16
+**Analysis Date:** 2026-02-11
 
 ## Directory Layout
 
 ```
-gabi-rego-studio/
-├── .claude/                    # Claude AI configuration and skills
-│   └── skills/                 # Security check, React best practices
-├── .github/
-│   └── workflows/
-│       └── ci.yml              # CI pipeline
-├── .husky/                     # Git hooks (pre-commit runs tests)
-├── .planning/                  # GSD planning documents
-│   └── codebase/               # Architecture/structure analysis
-├── backups/                    # Database backup scripts
-├── docker/                     # Docker deployment config
-│   ├── nginx/                  # Nginx reverse proxy + SSL
-│   ├── postgres/               # PostgreSQL init scripts
-│   └── scripts/                # Docker helper scripts
-├── prisma/                     # Database schema and migrations
-│   ├── migrations/             # Prisma migration history
-│   ├── migrations_archived/    # Old migrations (pre-init)
-│   ├── schema.prisma           # Database schema definition
-│   └── seed.ts                 # Database seeding script
-├── public/                     # Static assets (logo, fonts)
-├── scripts/                    # One-off admin/migration scripts
-├── src/                        # Application source code
-│   ├── __tests__/              # Test files (mirrors src/ structure)
-│   ├── app/                    # Next.js App Router pages & API
-│   ├── components/             # React components
-│   ├── domain/                 # Domain type definitions
-│   ├── hooks/                  # Custom React hooks
-│   ├── lib/                    # Shared utilities and clients
-│   ├── schemas/                # Zod validation schemas
-│   ├── services/               # Business logic services
-│   └── types/                  # TypeScript type declarations
-├── utility/                    # Data import/export/scraping tools
-├── docker-compose.yml          # Docker Compose configuration
-├── Dockerfile                  # Production Docker image
-├── next.config.ts              # Next.js configuration
-├── package.json                # Dependencies and scripts
-├── tsconfig.json               # TypeScript configuration
-├── vercel.json                 # Vercel deployment config
-└── vitest.config.ts            # Test configuration
+project-root/
+├── .planning/               # GSD planning documents
+├── .github/                 # GitHub Actions workflows
+├── docker/                  # Docker deployment configuration
+│   ├── postgres/           # PostgreSQL init scripts
+│   ├── nginx/              # Nginx reverse proxy config
+│   └── scripts/            # Docker helper scripts
+├── prisma/                 # Database schema and migrations
+│   ├── migrations/         # Prisma migration history
+│   ├── migrations_archived/# Old archived migrations
+│   ├── schema.prisma       # Database schema definition
+│   └── seed.ts             # Database seeding script
+├── public/                 # Static assets (images, fonts, logos)
+├── scripts/                # Development and deployment scripts
+├── src/                    # Application source code
+│   ├── app/               # Next.js App Router pages and API routes
+│   ├── components/        # React UI components
+│   ├── domain/            # Business entity type definitions
+│   ├── hooks/             # Custom React hooks
+│   ├── lib/               # Utilities, helpers, and infrastructure
+│   ├── schemas/           # Zod validation schemas
+│   ├── services/          # Business logic and data access functions
+│   ├── types/             # TypeScript type definitions
+│   ├── instrumentation.ts # OpenTelemetry or monitoring setup
+│   └── middleware.ts      # Next.js request middleware for auth/authz
+├── utility/               # One-off utility scripts (web scrapers, data import/export)
+├── next.config.ts         # Next.js build and runtime configuration
+├── tsconfig.json          # TypeScript compiler configuration
+├── tailwind.config.ts     # Tailwind CSS configuration
+├── vitest.config.ts       # Vitest unit test configuration
+└── package.json           # Node.js dependencies and scripts
 ```
 
 ## Directory Purposes
 
-**`src/app/` - Next.js App Router:**
-- Purpose: All pages, layouts, API routes, and server actions
-- Contains: Route groups `(admin)`, `(aluno)`, `(auth)` plus `api/` and `actions/`
+**src/app/:**
+- Purpose: Server-rendered pages and API routes using Next.js App Router
+- Contains: Route groups `(admin)`, `(aluno)`, `(auth)` for role-based layouts; API handlers; server actions; global layout and error handling
+- Key files: `layout.tsx` (root), `page.tsx` (home), `error.tsx` (error boundary), `globals.css` (styling)
+- Pattern: Group syntax `(groupname)` for layout scope without affecting URL path
+
+**src/app/api/:**
+- Purpose: RESTful API endpoints for frontend and external integrations
+- Contains: Resource route handlers (`/api/membros`, `/api/treinos`, `/api/agendamentos`); authentication endpoints; cron job handlers; PDF generation
+- Key files: `route.ts` in each endpoint directory
+- Pattern: Each resource has directory with route.ts for GET, POST, PUT, DELETE methods
+
+**src/app/(admin)/:**
+- Purpose: Admin dashboard and management interfaces for studio staff
+- Contains: Pages for members (`alunos/`), training programs (`treinos/`), schedule (`agenda/`), payments (`financeiro/`), settings (`configuracoes/`)
+- Layout: Uses shared `layout.tsx` with sidebar, header, and role-based access checks
+- Pages: `dashboard` (overview), `alunos/[id]` (member detail), `treinos/[id]/editar` (trainer editor)
+
+**src/app/(aluno)/:**
+- Purpose: Member-facing interface for students/gym members
+- Contains: Pages for viewing training (`meu-treino/`), schedule (`minha-agenda/`), profile (`meu-perfil/`), payments (`pagamentos/`)
+- Layout: Uses shared `layout.tsx` with member-specific sidebar
+- Data: Members see only their own data (enforced via `membroId` in session)
+
+**src/app/(auth)/:**
+- Purpose: Authentication flow pages for login, signup, and onboarding
+- Contains: `login/`, `cadastro/` (signup), `anamnese/` (health intake form), `completar-perfil/` (profile completion), `redefinir-senha/` (password reset), `verificar-email/` (email verification)
+- No layout sidebar: Clean, minimal layout for auth forms
+- Redirect: Authenticated users redirected to role-based dashboards
+
+**src/app/actions/:**
+- Purpose: Server actions for data mutations triggered by client-side forms
+- Contains: `membros.ts` with actions like `toggleMembroStatus()`, `deleteMembro()`, `deactivateMembro()`
+- Pattern: Each file has `'use server'` directive, Prisma calls, and cache revalidation
+- Used by: Admin forms in `(admin)/alunos` pages
+
+**src/components/ui/:**
+- Purpose: Reusable Radix UI primitive components styled with Tailwind CSS
+- Contains: `button.tsx`, `dialog.tsx`, `input.tsx`, `select.tsx`, `sidebar.tsx`, `card.tsx`, `badge.tsx`, `dropdown-menu.tsx`, etc.
+- Pattern: Low-level, unstyled-by-default components that accept className props
+- Generated: Initialized via shadcn/ui CLI (`components.json` config)
+
+**src/components/admin/:**
+- Purpose: Admin-specific composite components
+- Contains: `alunos-filters.tsx` (member filter UI), `member-actions.tsx` (bulk actions), `treino-template-button.tsx` (template selector)
+- Pattern: Combine multiple UI primitives with business logic
+
+**src/components/forms/:**
+- Purpose: Complex form components with validation
+- Contains: `MemberForm.tsx` (create/edit member), and other domain-specific forms
+- Pattern: React Hook Form + Zod validation, controlled inputs, error display
+
+**src/components/schedule/:**
+- Purpose: Calendar and scheduling UI components
+- Contains: `daily-view.tsx`, `weekly-view.tsx`, `monthly-view.tsx` (different calendar views), `time-slot.tsx` (individual time slot), `agendamento-modal.tsx` (booking form), `schedule-header.tsx` (date/filter controls)
+- Hook: `use-schedule.ts` manages calendar state, date navigation, filtering
+- Data: Fetches from `/api/agendamentos` via SWR
+
+**src/components/ (root):**
+- Purpose: Global and layout components
+- Contains: `admin-sidebar.tsx` (admin navigation), `aluno-sidebar.tsx` (member navigation), `error-boundary.tsx` (React error catching), `theme-provider.tsx` (dark mode), `theme-toggle.tsx` (theme switcher)
+
+**src/lib/:**
+- Purpose: Utilities and infrastructure code
 - Key files:
-  - `layout.tsx`: Root layout with ThemeProvider, Toaster, fonts
-  - `page.tsx`: Root redirect logic (auth check, onboarding routing)
-  - `globals.css`: Global Tailwind CSS styles
+  - `prisma.ts` - Singleton database client
+  - `auth.ts` - NextAuth configuration, JWT provider, session/token callbacks
+  - `api.ts` - `withApiAuth()` helper for route protection, `ensureOwnerOrAdmin()` helper for data ownership checks
+  - `validators.ts` - Shared validation functions (CPF, email, date formatting, currency)
+  - `utils.ts` - Generic utilities (classname merging, etc.)
+  - `dates.ts` - Date manipulation helpers
+  - `email.ts` - Email template and sending logic
+  - `resend.ts` - Resend email service SDK configuration
+  - `pdf.ts` - PDF generation utilities for training programs
+  - `planos.ts` - Plan/pricing data and calculations
+  - `schedule.ts` - Scheduling logic and recurring appointment sync
+  - `fetcher.ts` - SWR data fetching helper
+  - `rate-limit.ts` - Upstash Redis-based rate limiting
+  - `shutdown.ts` - Graceful shutdown handler
 
-**`src/app/(admin)/` - Admin Pages:**
-- Purpose: Admin-only pages (studio owner/manager)
-- Contains: Dashboard, student management, training sheets, financials, schedule, settings
-- Key files:
-  - `layout.tsx`: Auth guard (ADMIN role), sidebar shell with `AdminSidebar`
-  - `dashboard/page.tsx`: Main admin dashboard
-  - `alunos/page.tsx`: Student list page
-  - `alunos/[id]/page.tsx`: Student detail page
-  - `alunos/[id]/editar/page.tsx`: Student edit form
-  - `alunos/[id]/anamnese/page.tsx`: Student health questionnaire
-  - `alunos/novo/page.tsx`: New student form
-  - `treinos/page.tsx`: Training sheet list
-  - `treinos/[id]/page.tsx`: Training sheet detail
-  - `treinos/[id]/editar/page.tsx`: Training sheet editor
-  - `treinos/gerador/page.tsx`: Training PDF generator
-  - `financeiro/page.tsx`: Financial overview
-  - `agenda/page.tsx`: Schedule management (weekly/daily/monthly views)
-  - `configuracoes/page.tsx`: System settings
+**src/lib/jobs/:**
+- Purpose: Background job implementations for scheduled tasks
+- Contains: `cobranca-whatsapp.ts` (payment reminders via WhatsApp)
 
-**`src/app/(aluno)/` - Member Pages:**
-- Purpose: Student/member-facing pages
-- Contains: Home, personal schedule, training view, payments, profile
-- Key files:
-  - `layout.tsx`: Auth guard (MEMBRO or ADMIN), sidebar shell with `AlunoSidebar`
-  - `inicio/page.tsx`: Member home/dashboard
-  - `minha-agenda/page.tsx`: Personal schedule view
-  - `meu-treino/page.tsx`: View assigned training sheets
-  - `pagamentos/page.tsx`: Payment history and status
-  - `meu-perfil/page.tsx`: Profile management
+**src/lib/whatsapp/:**
+- Purpose: WhatsApp integration via Evolution API
+- Contains: `evolution.ts` (send messages, format numbers, check configuration)
 
-**`src/app/(auth)/` - Auth Pages:**
-- Purpose: Public and semi-public authentication flows
-- Contains: Login, registration, email verification, password reset, profile completion, anamnese
-- Key files:
-  - `layout.tsx`: Client component with `SessionProvider` wrapper
-  - `login/page.tsx`: Login form
-  - `cadastro/page.tsx`: Registration form
-  - `verificar-email/[token]/page.tsx`: Email verification handler
-  - `redefinir-senha/[token]/page.tsx`: Password reset form
-  - `completar-perfil/page.tsx`: Onboarding step 2 (profile details)
-  - `anamnese/page.tsx`: Onboarding step 3 (health questionnaire)
+**src/lib/treino/:**
+- Purpose: Training program utilities and helpers
+- Contains: `editor.ts` (training editor logic)
 
-**`src/app/api/` - API Routes:**
-- Purpose: RESTful backend endpoints
-- Contains: 33 route files organized by resource (see ARCHITECTURE.md for full listing)
-- Pattern: Each `route.ts` exports named HTTP method handlers (GET, POST, PUT, PATCH, DELETE)
-
-**`src/app/actions/` - Server Actions:**
-- Purpose: Server-side mutations callable from client components
-- Contains: `membros.ts` (toggle status, delete, deactivate)
-- Pattern: `'use server'` directive, returns `{ success, error? }` object
-
-**`src/components/` - React Components:**
-- Purpose: Reusable UI components
-- Organized by domain:
-  - `ui/`: Shadcn/ui primitives (button, card, dialog, form, input, select, table, tabs, tooltip, etc.)
-  - `admin/`: Admin-specific components (`member-actions.tsx`, `treino-template-button.tsx`, `alunos-filters.tsx`)
-  - `schedule/`: Schedule view components (`weekly-view.tsx`, `daily-view.tsx`, `monthly-view.tsx`, `time-slot.tsx`, `agendamento-modal.tsx`, `day-detail-modal.tsx`, `member-badge.tsx`, `schedule-header.tsx`, `time-slot-popover.tsx`, `use-schedule-data.ts`)
-  - `forms/`: Form components (`MemberForm.tsx`)
-  - Root: `admin-sidebar.tsx`, `aluno-sidebar.tsx`, `theme-provider.tsx`, `theme-toggle.tsx`, `error-boundary.tsx`
-
-**`src/domain/` - Domain Types:**
-- Purpose: Core domain type definitions separate from API/DB types
-- Contains: `treino.ts` (TreinoExerciseInput, TreinoExercise, TreinoFicha, TreinoTemplate, TrainingPDFData, etc.)
-
-**`src/hooks/` - Custom Hooks:**
-- Purpose: Reusable React hooks
+**src/services/:**
+- Purpose: Business logic layer for data access and domain operations
 - Contains:
-  - `use-schedule.ts`: Full schedule CRUD operations with SWR (create, update, delete, move agendamentos)
-  - `use-agenda-interactions.ts`: Schedule UI interaction logic
-  - `use-url-filters.ts`: URL query param state management
-  - `use-mobile.ts`: Mobile breakpoint detection
+  - `membro.service.ts` - Member listing and detail queries with optional compact projection
+  - `agendamento.service.ts` - Schedule creation, conflict checking, recurring sync
+  - `treino.service.ts` - Training program creation, validation, PDF generation
+- Pattern: Async functions accepting typed parameters, using Prisma, returning strongly-typed results
 
-**`src/lib/` - Shared Libraries:**
-- Purpose: Core infrastructure, utilities, and external service clients
-- Key files:
-  - `auth.ts`: NextAuth v5 configuration (Credentials provider, JWT callbacks, session strategy)
-  - `prisma.ts`: Prisma Client singleton (global caching for hot reload)
-  - `api.ts`: `withApiAuth()`, `validateRequest()`, `ensureOwnerOrAdmin()` utilities
-  - `resend.ts`: Resend email client + HTML email templates (verification, password reset, reminders, birthday, welcome)
-  - `whatsapp/evolution.ts`: Evolution API WhatsApp client (send text messages, number formatting)
-  - `rate-limit.ts`: Upstash Redis rate limiter (sliding window, IP-based)
-  - `pdf.ts`: PDFKit-based training sheet PDF generator
-  - `schedule.ts`: Schedule constants, date utilities, event grouping logic
-  - `dates.ts`: Timezone-aware date helpers (YMD format, BR formatting)
-  - `validators.ts`: Brazilian data validators (CPF, email, phone, currency, date formatting)
-  - `anamnese.ts`: Anamnese field whitelist and sanitizer
-  - `planos.ts`: Plan categorization helper
-  - `fetcher.ts`: SWR fetcher with typed error handling (`FetchError` class)
-  - `email.ts`: Email normalization utility
-  - `utils.ts`: General utilities (likely `cn()` for Tailwind class merging)
-  - `scheduler.ts`: Aggregated scheduled task runner (reminders, birthdays, overdue payments, recurring appointments)
-  - `shutdown.ts`: Graceful shutdown handlers (Prisma disconnect)
-  - `treino/editor.ts`: Training editor utilities
-  - `fonts/FreeStyleScript.base64.ts`: Embedded font for PDF generation
-  - `jobs/cobranca-whatsapp.ts`: WhatsApp billing reminder job logic
-
-**`src/schemas/` - Zod Schemas:**
-- Purpose: Request body validation with Zod + inferred TypeScript types
+**src/schemas/:**
+- Purpose: Zod validation schemas for domain entities
 - Contains:
-  - `auth.schema.ts`: Auth-related validation schemas
-  - `membro.schema.ts`: `membroCreateSchema`, `membroUpdateSchema` with Brazilian data transforms (CPF, phone, precoCustomizado)
-  - `treino.schema.ts`: `exercicioSchema`, `fichaCreateSchema`, `fichaUpdateSchema`, `treinoTemplateSchema`, `trainingPdfSchema`
+  - `auth.schema.ts` - Login credentials, password reset schemas
+  - `membro.schema.ts` - Member creation/update validation
+  - `treino.schema.ts` - Training program validation (exercises, sessions, objectives)
+- Pattern: Define once, use in both API routes and form validation
 
-**`src/services/` - Business Logic:**
-- Purpose: Complex database operations and business rules
+**src/domain/:**
+- Purpose: TypeScript type definitions for business entities
+- Contains: `treino.ts` with exercise, session, and PDF data types
+- Pattern: Separate from schemas; used for runtime type safety and IDE autocomplete
+
+**src/hooks/:**
+- Purpose: Custom React hooks for data fetching and UI state management
 - Contains:
-  - `membro.service.ts`: `listMembros()`, `getMembroById()` with Prisma includes
-  - `treino.service.ts`: Full CRUD for fichas de treino, exercise replacement, template management
-  - `agendamento.service.ts`: `validateHorarioFixoLimit()`, `syncAgendamentosRecorrentes()` (recurring appointment generation from fixed schedules)
+  - `use-schedule.ts` - Calendar state (current date, view mode, filters), fetches from `/api/agendamentos`
+  - `use-agenda-interactions.ts` - Scheduling form state and submission logic
+  - `use-url-filters.ts` - Parse and sync URL query parameters with local state
+  - `use-mobile.ts` - Media query hook for responsive design
 
-**`src/types/` - TypeScript Types:**
-- Purpose: Shared TypeScript type declarations and module augmentations
+**src/types/:**
+- Purpose: Global TypeScript type definitions
+- Contains: Session user interface, API response types
+
+**prisma/schema.prisma:**
+- Purpose: Database schema definition
+- Entities: `Usuario` (auth user), `Membro` (gym member), `Plano` (pricing plan), `Agendamento` (schedule), `FichaTreino` (training program), `Pagamento` (payment), `Notificacao` (notification), `HorarioDisponivel` (available time slots), `Anamnese` (health questionnaire), `HorarioFixo` (member-specific fixed slots)
+- Enums: `Role` (ADMIN, MEMBRO), `StatusMembro` (ATIVO, INATIVO, PENDENTE), `StatusPagamento` (PENDENTE, PAGO, ATRASADO, CANCELADO), `DiaSemana` (SEGUNDA-DOMINGO), `TipoNotificacao` (LEMBRETE_AULA, COBRANCA, ANIVERSARIO, AVISO_GERAL), `Sexo` (MASCULINO, FEMININO)
+- Migrations: Located in `prisma/migrations/` with timestamps and descriptive names
+
+**public/:**
+- Purpose: Static assets served without processing
+- Contains: Logo images, favicons, custom fonts (FreeStyleScript.ttf for PDF signature)
+
+**utility/:**
+- Purpose: One-off scripts for data import, export, scraping, and maintenance
+- Contains: `nextfit-scraper.ts` (scrape external schedule), `scrape-anamnesis.ts`, `update-plans.ts`, `extract-plan-prices.ts`, `import-schedule.ts`, `preview-emails.ts`, `cleanup-inactive-members.ts`
+- Execution: Run via `npm run [script-name]` with tsx runner
+
+**docker/:**
+- Purpose: Docker deployment configuration
 - Contains:
-  - `schedule.ts`: Schedule-related interfaces (ScheduleView, Membro, Agendamento, SlotData, DayData, WeekData, etc.)
-  - `next-auth.d.ts`: NextAuth module augmentation (adds `role`, `membroId` to session user)
-
-**`src/__tests__/` - Tests:**
-- Purpose: Unit and integration tests (Vitest)
-- Structure mirrors source: `actions/`, `api/`, `lib/`, `pdf/`, `schemas/`, `services/`
-
-**`prisma/` - Database:**
-- Purpose: Prisma ORM schema, migrations, and seeding
-- Key files:
-  - `schema.prisma`: 14 models, 7 enums. All Portuguese field names with `@map()` to snake_case DB columns
-  - `seed.ts`: Database seed script
-  - `migrations/`: 6 migration files (init, senha_definida, anamnese_tokens, RLS, horarios_fixos, notificacao_ref_key)
-
-**`scripts/` - Admin Scripts:**
-- Purpose: One-off maintenance and migration scripts
-- Contains:
-  - `fix-onboarding-status.ts`: Fix onboarding status for existing users
-  - `migrate-payments.ts`: Payment data migration
-  - `check-deployment.sh`: Deployment verification
-  - `migrate-to-supabase.sh`: Supabase migration script
-
-**`utility/` - Data Tools:**
-- Purpose: External data import/export/scraping utilities (not part of main app)
-- Contains: NextFit scraper, anamnesis scraper, plan price extractor, schedule importer, email preview, inactive member cleanup
-- Run via: `npm run scrape:nextfit`, `npm run import:schedule`, etc.
-
-**`docker/` - Docker Config:**
-- Purpose: Self-hosted deployment infrastructure
-- Contains: Nginx reverse proxy config with SSL, PostgreSQL init scripts, start/stop/backup shell scripts
+  - `postgres/init/` - SQL scripts to initialize database
+  - `nginx/` - Reverse proxy config with SSL
+  - `scripts/` - Bash scripts for container lifecycle (start, stop, backup)
+- File: `docker-compose.yml` defines services (app, postgres, nginx)
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/app/layout.tsx`: Root layout (ThemeProvider, fonts, Toaster)
-- `src/app/page.tsx`: Root page (auth redirect router)
-- `src/middleware.ts`: Request middleware (auth + role enforcement)
-- `src/instrumentation.ts`: Server startup hooks (shutdown handlers)
+
+- **Web App Root:** `src/app/layout.tsx` - Root layout, theme provider setup
+- **Admin Dashboard:** `src/app/(admin)/dashboard/page.tsx` - Admin overview page
+- **Member Home:** `src/app/(aluno)/inicio/page.tsx` - Member landing page
+- **Auth Home:** `src/app/(auth)/login/page.tsx` - Login form
+- **API Root:** `src/app/api/` - All REST endpoints
+- **Middleware:** `src/middleware.ts` - Route protection and auth checks
 
 **Configuration:**
-- `next.config.ts`: Next.js config (security headers, CORS, pdfkit externals, standalone output for Docker)
-- `tsconfig.json`: TypeScript config (strict mode, `@/*` path alias to `./src/*`)
-- `vitest.config.ts`: Test runner config
-- `eslint.config.mjs`: ESLint config
-- `postcss.config.mjs`: PostCSS/Tailwind config
-- `components.json`: Shadcn/ui config
-- `vercel.json`: Vercel deployment (region: gru1/Sao Paulo)
-- `docker-compose.yml`: Docker services (app, postgres, nginx)
-- `Dockerfile`: Production Docker image
-- `.env.example`, `.env.production.example`: Environment variable templates
+
+- **TypeScript:** `tsconfig.json` - Compiler options, path aliases (`@/*` → `src/*`)
+- **Next.js:** `next.config.ts` - Build, image optimization, security headers, CORS
+- **Tailwind:** `tailwind.config.ts` - Design tokens and theme customization
+- **Vitest:** `vitest.config.ts` - Test runner configuration
+- **Database:** `prisma/schema.prisma` - Data model and migrations
 
 **Core Logic:**
-- `src/lib/auth.ts`: Authentication configuration
-- `src/lib/api.ts`: API middleware utilities
-- `src/lib/prisma.ts`: Database client
-- `src/services/*.service.ts`: Business logic
-- `src/lib/scheduler.ts`: Background task orchestrator
-- `src/lib/pdf.ts`: PDF generation
+
+- **Auth:** `src/lib/auth.ts` - NextAuth provider, credentials validation, token/session callbacks
+- **Database:** `src/lib/prisma.ts` - Singleton client
+- **API Helper:** `src/lib/api.ts` - `withApiAuth()` and ownership checks
+- **Scheduler:** `src/lib/scheduler.ts` - Batch notification processing
+- **Services:** `src/services/` - Business logic per entity
 
 **Testing:**
-- `src/__tests__/`: All test files
-- `vitest.config.ts`: Test configuration
+
+- **Test Files:** `src/__tests__/` - Unit and integration tests co-located by layer
+- **Config:** `vitest.config.ts` - Test runner setup
+- **Test Command:** `npm run test` or `npm run test:run`
 
 ## Naming Conventions
 
 **Files:**
-- Pages: `page.tsx` (Next.js convention)
-- Layouts: `layout.tsx` (Next.js convention)
-- API routes: `route.ts` (Next.js convention)
-- Components: `kebab-case.tsx` (e.g., `admin-sidebar.tsx`, `member-badge.tsx`)
-- Exception: `MemberForm.tsx` uses PascalCase
-- Services: `kebab-case.service.ts` (e.g., `membro.service.ts`)
-- Schemas: `kebab-case.schema.ts` (e.g., `membro.schema.ts`)
-- Hooks: `use-kebab-case.ts` (e.g., `use-schedule.ts`)
-- Lib utilities: `kebab-case.ts` (e.g., `rate-limit.ts`)
-- Type declarations: `kebab-case.ts` or `kebab-case.d.ts`
+
+- `.ts` - Utility and library files
+- `.tsx` - React components (pages, layouts, components)
+- `route.ts` - Next.js API route handlers (not renamed)
+- `layout.tsx` - Next.js layout components (not renamed)
+- `page.tsx` - Next.js page components (not renamed)
+- `middleware.ts` - Next.js request middleware (not renamed)
+- `.service.ts` - Business logic service files (e.g., `membro.service.ts`)
+- `.schema.ts` - Zod validation schemas (e.g., `auth.schema.ts`)
+- `[id].tsx` - Dynamic route segment (e.g., `[id]/page.tsx`)
+- `[...nextauth].ts` - Catch-all API route (NextAuth)
 
 **Directories:**
-- Route groups: `(group-name)` (e.g., `(admin)`, `(aluno)`, `(auth)`)
-- Dynamic routes: `[param]` (e.g., `[id]`)
-- Catch-all routes: `[...param]` (e.g., `[...nextauth]`)
-- Feature directories: Portuguese names matching domain (`alunos`, `treinos`, `financeiro`, `agenda`)
-- Component directories: English names matching purpose (`ui`, `admin`, `schedule`, `forms`)
 
-**Database:**
-- Models: PascalCase Portuguese (e.g., `Membro`, `FichaTreino`, `HorarioDisponivel`)
-- Fields: camelCase Portuguese (e.g., `dataNascimento`, `horarioId`)
-- DB columns: snake_case via `@map()` (e.g., `data_nascimento`, `horario_id`)
-- Tables: snake_case plural via `@@map()` (e.g., `membros`, `fichas_treino`)
-- Enums: UPPER_CASE Portuguese (e.g., `ATIVO`, `SEGUNDA`, `COBRANCA`)
+- `(groupname)/` - Route groups for layout scope (parentheses excluded from URL)
+- `components/ui/` - Shadcn/ui primitives
+- `components/{feature}/` - Feature-specific composite components
+- `lib/{feature}/` - Feature-specific utility subdirectories
+- `__tests__/` - Test files mirror source structure
+
+**React Components:**
+
+- PascalCase file names: `AdminSidebar.tsx`, `MemberForm.tsx`, `TimeSlot.tsx`
+- Functional components (not class)
+- Server components by default (unless `'use client'` directive)
+- Hooks exported from `hooks/` directory
+
+**TypeScript:**
+
+- Interfaces: PascalCase, describe shape of objects (e.g., `SessionUser`, `ApiOptions`)
+- Types: PascalCase, describe specific data (e.g., `TreinoExercise`, `TrainingPDFData`)
+- Enums: PascalCase in code, CamelCase in Prisma schema (`Role`, `StatusMembro`)
+
+**Functions and Variables:**
+
+- camelCase for functions and variables
+- Services/utilities: descriptive names like `listMembros()`, `getMembroById()`, `syncAgendamentosRecorrentes()`
+- Server actions: verb-first like `toggleMembroStatus()`, `deleteMembro()`, `deactivateMembro()`
 
 ## Where to Add New Code
 
-**New Admin Page:**
-- Create: `src/app/(admin)/{feature-name}/page.tsx`
-- For dynamic routes: `src/app/(admin)/{feature-name}/[id]/page.tsx`
-- Auth is handled by `(admin)/layout.tsx` (requires ADMIN role)
-- Add navigation link in `src/components/admin-sidebar.tsx`
-
-**New Member Page:**
-- Create: `src/app/(aluno)/{feature-name}/page.tsx`
-- Auth is handled by `(aluno)/layout.tsx` (requires MEMBRO or ADMIN)
-- Add navigation link in `src/components/aluno-sidebar.tsx`
-- Add route to `MEMBER_ROUTES` in `src/middleware.ts`
-
-**New API Endpoint:**
-- Create: `src/app/api/{resource}/route.ts` (collection) or `src/app/api/{resource}/[id]/route.ts` (item)
-- Use `withApiAuth()` from `src/lib/api.ts` for authentication
-- Use `validateRequest()` from `src/lib/api.ts` with a Zod schema from `src/schemas/`
-- If public, add route to `PUBLIC_ROUTES` in `src/middleware.ts`
-
-**New Service:**
-- Create: `src/services/{resource}.service.ts`
-- Import Prisma from `src/lib/prisma.ts`
-- Import types from `@prisma/client` or `src/domain/`
-- Export standalone functions (no classes)
-
-**New Zod Schema:**
-- Create: `src/schemas/{resource}.schema.ts`
-- Export both the schema and inferred type (`export type X = z.infer<typeof xSchema>`)
+**New Feature Page:**
+- Primary code: `src/app/(role)/feature-name/page.tsx` (server component)
+- Optional layout: `src/app/(role)/feature-name/layout.tsx` if specific styling/guards needed
+- Sibling routes: Create subdirectories (e.g., `[id]/page.tsx` for detail, `[id]/editar/page.tsx` for edit)
+- Tests: `src/__tests__/[feature]/ or co-locate with page
 
 **New Component:**
-- UI primitive: `src/components/ui/{component-name}.tsx` (follow Shadcn/ui patterns)
-- Feature-specific: `src/components/{feature}/{component-name}.tsx`
-- Page-level: co-locate in the page directory or place in appropriate `components/` subdirectory
+- Reusable UI Primitive: `src/components/ui/component-name.tsx` (if domain-agnostic)
+- Feature-Specific: `src/components/{feature}/component-name.tsx` (e.g., `src/components/admin/component-name.tsx`)
+- Form Component: `src/components/forms/FeatureForm.tsx` with React Hook Form + Zod
+- Pattern: Export from file, import as `import { ComponentName } from '@/components/...'`
+
+**New API Endpoint:**
+- REST Resource: `src/app/api/resource/route.ts` with GET/POST/PUT/DELETE methods
+- Dynamic Resource: `src/app/api/resource/[id]/route.ts` for detail operations
+- Validation: Import Zod schema from `src/schemas/`, validate in handler
+- Auth: Wrap handler in `withApiAuth()` helper from `src/lib/api.ts`
+- Tests: Create `src/__tests__/api/resource.test.ts`
+
+**New Business Logic:**
+- Service Function: `src/services/entity-name.service.ts` with async query/mutation functions
+- Pattern: Accept typed parameters, return typed results, use Prisma directly
+- Tests: `src/__tests__/services/entity-name.test.ts`
+
+**New Server Action:**
+- Location: `src/app/actions/feature-name.ts`
+- Directive: Start with `'use server'`
+- Pattern: Async functions, Prisma mutations, `revalidatePath()` after mutation
+- Return: `{ success: boolean, error?: string, data?: T }`
+
+**New Validation Schema:**
+- Location: `src/schemas/entity.schema.ts`
+- Pattern: Zod schema definition, export as constant
+- Use: Import into API route for validation, into component for form validation
+- Example: `export const memberCreateSchema = z.object({ ... })`
+
+**New Utility/Helper:**
+- Shared utility: `src/lib/utility-name.ts`
+- Domain-specific: `src/lib/{feature}/utility-name.ts`
+- Pattern: Export functions, no side effects, pure helpers
+- Example: `src/lib/validators.ts` for validation helpers
 
 **New Hook:**
-- Create: `src/hooks/use-{name}.ts`
-- Use SWR for data fetching, import `fetcher` from `src/lib/fetcher.ts`
-- Follow pattern in `src/hooks/use-schedule.ts`
+- Location: `src/hooks/use-feature-name.ts` (always prefix with `use-`)
+- Pattern: Custom React hook, manages state or side effects
+- Data Fetching: Use SWR pattern with `fetcher` from `src/lib/fetcher.ts`
+- Example: `src/hooks/use-schedule.ts` for calendar state
 
-**New Domain Type:**
-- Add to existing file in `src/domain/` or create `src/domain/{resource}.ts`
-- For API response types, prefer `src/types/`
-
-**New Background Job:**
-- Job logic: `src/lib/jobs/{job-name}.ts`
-- Cron endpoint: `src/app/api/cron/{job-name}/route.ts` (verify `CRON_SECRET`)
-- Add to `src/lib/scheduler.ts` if it should run with the email task batch
-
-**New Database Model:**
-- Add model to `prisma/schema.prisma`
-- Run `npm run db:migrate` to create migration
-- Run `npm run db:generate` to update Prisma Client
-
-**New Test:**
-- Create: `src/__tests__/{layer}/{feature}.test.ts`
-- Mirror the source structure (e.g., test for `src/services/membro.service.ts` goes in `src/__tests__/services/membro.service.test.ts`)
-
-**New Utility Script:**
-- Create: `utility/{script-name}.ts`
-- Add npm script in `package.json` under `scripts` (use `tsx` runner)
-- For one-off admin tasks: `scripts/{script-name}.ts`
+**New Type Definition:**
+- Domain Type: `src/domain/entity-name.ts` for business entity types
+- Global Type: `src/types/common.ts` for shared types used across layers
+- API Schema Types: Inferred from Zod schemas via `z.infer<typeof schema>`
 
 ## Special Directories
 
-**`node_modules/`:**
-- Purpose: npm dependencies
-- Generated: Yes
-- Committed: No
+**src/__tests__/:**
+- Purpose: Unit and integration tests
+- Generated: No (committed to repo)
+- Organization: Mirrors `src/` structure (e.g., `__tests__/services/membro.test.ts` tests `services/membro.service.ts`)
+- Pattern: Vitest with `describe()` and `it()` blocks
+- Run: `npm run test` (watch) or `npm run test:run` (single run)
 
-**`.next/`:**
-- Purpose: Next.js build output and cache
-- Generated: Yes
-- Committed: No
+**prisma/migrations/:**
+- Purpose: Prisma migration history for database schema changes
+- Generated: Created by `prisma migrate dev` command
+- Committed: Yes, to version control
+- Do NOT manually edit migration files; use `prisma migrate dev` or `prisma db push`
 
-**`prisma/migrations/`:**
-- Purpose: Database migration history
-- Generated: Yes (by `prisma migrate dev`)
-- Committed: Yes (required for `prisma migrate deploy`)
-
-**`prisma/migrations_archived/`:**
-- Purpose: Old migrations from before schema reset
-- Generated: No
-- Committed: Yes (historical reference)
-
-**`utility/csv/`:**
-- Purpose: Scraped CSV data and browser cache from utility scripts
-- Generated: Yes
-- Committed: Partially (CSVs yes, browser data no)
-
-**`tmp/`:**
-- Purpose: Temporary files during development
-- Generated: Yes
-- Committed: No (should be in .gitignore)
-
-**`backups/`:**
-- Purpose: Database backup outputs
-- Generated: Yes
-- Committed: Partially
-
-**`.claude/skills/`:**
-- Purpose: Claude AI skill definitions for code assistance
+**public/:**
+- Purpose: Static files served at root (e.g., `public/logo.png` → `/logo.png`)
 - Generated: No
 - Committed: Yes
+- Contents: Images, fonts, favicons, robots.txt
+
+**docker/:**
+- Purpose: Docker deployment configuration
+- Generated: No
+- Committed: Yes
+- Use: Run `npm run docker:up` for local Docker development
+
+**.next/:**
+- Purpose: Next.js build output and cache
+- Generated: Yes (by `npm run build`)
+- Committed: No (in .gitignore)
+- Ignore: All build artifacts
 
 ---
 
-*Structure analysis: 2026-02-16*
+*Structure analysis: 2026-02-11*

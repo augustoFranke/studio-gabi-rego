@@ -13,8 +13,6 @@ import Image from "next/image"
 function VerificarEmailContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get("email")
-  const mode = searchParams.get("modo")
-  const isProfileCompletion = mode === "perfil"
   const [isResending, setIsResending] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
@@ -33,17 +31,14 @@ function VerificarEmailContent() {
       const response = await fetch("/api/auth/reenviar-verificacao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          modo: isProfileCompletion ? "perfil" : "verificacao",
-        }),
+        body: JSON.stringify({ email }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
         toast.success("Email reenviado com sucesso!")
-        setCountdown(60) // 60 seconds cooldown
+        setCountdown(60)
       } else {
         toast.error(data.error || "Erro ao reenviar email")
       }
@@ -84,16 +79,6 @@ function VerificarEmailContent() {
             />
           </div>
 
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">
-              {isProfileCompletion ? "3" : "2"}
-            </div>
-            <span className="text-xs text-orange-500 font-medium">
-              {isProfileCompletion ? "Perfil" : "Verificar"}
-            </span>
-          </div>
-
           <div className="flex justify-center mb-4">
             <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center">
               <Mail className="h-10 w-10 text-orange-500" />
@@ -101,10 +86,10 @@ function VerificarEmailContent() {
           </div>
 
           <CardDescription className="text-foreground font-medium text-lg">
-            {isProfileCompletion ? "Continue seu cadastro" : "Verifique seu email"}
+            Verifique seu email
           </CardDescription>
           <CardDescription className="text-muted-foreground mt-2">
-            {isProfileCompletion ? "Enviamos um link para completar seu perfil para" : "Enviamos um link de verificação para"}
+            Enviamos um link de verificação para
             {email && (
               <span className="block text-orange-500 font-medium mt-1">{email}</span>
             )}
@@ -149,11 +134,11 @@ function VerificarEmailContent() {
 
           <div className="text-center">
             <Link
-              href={isProfileCompletion ? "/login" : "/cadastro"}
+              href="/cadastro"
               className="text-sm text-muted-foreground hover:text-orange-500 transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="h-3 w-3" />
-              {isProfileCompletion ? "Voltar para o login" : "Voltar para o cadastro"}
+              Voltar para o cadastro
             </Link>
           </div>
         </CardContent>
