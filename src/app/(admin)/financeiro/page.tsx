@@ -113,6 +113,24 @@ function formatDate(date: string): string {
   return new Date(date).toLocaleDateString("pt-BR")
 }
 
+function categorizePlanos(planos: Plano[], activeOnly = false) {
+  const planosGabi: Plano[] = []
+  const planosEstagiarios: Plano[] = []
+  const planosOutros: Plano[] = []
+  for (const p of planos) {
+    if (activeOnly && !p.ativo) continue
+    const nameLower = p.nome.toLowerCase()
+    if (nameLower.includes('gabi')) {
+      planosGabi.push(p)
+    } else if (nameLower.includes('estagiário') || nameLower.includes('estagiarios')) {
+      planosEstagiarios.push(p)
+    } else {
+      planosOutros.push(p)
+    }
+  }
+  return { planosGabi, planosEstagiarios, planosOutros }
+}
+
 function getStatusBadge(status: Pagamento["status"]) {
   const variants: Record<Pagamento["status"], { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
     PAGO: { variant: "default", icon: <Check className="h-3 w-3" />, label: "Pago" },
@@ -291,10 +309,17 @@ export default function FinanceiroPage() {
     fetchData()
   }, [fetchData])
 
-  // Refetch when search or filter changes (real-time)
+  // Debounce search to avoid API call on every keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   useEffect(() => {
-    fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)
-  }, [searchPagamento, filterStatus, sortPagamento, fetchPagamentos])
+    const timer = setTimeout(() => setDebouncedSearch(searchPagamento), 350)
+    return () => clearTimeout(timer)
+  }, [searchPagamento])
+
+  // Refetch when search or filter changes
+  useEffect(() => {
+    fetchPagamentos(1, debouncedSearch, filterStatus, sortPagamento)
+  }, [debouncedSearch, filterStatus, sortPagamento, fetchPagamentos])
 
   // Plano handlers
   const handleOpenPlanoDialog = (plano?: Plano) => {
@@ -615,7 +640,7 @@ export default function FinanceiroPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -626,7 +651,7 @@ export default function FinanceiroPage() {
             <div className="text-2xl font-bold">{stats.totalPlanos}</div>
           </CardContent>
         </Card>
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -637,7 +662,7 @@ export default function FinanceiroPage() {
             <div className="text-2xl font-bold">{stats.pagamentosPendentes}</div>
           </CardContent>
         </Card>
-        <Card className="group hover:shadow-md hover:shadow-destructive/5 transition-all border-destructive/10">
+        <Card className="group hover:shadow-md hover:shadow-destructive/5 transition-shadow border-destructive/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Atrasados</CardTitle>
             <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-colors">
@@ -648,7 +673,7 @@ export default function FinanceiroPage() {
             <div className="text-2xl font-bold text-destructive">{stats.pagamentosAtrasados}</div>
           </CardContent>
         </Card>
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -689,7 +714,7 @@ export default function FinanceiroPage() {
                 </div>
                 <Dialog open={pagamentoDialogOpen} onOpenChange={setPagamentoDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => handleOpenPagamentoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all">
+                    <Button onClick={() => handleOpenPagamentoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
                       <Plus className="mr-2 h-4 w-4" />
                       Novo Pagamento
                     </Button>
@@ -749,21 +774,7 @@ export default function FinanceiroPage() {
                           Plano
                         </Label>
                         {(() => {
-                          // Single-pass categorization instead of multiple filter iterations
-                          const planosGabi: typeof planos = []
-                          const planosEstagiarios: typeof planos = []
-                          const planosOutros: typeof planos = []
-                          for (const p of planos) {
-                            if (!p.ativo) continue
-                            const nameLower = p.nome.toLowerCase()
-                            if (nameLower.includes('gabi')) {
-                              planosGabi.push(p)
-                            } else if (nameLower.includes('estagiário') || nameLower.includes('estagiarios')) {
-                              planosEstagiarios.push(p)
-                            } else {
-                              planosOutros.push(p)
-                            }
-                          }
+                          const { planosGabi, planosEstagiarios, planosOutros } = categorizePlanos(planos, true)
 
                           return (
                             <Select
@@ -1166,7 +1177,7 @@ export default function FinanceiroPage() {
                 </div>
                 <Dialog open={planoDialogOpen} onOpenChange={setPlanoDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => handleOpenPlanoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all">
+                    <Button onClick={() => handleOpenPlanoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
                       <Plus className="mr-2 h-4 w-4" />
                       Novo Plano
                     </Button>
@@ -1321,20 +1332,7 @@ export default function FinanceiroPage() {
               ) : (
                 <div className="space-y-8">
                   {(() => {
-                    // Single-pass categorization instead of multiple filter iterations
-                    const planosGabi: typeof planos = []
-                    const planosEstagiarios: typeof planos = []
-                    const planosOutros: typeof planos = []
-                    for (const p of planos) {
-                      const nameLower = p.nome.toLowerCase()
-                      if (nameLower.includes('gabi')) {
-                        planosGabi.push(p)
-                      } else if (nameLower.includes('estagiário') || nameLower.includes('estagiarios')) {
-                        planosEstagiarios.push(p)
-                      } else {
-                        planosOutros.push(p)
-                      }
-                    }
+                    const { planosGabi, planosEstagiarios, planosOutros } = categorizePlanos(planos)
 
                     return (
                       <>
@@ -1354,7 +1352,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               {planosGabi.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-all`}>
+                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
                                       <div>
@@ -1441,7 +1439,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               {planosEstagiarios.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 dark:from-sky-950/20 dark:to-blue-950/10 dark:border-sky-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all`}>
+                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 dark:from-sky-950/20 dark:to-blue-950/10 dark:border-sky-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
                                       <div>
@@ -1528,7 +1526,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               {planosOutros.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10 dark:border-violet-800/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all`}>
+                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10 dark:border-violet-800/30 hover:shadow-lg hover:shadow-purple-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
                                       <div>

@@ -64,15 +64,15 @@ function createTableDrawer(options: {
 }) {
   const { doc, fontRegular, fontBold } = options
   const colWidths = [
-    USABLE_WIDTH * 0.45, // Exercise
-    USABLE_WIDTH * 0.15, // Sets
-    USABLE_WIDTH * 0.15, // Reps
-    USABLE_WIDTH * 0.25, // Notes (Empty)
+    TABLE_WIDTH * 0.45, // Exercise
+    TABLE_WIDTH * 0.12, // Sets
+    TABLE_WIDTH * 0.13, // Reps
+    TABLE_WIDTH * 0.30, // Notes
   ]
-  const rowHeight = 0.7 * CM
+  const rowHeight = 0.5 * CM
 
   const drawRow = (y: number, cols: string[], isHeader: boolean = false) => {
-    let x = MARGIN_LEFT
+    let x = TABLE_LEFT
 
     cols.forEach((text, i) => {
       const width = colWidths[i]
@@ -82,10 +82,10 @@ function createTableDrawer(options: {
 
       // Draw text
       doc.font(isHeader ? fontBold : fontRegular)
-        .fontSize(12)
+        .fontSize(10)
 
       const textX = x + 2
-      const textY = y + (rowHeight - 12) / 2 + 2
+      const textY = y + (rowHeight - 10) / 2 + 2
       const align = i > 0 ? 'center' as const : 'left' as const
       const textOptions = {
         width: width - 4,
@@ -141,7 +141,12 @@ function createTableDrawer(options: {
 
     // Rows
     exercises.forEach((ex) => {
-      drawRow(cursorY, [ex.name.toUpperCase(), ex.sets.toUpperCase(), ex.reps.toUpperCase(), ''])
+      drawRow(cursorY, [
+        ex.name.toUpperCase(),
+        ex.sets.toUpperCase(),
+        ex.reps.toUpperCase(),
+        ex.observacoes?.toUpperCase() || ''
+      ])
       cursorY += rowHeight
     })
 

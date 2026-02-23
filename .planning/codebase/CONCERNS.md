@@ -1,201 +1,212 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-16
+**Analysis Date:** 2026-02-11
 
 ## Tech Debt
 
-**Massive financeiro page component (1,612 lines):**
-- Issue: `src/app/(admin)/financeiro/page.tsx` is a single client component handling plans CRUD, payments CRUD, stats display, dialogs, pagination, filtering, and sorting. It contains inline schemas, local type definitions, and all UI in one file.
-- Files: `src/app/(admin)/financeiro/page.tsx`
-- Impact: Extremely difficult to maintain, test, or modify. Any change risks regressions across unrelated financial features. No unit tests exist for this page logic.
-- Fix approach: Extract into sub-components (`PlanoCard`, `PagamentoTable`, `PagamentoDialog`, `FinanceiroStats`), move inline schemas to `src/schemas/`, and extract data fetching into custom hooks.
+**Large monolithic page components:**
+- Issue: Several frontend page components exceed 1000 lines, particularly `src/app/(admin)/financeiro/page.tsx` (1610 lines), `src/app/(admin)/treinos/gerador/page.tsx` (785 lines), and `src/app/(auth)/anamnese/page.tsx` (747 lines). These are difficult to maintain, test, and extend. Complex state management and business logic are tightly coupled with UI rendering.
+- Files: `src/app/(admin)/financeiro/page.tsx`, `src/app/(admin)/treinos/gerador/page.tsx`, `src/app/(auth)/anamnese/page.tsx`, `src/app/(admin)/treinos/[id]/editar/page.tsx` (674 lines), `src/components/forms/MemberForm.tsx` (596 lines)
+- Impact: Hard to isolate bugs, reduces code reusability, slow development velocity when making changes to any single feature
+- Fix approach: Extract business logic into custom hooks, break components into smaller focused presentational components, move form validation and submission logic into separate modules
 
-**Duplicated email template HTML (948 lines):**
-- Issue: `src/lib/resend.ts` contains 7 full HTML email templates as inline template literals. Each template duplicates the entire HTML boilerplate (header, footer, styling, layout tables). The file is nearly 950 lines, with ~90% being duplicated HTML structure.
+**Email HTML template bloat:**
+- Issue: `src/lib/resend.ts` contains 948 lines of monolithic email template code with inline HTML strings. Each email template is a massive string literal making it difficult to modify styling, add new templates, or test variations.
 - Files: `src/lib/resend.ts`
-- Impact: Updating the brand design (colors, logo URL, footer text) requires changing 7 templates identically. High risk of inconsistency.
-- Fix approach: Extract a shared email layout function that wraps content, or use a templating library (e.g., react-email). Keep `emailTemplates` as the export interface but reduce internal duplication.
+- Impact: Hard to maintain email templates, difficult to add new email types, code becomes unwieldy to review
+- Fix approach: Migrate to a template library like React Email or move templates to separate files/templates directory with proper structure
 
-**Duplicated ANAMNESE_FIELDS definition:**
-- Issue: The list of anamnese fields is defined in two places: as a `Set` in `src/lib/anamnese.ts` and as a `const` array in `src/app/api/minha-anamnese/route.ts`. Both must be kept in sync manually.
-- Files: `src/lib/anamnese.ts`, `src/app/api/minha-anamnese/route.ts`
-- Impact: Adding/removing an anamnese field requires updating two locations. Divergence causes silent data loss.
-- Fix approach: Use the canonical `ANAMNESE_FIELDS` set from `src/lib/anamnese.ts` everywhere. The `minha-anamnese` route should import and use `sanitizeAnamnesePayload` from `src/lib/anamnese.ts` instead of defining its own `buildAnamneseData`.
+**Direct environment variable access (47 instances):**
+- Issue: Scattered `process.env.*` calls throughout codebase instead of centralized configuration. Found in middleware, API routes, components, and tests. Makes environment variable validation fragile and harder to ensure all required vars are set.
+- Files: `src/middleware.ts`, `src/app/api/perfil/route.ts`, `src/app/api/auth/reenviar-verificacao/route.ts`, `src/app/api/auth/enviar-reset-senha/route.ts`, `src/app/api/auth/cadastro/route.ts`, `src/app/api/health/route.ts`, `src/app/api/anamnese-token/route.ts`, `src/app/api/cron/cobrancas-whatsapp/route.ts`, `src/app/api/cron/tarefas-email/route.ts`, `src/app/(auth)/completar-perfil/page.tsx`, `src/components/error-boundary.tsx`
+- Impact: Missing environment variables won't be caught until runtime; difficult to track which variables are used where; no single source of truth for configuration
+- Fix approach: Create centralized config module `src/lib/config.ts` that validates and exposes all env vars at startup, or use @t3-oss/env-nextjs for type-safe env vars
 
-**Placeholder email workaround for admin-created members:**
-- Issue: When an admin creates a member without an email, the system generates `temp_{timestamp}@placeholder.local` as a fake email to satisfy the unique constraint. This is repeated in two API routes with slightly different patterns.
-- Files: `src/app/api/membros/route.ts` (line 156), `src/app/api/membros/[id]/route.ts` (line 62), `src/lib/email.ts`
-- Impact: Placeholder emails pollute the `usuarios` table. The `email.ts` helper knows about the domain but the generation logic is duplicated. If the pattern drifts, `normalizeEmail()` may not correctly filter placeholders.
-- Fix approach: Centralize placeholder email generation in `src/lib/email.ts` as a `generatePlaceholderEmail()` function, and use it from both API routes. Consider making `email` nullable on the `Usuario` model instead.
+**HTML escaping and sanitization scattered:**
+- Issue: Multiple sanitization approaches used throughout: custom HTML escaping in `src/lib/resend.ts` (lines 8-37), dompurify/isomorphic-dompurify imported but usage pattern inconsistent. Email building in resend.ts has custom regex-based sanitization that may miss edge cases.
+- Files: `src/lib/resend.ts`, `src/lib/validators.ts`, potentially other places doing manual string manipulation
+- Impact: Security vulnerability risk if escaping is inconsistent or incomplete; harder to audit sanitization across codebase
+- Fix approach: Create centralized sanitization module with consistent API; use established library (dompurify) everywhere instead of custom regex
 
-**Gender heuristic in anamnese route:**
-- Issue: `src/app/api/membros/[id]/anamnese/route.ts` contains a `determineSexo()` function that guesses gender from first names using hardcoded lists and suffix heuristics. This is a fallback for when `sexo` is not set in the database.
-- Files: `src/app/api/membros/[id]/anamnese/route.ts` (lines 99-135)
-- Impact: Inaccurate for non-Portuguese names, gender-neutral names, or non-binary individuals. Returns "Masculino" as default, which is incorrect for a fitness studio with predominantly female clientele.
-- Fix approach: Remove the heuristic. Return `null` when `sexo` is not set, and prompt the admin to set it explicitly in the member profile.
-
-**Inconsistent revalidatePath in server actions:**
-- Issue: `src/app/actions/membros.ts` uses `/membros` for `toggleMembroStatus` and `deleteMembro`, but `/alunos` for `deactivateMembro`. The actual route is `/alunos`, so the first two revalidations target a non-existent path.
-- Files: `src/app/actions/membros.ts` (lines 15, 39, 54)
-- Impact: Status toggle and delete operations may not refresh the UI correctly because they revalidate `/membros` instead of `/alunos`.
-- Fix approach: Change all three to `revalidatePath('/alunos')`.
-
-**Large treinos generator page (785 lines):**
-- Issue: `src/app/(admin)/treinos/gerador/page.tsx` is a complex client-side form handling exercise management, template loading, member selection, and form submission in a single component.
-- Files: `src/app/(admin)/treinos/gerador/page.tsx`
-- Impact: Difficult to maintain and no test coverage for this critical workflow.
-- Fix approach: Extract exercise list management, template selection, and member selection into separate components or hooks.
-
-## Known Bugs
-
-**Incorrect revalidation path for member status toggle:**
-- Symptoms: After toggling a member's status (active/inactive) or deleting a member, the `/alunos` list page may not update because `revalidatePath('/membros')` targets a non-existent route.
-- Files: `src/app/actions/membros.ts` (lines 15, 39)
-- Trigger: Toggle status or delete any member from the member detail page.
-- Workaround: Manual browser refresh shows updated data.
-
-## Security Considerations
-
-**next-auth v5 beta dependency:**
-- Risk: The app uses `next-auth@^5.0.0-beta.30`, which is a pre-release version. Beta releases may contain security vulnerabilities that are not tracked in advisory databases, and breaking changes can occur between versions.
-- Files: `package.json` (line 70), `src/lib/auth.ts`, `src/middleware.ts`
-- Current mitigation: The auth implementation is straightforward (credentials provider + JWT).
-- Recommendations: Monitor for stable v5 release and upgrade promptly. Pin to a specific beta version rather than using `^` range to avoid unexpected upgrades.
-
-**Rate limiter fails open in production:**
-- Risk: When Upstash Redis is not configured (`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` missing), the rate limiter logs a warning but allows all requests through. This is intentional for development but dangerous if production misconfigures Redis.
-- Files: `src/lib/rate-limit.ts` (lines 37-42)
-- Current mitigation: A `console.error("CRITICAL: ...")` log is emitted.
-- Recommendations: Consider failing closed in production (return `{ success: false }`) or add a health check that alerts when rate limiting is disabled.
-
-**Server actions lack auth checks:**
-- Risk: `src/app/actions/membros.ts` performs `toggleMembroStatus`, `deleteMembro`, and `deactivateMembro` without verifying the caller's session or role. Any authenticated user (including members) could invoke these server actions.
-- Files: `src/app/actions/membros.ts`
-- Current mitigation: The UI only shows these buttons to admins, but server actions are callable by any client.
-- Recommendations: Add `auth()` check at the top of each server action and verify `session.user.role === 'ADMIN'`.
-
-**Cron endpoints protected by shared secret only:**
-- Risk: `src/app/api/cron/tarefas-email/route.ts` and `src/app/api/cron/cobrancas-whatsapp/route.ts` authenticate via a `CRON_SECRET` bearer token. If the secret is weak or leaked, anyone can trigger bulk email/WhatsApp sends.
-- Files: `src/app/api/cron/tarefas-email/route.ts`, `src/app/api/cron/cobrancas-whatsapp/route.ts`
-- Current mitigation: The cron routes are in the PUBLIC_ROUTES middleware allowlist, so they bypass session auth. Token comparison uses strict equality (no timing attack, but could use `crypto.timingSafeEqual`).
-- Recommendations: Use `crypto.timingSafeEqual` for token comparison. Consider IP allowlisting for Vercel cron source IPs.
-
-**Password policy inconsistency:**
-- Risk: The registration endpoint (`src/app/api/auth/cadastro/route.ts`) requires 8 characters, uppercase, and a number. The member update schema (`src/schemas/membro.schema.ts`) only requires 6 characters. Admin-created members with no password get a random hash.
-- Files: `src/app/api/auth/cadastro/route.ts` (lines 30-49), `src/schemas/membro.schema.ts` (line 52)
-- Current mitigation: None.
-- Recommendations: Unify password validation into a shared Zod schema used in both registration and admin update flows.
-
-**DOMPurify imported but unused:**
-- Risk: `dompurify` and `isomorphic-dompurify` are listed as dependencies but not imported anywhere in `src/`. This suggests either planned sanitization that was never implemented, or sanitization was removed but dependencies were not cleaned up.
-- Files: `package.json` (lines 67-68)
-- Current mitigation: The `src/lib/anamnese.ts` sanitizer and `src/lib/resend.ts` `escapeHtml` handle the current sanitization needs.
-- Recommendations: Remove `dompurify` and `isomorphic-dompurify` from dependencies if not needed, or implement HTML sanitization where user content is rendered.
+**Scheduler is hardcoded for production workarounds:**
+- Issue: `src/lib/scheduler.ts` (379 lines) contains note about production considerations: "En produção, considerar usar: - Vercel Cron Jobs - Upstash QStash - node-cron (se self-hosted)". Currently appears to be in-memory/polling-based, which won't scale and won't survive server restarts.
+- Files: `src/lib/scheduler.ts`
+- Impact: Notifications/reminders/billing cron jobs will not run reliably in production; can miss billing cycles, class reminders, and automated tasks
+- Fix approach: Implement proper job queue (Upstash, Bull, or Vercel Cron) instead of in-memory scheduling
 
 ## Performance Bottlenecks
 
-**Birthday notification fetches all active members:**
-- Problem: `processarAniversarios()` in `src/lib/scheduler.ts` loads ALL active members into memory, then filters in JavaScript for matching birthday month/day.
-- Files: `src/lib/scheduler.ts` (lines 256-269)
-- Cause: PostgreSQL cannot natively extract month/day from a `DateTime` field in a Prisma `where` clause, so the filtering is done application-side.
-- Improvement path: Use `prisma.$queryRaw` with `EXTRACT(MONTH FROM data_nascimento)` and `EXTRACT(DAY FROM data_nascimento)` to filter at the database level. For a small studio this is not critical, but it does not scale.
+**Unbounded queries without pagination in some endpoints:**
+- Issue: `src/app/api/planos/route.ts`, `src/app/api/agendamentos/route.ts` (line 88), and `src/app/api/horarios/route.ts` use `findMany()` without pagination limits. Only `src/app/api/pagamentos/route.ts` implements proper pagination with skip/take. As data grows, these endpoints will fetch all records and cause N+1 query issues.
+- Files: `src/app/api/planos/route.ts` (line 15), `src/app/api/agendamentos/route.ts` (line 88), `src/app/api/horarios/route.ts` (line 23), `src/app/api/membros/route.ts` (lines 37, 42)
+- Impact: Slow response times as datasets grow; server memory pressure; poor user experience during peak usage
+- Fix approach: Add pagination with limit/offset or cursor-based pagination to all GET endpoints
 
-**No database indexes beyond Prisma defaults:**
-- Problem: The schema relies entirely on Prisma's default indexes (primary keys, unique constraints, and foreign keys). Queries that filter by `status`, `dataVencimento`, or date ranges have no composite indexes.
-- Files: `prisma/schema.prisma`
-- Cause: No explicit `@@index` declarations in the schema.
-- Improvement path: Add `@@index([status, dataVencimento])` on `Pagamento`, `@@index([data])` on `Agendamento`, and `@@index([status])` on `Membro`. Monitor query performance with Supabase dashboard.
+**Scheduler batch processing with hardcoded batch size:**
+- Issue: `src/lib/scheduler.ts` (line 60) uses hardcoded `BATCH_SIZE = 5` for processing notifications. No adaptive batching based on API rate limits, no backpressure handling, and all batches processed sequentially in a loop.
+- Files: `src/lib/scheduler.ts` (lines 60-80)
+- Impact: External API rate limits could cause failures; inefficient use of async parallelism; slow notification delivery during high volume
+- Fix approach: Make batch size configurable per integration; implement rate limit awareness; use proper work queue
 
-**Client-side data fetching on financeiro page:**
-- Problem: The 1,612-line financeiro page fetches planos, pagamentos, membros, and stats via separate `fetch()` calls on mount. Each tab switch or filter change triggers additional API calls.
-- Files: `src/app/(admin)/financeiro/page.tsx`
-- Cause: The page is a client component that manages all state locally instead of using server components or SWR for data.
-- Improvement path: Use `useSWR` (already a dependency) for data fetching with caching and deduplication. Consider making the page a server component with client sub-components.
+**PDF generation without streaming:**
+- Issue: `src/lib/pdf.ts` generates entire PDF in memory before returning. PDFKit documents accumulate in memory without streaming support.
+- Files: `src/lib/pdf.ts`
+- Impact: Large PDFs cause memory spikes; long-running requests for large training plans; poor performance under load
+- Fix approach: Implement streaming response for PDF generation
+
+**Page revalidation cache strategy needs tuning:**
+- Issue: Various pages use hardcoded revalidation times: `{ revalidate: 60 }` for members list, `{ revalidate: 30 }` for dashboard, `{ revalidate: false }` on some SWR calls. No clear strategy based on data freshness requirements.
+- Files: `src/app/(admin)/alunos/page.tsx` (line 70), `src/app/(admin)/dashboard/page.tsx` (line 176), multiple SWR hooks with `revalidateOnFocus: false`
+- Impact: Stale data shown to users or unnecessary revalidation causing slow page loads; inconsistent user experience
+- Fix approach: Document cache strategy based on data freshness requirements; use ISR patterns where appropriate
 
 ## Fragile Areas
 
-**Scheduler notification deduplication:**
-- Files: `src/lib/scheduler.ts`, `src/lib/jobs/cobranca-whatsapp.ts`
-- Why fragile: The `processNotifications` helper checks for existing notifications using time-based ranges (e.g., "last 24 hours"). If the cron job timing shifts or runs more than once in a window, duplicate notifications can be sent. The `cobranca-whatsapp` job uses a different deduplication approach (exact date match) than the email scheduler (time range).
-- Safe modification: Always test deduplication logic with overlapping cron runs. The `Notificacao.refKey` unique field exists but is only used by some jobs.
-- Test coverage: `src/__tests__/api/cron-tarefas-email.test.ts` and `src/__tests__/api/cron-cobrancas-whatsapp.test.ts` exist but only test the route handlers, not the scheduler logic itself.
+**Complex agendamento (scheduling) logic with multiple related entities:**
+- Issue: `src/app/api/agendamentos/[id]/route.ts` and `src/services/agendamento.service.ts` handle complex recurring appointment generation, validation, and cascading deletes. Scope parameter allows single or "future" deletions affecting multiple records. HorarioFixo validation adds more complexity.
+- Files: `src/app/api/agendamentos/[id]/route.ts`, `src/services/agendamento.service.ts`, `src/lib/schedule.ts`
+- Impact: Difficult to test; easy to introduce bugs affecting user's schedules; cascading deletes risk data loss
+- Safe modification: Add comprehensive integration tests before changing scope handling logic; document business rules for recurring appointments; add transaction wrapping for cascading operations
 
-**Middleware route matching:**
-- Files: `src/middleware.ts`
-- Why fragile: The route protection is based on hardcoded string arrays (`ADMIN_ROUTES`, `MEMBER_ROUTES`, `PUBLIC_ROUTES`). Adding a new route requires updating the middleware; forgetting to do so exposes the route as unprotected (falls through to `NextResponse.next()`).
-- Safe modification: When adding any new route group, always update the corresponding array in `src/middleware.ts`. Consider using a catch-all approach where unmatched authenticated routes redirect to login.
-- Test coverage: No direct tests for middleware route matching logic.
+**Anamnese (intake form) flow with token-based access:**
+- Issue: `src/app/(auth)/anamnese/page.tsx` (747 lines) handles complex form with token validation, auto-save, and multiple sections. Token generation in `src/app/api/anamnese-token/route.ts` and validation scattered across multiple endpoints.
+- Files: `src/app/(auth)/anamnese/page.tsx`, `src/app/api/anamnese-token/route.ts`, `src/app/api/minha-anamnese/route.ts`
+- Impact: Token expiration not consistently enforced; test coverage likely incomplete; refactoring form structure is risky
+- Safe modification: Extract form logic into separate module; add comprehensive token lifecycle tests; separate validation from business logic
 
-## Scaling Limits
+**Manual date parsing without consistent timezone handling:**
+- Issue: Multiple places use `parseLocalDate` helper from `src/lib/schedule.ts` to parse dates, but timezone handling is implicit and may not be consistent. Scheduler uses explicit timezone handling with new Date() arithmetic which is error-prone.
+- Files: `src/lib/schedule.ts`, `src/app/api/agendamentos/route.ts`, `src/app/(aluno)/minha-agenda/page.tsx`
+- Impact: Edge cases around midnight, DST transitions, or timezone mismatches could cause scheduling bugs; hard to debug timezone-related issues
+- Safe modification: Establish explicit timezone handling strategy; consider using date-fns or day.js with timezone support; add tests for edge cases
 
-**Single-instance cron design:**
-- Current capacity: Cron jobs are triggered by HTTP POST and run synchronously. The scheduler processes notifications sequentially (one member at a time).
-- Limit: With hundreds of members, the cron job could time out on Vercel's serverless function limit (10-60 seconds depending on plan).
-- Scaling path: Use `Promise.allSettled` for parallel notification sends, or use Upstash QStash for fan-out to individual member notifications.
-
-**No pagination on several API endpoints:**
-- Current capacity: `GET /api/membros`, `GET /api/horarios`, and `GET /api/planos` return all records.
-- Limit: With hundreds of members or schedule slots, response payloads become large.
-- Scaling path: Add pagination parameters (`page`, `limit`) similar to `GET /api/pagamentos` which already implements pagination.
-
-## Dependencies at Risk
-
-**next-auth v5 beta (^5.0.0-beta.30):**
-- Risk: Pre-release software. API surface may change. Security patches may not follow standard advisory processes.
-- Impact: Authentication is the foundation of the entire app. A breaking change in next-auth could lock users out.
-- Migration plan: Stay on current beta pin, monitor for stable 5.x release, and upgrade when available. The auth implementation is simple enough to adapt.
-
-**Dual PDF libraries (pdf-lib + pdfkit):**
-- Risk: Both `pdf-lib` (^1.17.1) and `pdfkit` (^0.17.2) are listed as dependencies, but only `pdfkit` is imported in `src/lib/pdf.ts`. `pdf-lib` appears unused.
-- Impact: Unnecessary bundle size and potential confusion about which library to use.
-- Migration plan: Remove `pdf-lib` from `package.json` if it is not imported anywhere.
-
-**Zod v4 (^4.3.5):**
-- Risk: Zod v4 is relatively new. The project uses it for all request validation. If the project was migrated from v3, there may be subtle behavioral differences.
-- Impact: Low risk -- Zod v4 is stable. But worth noting as a recent upgrade.
-- Migration plan: None needed. Keep updated.
-
-## Missing Critical Features
-
-**No structured logging:**
-- Problem: All logging uses `console.log/warn/error`. There is no structured logging, log levels, or log aggregation beyond what Vercel provides by default.
-- Files: Throughout `src/app/api/`, `src/lib/scheduler.ts`, `src/lib/resend.ts`
-- Blocks: Debugging production issues, audit trails for sensitive operations (member deletion, payment status changes).
-
-**No error tracking / monitoring:**
-- Problem: No Sentry, LogRocket, or similar error tracking service is integrated. Production errors are only visible in Vercel logs, which have limited retention and no alerting.
-- Blocks: Proactive incident detection. Silent failures in cron jobs, email sends, or WhatsApp sends go unnoticed.
-
-**No audit log for admin operations:**
-- Problem: Admin actions like deleting a member, changing payment status, or modifying plans have no audit trail beyond `atualizadoEm` timestamps.
-- Blocks: Accountability for data changes, debugging when data appears incorrect.
+**Financial pages with complex state and real-time updates:**
+- Issue: `src/app/(admin)/financeiro/page.tsx` (1610 lines) has complex state management for payments, plans, members with inline CRUD operations. Multiple tabs with different data models and error states.
+- Files: `src/app/(admin)/financeiro/page.tsx`
+- Impact: High risk of state management bugs; difficult to test individual features; refactoring is dangerous
+- Safe modification: Break into separate components per tab; extract form logic into custom hooks; add comprehensive tests for each operation before refactoring
 
 ## Test Coverage Gaps
 
-**No tests for client-side components or pages:**
-- What's not tested: All `src/app/(admin)/` pages, `src/app/(aluno)/` pages, `src/app/(auth)/` pages, and `src/components/` are untested. The test suite covers API routes, schemas, services, and PDF generation only.
-- Files: `src/app/(admin)/financeiro/page.tsx` (1,612 lines), `src/app/(admin)/treinos/gerador/page.tsx` (785 lines), all components in `src/components/`
-- Risk: UI regressions go undetected. The most complex files (financeiro, treinos generator) have zero test coverage.
-- Priority: Medium -- the API layer is well-tested, but critical user workflows lack any automated verification.
+**API routes lack comprehensive error case testing:**
+- Issue: Found many API endpoints but `src/__tests__/api/` contains sparse coverage (only 247-line test file for agendamentos, some mock test files). No visible tests for payment flows, member creation edge cases, or cron job execution.
+- Files: All `src/app/api/**/*.ts` routes
+- Impact: Edge cases and error scenarios not validated; production bugs from missing validation; regressions go unnoticed
+- Priority: High - financial/payment code especially needs coverage
 
-**No tests for scheduler logic:**
-- What's not tested: `src/lib/scheduler.ts` contains core business logic for notification processing, billing reminders, and overdue payment updates. Only the thin cron route handlers are tested.
-- Files: `src/lib/scheduler.ts`, `src/lib/jobs/cobranca-whatsapp.ts`
-- Risk: Notification deduplication bugs, missed birthday emails, or incorrect overdue payment transitions would not be caught.
-- Priority: High -- this is critical business logic that runs automatically without user oversight.
+**Frontend components (especially large pages) lack unit tests:**
+- Issue: Large components like `src/app/(admin)/financeiro/page.tsx`, `src/app/(admin)/treinos/gerador/page.tsx` have no visible tests. Form components have no test coverage for validation, submission, or error states.
+- Files: `src/app/(admin)/**/*.tsx`, `src/components/forms/**/*.tsx`
+- Impact: UI bugs in payment flows, training plan generation, member management go undetected; refactoring is risky
+- Priority: High - user-facing feature code needs tests
 
-**No tests for middleware:**
-- What's not tested: `src/middleware.ts` route protection logic. No tests verify that admin routes reject member tokens or that public routes are accessible without auth.
-- Files: `src/middleware.ts`
-- Risk: A typo in route arrays could expose admin functionality to all users.
-- Priority: High -- authorization bypass is a security concern.
+**Missing integration tests for authentication flows:**
+- Issue: Auth routes exist (`src/app/api/auth/**/*.ts`) but integration tests for signup, password reset, email verification are not evident.
+- Files: `src/app/api/auth/**/*.ts`
+- Impact: Auth bugs affect entire application; edge cases like token expiration not verified
+- Priority: High - security/core functionality
 
-**No E2E tests:**
-- What's not tested: Full user flows (registration, onboarding, scheduling, payments).
-- Files: `playwright` is listed in devDependencies but no test files exist.
-- Risk: Integration issues between client and server code go undetected.
-- Priority: Low -- unit and API tests cover most logic, but E2E would catch flow-level regressions.
+**Schedule/cron job execution never tested:**
+- Issue: `src/lib/scheduler.ts` has complex notification processing but no tests to verify notifications are actually created and sent
+- Files: `src/lib/scheduler.ts`
+- Impact: Cron jobs may fail silently; users won't receive reminders/notifications without knowing
+- Priority: High - user-facing functionality
+
+## Security Considerations
+
+**Cron endpoints rely on environment variable secret:**
+- Issue: `src/app/api/cron/**/*.ts` routes use `process.env.CRON_SECRET` for authorization. No rate limiting on cron endpoints themselves. If secret is leaked or weak, unauthorized job triggering is possible.
+- Files: `src/app/api/cron/cobrancas-whatsapp/route.ts` (line 15), `src/app/api/cron/tarefas-email/route.ts` (line 14)
+- Current mitigation: Environment variable exists, but no docs on secret strength requirements
+- Recommendations: Use Upstash/Vercel webhook signing instead of simple secret; add IP allowlist if using Vercel Cron; rotate secret regularly
+
+**Email templates use HTML construction with potential XSS risk:**
+- Issue: Email templates in `src/lib/resend.ts` use custom HTML escaping (lines 8-37) rather than template engine. If any unescaped user data enters templates, XSS is possible.
+- Files: `src/lib/resend.ts` (emailTemplates functions)
+- Current mitigation: Manual escaping functions implemented
+- Recommendations: Use React Email or similar typed template library to prevent string-based XSS; add JSDoc examples showing safe usage; consider using template literals with explicit escaping helpers
+
+**Sensitive data potentially exposed in console logs:**
+- Issue: 20+ console.error/warn statements throughout app. Error responses sometimes logged without filtering sensitive fields (emails, phone numbers). Development mode error boundary shows full stack traces.
+- Files: `src/app/(aluno)/minha-agenda/page.tsx`, `src/app/api/**/*.ts`, `src/components/error-boundary.tsx` (line 55)
+- Current mitigation: NODE_ENV check in error-boundary
+- Recommendations: Implement structured logging with field masking; never log full error objects; sanitize error messages before returning to client; use logging service (e.g., Sentry) for production
+
+**CPF/sensitive data in URLs and logs:**
+- Issue: Some routes accept CPF in search params or body. While validated, if logged or exposed in errors, sensitive ID data could leak.
+- Files: `src/lib/validators.ts` (CPF validation), forms accepting CPF input
+- Impact: Personal data leakage if errors/logs are exposed
+- Recommendations: Ensure CPF never appears in logs; consider hashing for lookups instead of plaintext; add data retention policy for sensitive fields
+
+**Database connection string handling:**
+- Issue: `DATABASE_URL` and `DIRECT_URL` set via environment variables. If deployed to environment where .env files are accessible or env var dumps are logged, credentials could leak.
+- Current mitigation: .env in .gitignore
+- Recommendations: Ensure env vars only accessible to application code; use secrets manager in production (e.g., AWS Secrets Manager, Vercel Secrets); never log DATABASE_URL; rotate credentials on suspected exposure
+
+## Scaling Limits
+
+**In-memory scheduler won't scale beyond single instance:**
+- Issue: `src/lib/scheduler.ts` processes notifications in-memory. On multiple server instances, duplicate notifications will be sent. No distributed coordination.
+- Impact: Each instance runs same cron job → duplicate emails/WhatsApp messages; notification storms
+- Scaling path: Migrate to Upstash QStash, Vercel Cron, or Bull with Redis for distributed job processing
+
+**Agendamentos findMany without pagination limit:**
+- Issue: No maximum result set size on `src/app/api/agendamentos/route.ts` query. As studio gains members, single request can fetch thousands of records.
+- Impact: Slow API responses; memory pressure; frontend struggles to render large lists
+- Scaling path: Implement cursor-based pagination; add reasonable default limits; index queries on date range to improve DB performance
+
+**PDF generation in-memory:**
+- Issue: `src/lib/pdf.ts` builds entire PDF document before writing. Large training plans will consume significant memory per request.
+- Impact: Out-of-memory errors under concurrent PDF generation load
+- Scaling path: Implement streaming; consider server-side caching of generated PDFs; use headless browser if rendering templates
+
+**Email sending is synchronous and not queued:**
+- Issue: Email sends in `src/lib/resend.ts` are awaited in request handlers. If Resend API is slow or down, requests hang. Multiple concurrent emails could saturate connection pool.
+- Impact: Slow requests; potential timeouts; poor user experience during email sends
+- Scaling path: Implement job queue for email sending (Bull, Upstash); make email sends asynchronous
+
+## Dependencies at Risk
+
+**NextAuth.js beta version (5.0.0-beta.30):**
+- Risk: Using beta version of authentication library. Breaking changes possible in minor updates; bugs may exist.
+- Impact: Auth could break unexpectedly on dependency updates; security issues in beta might not be backported
+- Migration plan: Plan migration to stable NextAuth v5 release or switch to Auth0/Supabase Auth for production stability
+
+**pdfkit (0.17.2) - unmaintained:**
+- Risk: PDFKit is community-maintained with infrequent updates. Font handling and edge cases may have unfixed bugs.
+- Impact: PDF generation bugs could be difficult to fix; security vulnerabilities in rendering
+- Migration plan: Consider alternatives like puppeteer + HTML-to-PDF for complex layouts, or prebuilt PDF generation services
+
+**Prisma with PostgreSQL only:**
+- Risk: Direct dependency on PostgreSQL. Connection pooling via DIRECT_URL but primary pool connection is standard. Supabase/Railway/others may have quirks.
+- Impact: Difficult to migrate databases; vendor lock-in risk
+- Migration plan: Ensure schema migrations are version-controlled; test disaster recovery procedures; have backup provider ready
+
+## Missing Critical Features
+
+**No audit logging for sensitive operations:**
+- Problem: No audit trail for who modified payments, removed members, or changed schedules. Admin actions not tracked.
+- Blocks: Compliance requirements; impossible to investigate discrepancies
+- Files: `src/app/api/membros/route.ts`, `src/app/api/pagamentos/route.ts`, `src/app/(admin)/financeiro/page.tsx`
+- Recommendation: Add audit_logs table; log user ID, action, timestamp, before/after state for sensitive operations
+
+**No soft delete or data recovery:**
+- Problem: `deleteMany()` calls permanently remove records. No way to recover accidentally deleted data.
+- Blocks: Data recovery after accidental deletion; compliance with data retention policies
+- Files: `src/app/api/agendamentos/[id]/route.ts` (lines 225, 282, 293)
+- Recommendation: Implement soft deletes (deleted_at timestamp); add admin interface to view/restore deleted records
+
+**No rate limiting on public/auth endpoints:**
+- Problem: No visible rate limiting on signup, login, password reset. Vulnerable to brute force attacks.
+- Blocks: Security against credential stuffing and account enumeration
+- Files: `src/app/api/auth/**/*.ts`
+- Recommendation: Integrate Upstash Rate Limit (`@upstash/ratelimit` already in package.json); add per-IP/per-email limits
+
+**No role-based feature flags:**
+- Problem: No way to gradually roll out features or disable functionality for certain users without code changes.
+- Blocks: A/B testing; gradual rollouts; emergency feature shutdown
+- Recommendation: Add feature flag system (LaunchDarkly, Vercel Flags, or custom); use feature flag logic in components and API routes
 
 ---
 
-*Concerns audit: 2026-02-16*
+*Concerns audit: 2026-02-11*

@@ -35,6 +35,10 @@ export async function GET() {
       pagamentosPendentes,
       pagamentosAtrasados,
       receitaMes: receitaMesResult._sum.valor || 0
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      },
     })
   }, { requiredRole: 'ADMIN' })
 }

@@ -15,7 +15,6 @@
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
-import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import { Prisma, TipoNotificacao } from '@prisma/client'
 import {
   formatWhatsappNumber,
@@ -23,9 +22,14 @@ import {
   sendWhatsappText,
 } from '@/lib/whatsapp/evolution'
 
+type NotificationSkipWhere = Prisma.NotificacaoWhereInput & {
+  membroId: string
+  tipo: TipoNotificacao
+}
+
 type NotificationProcessOptions<T> = {
   items: T[]
-  shouldSkipWhere: (item: T) => Prisma.NotificacaoWhereInput
+  shouldSkipWhere: (item: T) => NotificationSkipWhere
   buildNotification: (item: T) => Prisma.NotificacaoCreateInput
   sendEmail?: (item: T) => Promise<void>
   sendWhatsapp?: (item: T) => Promise<void>
@@ -38,45 +42,47 @@ async function processNotifications<T>({
   sendEmail,
   sendWhatsapp,
 }: NotificationProcessOptions<T>) {
-  for (const item of items) {
-    const jaEnviou = await prisma.notificacao.findFirst({
-      where: shouldSkipWhere(item),
-    })
+  if (!items.length) return 0
 
-    if (jaEnviou) continue
+  // Batch skip-check: single query instead of N findFirst calls
+  const skipFilters = items.map(shouldSkipWhere)
+  const existing = await prisma.notificacao.findMany({
+    where: { OR: skipFilters },
+    select: { membroId: true, tipo: true },
+  })
+  const alreadySent = new Set(
+    existing.map((n) => `${n.membroId}-${n.tipo}`)
+  )
 
-    const notificacao = await prisma.notificacao.create({
-      data: buildNotification(item),
-    })
+  const toProcess = items.filter((item) => {
+    const { membroId, tipo } = shouldSkipWhere(item)
+    return !alreadySent.has(`${membroId}-${tipo}`)
+  })
 
-    if (sendEmail) {
-      await sendEmail(item)
-    }
+  // Process in parallel batches of 5 to avoid overwhelming external APIs
+  const BATCH_SIZE = 5
+  let processed = 0
+  for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
+    const batch = toProcess.slice(i, i + BATCH_SIZE)
+    const results = await Promise.allSettled(
+      batch.map(async (item) => {
+        const notificacao = await prisma.notificacao.create({
+          data: buildNotification(item),
+        })
 
-    if (sendWhatsapp) {
-      await sendWhatsapp(item)
-    }
+        if (sendEmail) await sendEmail(item)
+        if (sendWhatsapp) await sendWhatsapp(item)
 
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: {
-        enviada: true,
-        enviadaEm: new Date(),
-      },
-    })
+        await prisma.notificacao.update({
+          where: { id: notificacao.id },
+          data: { enviada: true, enviadaEm: new Date() },
+        })
+      })
+    )
+    processed += results.filter((r) => r.status === 'fulfilled').length
   }
 
-  return items.length
-}
-
-type RecurringAppointmentsParams = {
-  startDate: Date
-  endDate: Date
-  membroId?: string
-}
-
-export async function generateRecurringAppointments(params: RecurringAppointmentsParams) {
-  return syncAgendamentosRecorrentes(params)
+  return processed
 }
 
 /**
@@ -101,11 +107,13 @@ export async function processarLembretesAula() {
     },
     include: {
       membro: {
-        include: {
-          usuario: true,
+        select: {
+          id: true,
+          telefone: true,
+          usuario: { select: { nome: true, email: true } },
         },
       },
-      horario: true,
+      horario: { select: { horaInicio: true, horaFim: true } },
     },
   })
 
@@ -142,9 +150,6 @@ export async function processarLembretesAula() {
     sendEmail: resendEnabled
       ? async (agendamento) => {
           const { membro, horario, nome, dataFormatada } = getContext(agendamento)
-          if (!membro.usuario.email) {
-            return
-          }
           const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
           await enviarEmail({
             para: membro.usuario.email,
@@ -242,9 +247,6 @@ export async function processarCobrancas() {
     sendEmail: resendEnabled
       ? async (pagamento) => {
           const { membro, nome, valor, vencimento } = getContext(pagamento)
-          if (!membro.usuario.email) {
-            return
-          }
           const html = emailTemplates.cobranca(nome, valor, vencimento)
           await enviarEmail({
             para: membro.usuario.email,
@@ -268,38 +270,21 @@ export async function processarAniversarios() {
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
-  // Buscar membros ativos que fazem aniversário hoje direto no banco
-  type AniversarianteRow = {
-    id: string
-    telefone: string | null
-    usuarioNome: string | null
-    usuarioEmail: string | null
-  }
+  // Filter birthdays at the database level instead of loading all members
+  const birthdayIds = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT m.id FROM "Membro" m
+    WHERE m.status = 'ATIVO'
+      AND m."dataNascimento" IS NOT NULL
+      AND EXTRACT(MONTH FROM m."dataNascimento") = ${mes}
+      AND EXTRACT(DAY FROM m."dataNascimento") = ${dia}
+  `
 
-  const aniversariantesRows = await prisma.$queryRaw<AniversarianteRow[]>(
-    Prisma.sql`
-      SELECT
-        m.id,
-        m.telefone,
-        u.nome AS "usuarioNome",
-        u.email AS "usuarioEmail"
-      FROM membros m
-      INNER JOIN usuarios u ON u.id = m.usuario_id
-      WHERE m.status = CAST(${'ATIVO'} AS "StatusMembro")
-        AND m.data_nascimento IS NOT NULL
-        AND EXTRACT(MONTH FROM m.data_nascimento) = ${mes}
-        AND EXTRACT(DAY FROM m.data_nascimento) = ${dia}
-    `
-  )
-
-  const aniversariantes = aniversariantesRows.map((membro) => ({
-    id: membro.id,
-    telefone: membro.telefone,
-    usuario: {
-      nome: membro.usuarioNome,
-      email: membro.usuarioEmail,
-    },
-  }))
+  const aniversariantes = birthdayIds.length
+    ? await prisma.membro.findMany({
+        where: { id: { in: birthdayIds.map((b) => b.id) } },
+        include: { usuario: true },
+      })
+    : []
 
   const getContext = (membro: typeof aniversariantes[number]) => ({
     membro,
@@ -329,9 +314,6 @@ export async function processarAniversarios() {
     sendEmail: resendEnabled
       ? async (membro) => {
           const { nome } = getContext(membro)
-          if (!membro.usuario.email) {
-            return
-          }
           const html = emailTemplates.aniversario(nome)
           await enviarEmail({
             para: membro.usuario.email,
@@ -386,12 +368,15 @@ export async function atualizarPagamentosAtrasados() {
  * Útil para ser chamado por um cron job ou endpoint de API
  */
 export async function executarTodasTarefas() {
-  const resultados = {
-    pagamentosAtualizados: await atualizarPagamentosAtrasados(),
-    lembretesAula: await processarLembretesAula(),
-    cobrancas: await processarCobrancas(),
-    aniversarios: await processarAniversarios(),
-  }
+  // Run atualizarPagamentosAtrasados first (changes PENDENTE -> ATRASADO),
+  // then run the rest in parallel (they query non-overlapping date windows)
+  const pagamentosAtualizados = await atualizarPagamentosAtrasados()
 
-  return resultados
+  const [lembretesAula, cobrancas, aniversarios] = await Promise.all([
+    processarLembretesAula(),
+    processarCobrancas(),
+    processarAniversarios(),
+  ])
+
+  return { pagamentosAtualizados, lembretesAula, cobrancas, aniversarios }
 }

@@ -111,7 +111,7 @@ export default async function MembrosPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all">
+          <Button asChild className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
             <Link href="/alunos/novo">
               <Plus className="mr-2 h-4 w-4" />
               Novo Aluno

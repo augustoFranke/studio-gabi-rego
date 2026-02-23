@@ -219,7 +219,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Alunos Ativos
@@ -236,7 +236,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Aulas Hoje
@@ -253,7 +253,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Receita do Mês
@@ -272,7 +272,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-all border-primary/10">
+        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Taxa de Ocupação
@@ -286,7 +286,7 @@ export default async function DashboardPage() {
             <div className="flex items-center pt-1">
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary transition-all duration-500"
+                  className="h-full bg-primary transition-[width] duration-500"
                   style={{ width: `${Math.min(ocupacaoHoje, 100)}%` }}
                 />
               </div>

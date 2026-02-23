@@ -18,7 +18,6 @@ const {
     enviarEmail: vi.fn(async () => ({ success: true })),
     isResendConfigured: vi.fn(() => true),
     emailTemplates: {
-      completarPerfil: vi.fn((_nome: string | null, link: string) => `completar:${link}`),
       verificacaoEmail: vi.fn((_nome: string | null, link: string) => `verificar:${link}`),
     },
   },
@@ -111,7 +110,7 @@ describe('Auth API - POST /api/auth/reenviar-verificacao', () => {
     expect(json.success).toBe(true)
   })
 
-  it('creates profile completion token flow for verified user without onboarding', async () => {
+  it('returns generic success for verified user without generating profileToken', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-2',
       nome: 'Aluno',
@@ -122,13 +121,23 @@ describe('Auth API - POST /api/auth/reenviar-verificacao', () => {
 
     const res = await post({ email: 'x@example.com' })
     expect(res.status).toBe(200)
-    expect(prismaMock.usuario.update).toHaveBeenCalledWith({
-      where: { id: 'u-2' },
-      data: expect.objectContaining({
-        tokenReset: expect.any(String),
-        tokenResetExpira: expect.any(Date),
-        etapaOnboarding: 2,
-      }),
+    // Should NOT update user with tokenReset (no profileToken generation)
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled()
+  })
+
+  it('returns generic success for verified user with completed onboarding', async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({
+      id: 'u-3',
+      nome: 'Aluno',
+      emailVerificado: new Date(),
+      onboardingCompleto: true,
+      membro: { id: 'm-1' },
     })
+
+    const res = await post({ email: 'x@example.com' })
+    const json = await res.json()
+    expect(res.status).toBe(200)
+    expect(json.success).toBe(true)
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled()
   })
 })
