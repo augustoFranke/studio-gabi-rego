@@ -455,7 +455,7 @@ export default function FinanceiroPage() {
     if (pagamento) {
       setEditingPagamento(pagamento)
       setPagamentoForm({
-        membroId: pagamento.membroId,
+        membroId: pagamento.membroId || "",
         planoId: pagamento.planoId,
         valor: String(pagamento.valor),
         dataVencimento: pagamento.dataVencimento.split("T")[0],
@@ -959,11 +959,11 @@ export default function FinanceiroPage() {
                       <DialogTitle>Confirmar exclusão</DialogTitle>
                       <DialogDescription>
                         Tem certeza que deseja excluir o pagamento de{" "}
-                        {pagamentoToDelete?.membro?.usuario?.nome ? (
-                          <strong>{pagamentoToDelete.membro.usuario.nome}</strong>
-                        ) : (
-                          "este aluno"
-                        )}
+                        {pagamentoToDelete?.membro?.usuario?.nome
+                          ? <strong>{pagamentoToDelete.membro.usuario.nome}</strong>
+                          : pagamentoToDelete?.payerNome
+                            ? <strong>{pagamentoToDelete.payerNome}</strong>
+                            : "este pagador"}
                         {" "}no valor de <strong>{pagamentoToDelete ? formatCurrency(pagamentoToDelete.valor) : ""}</strong>?
                         Esta ação é <strong>permanente</strong> e não poderá ser desfeita.
                       </DialogDescription>
@@ -1060,7 +1060,7 @@ export default function FinanceiroPage() {
                       {pagamentos.map((pagamento) => (
                         <TableRow key={pagamento.id} className="hover:bg-primary/5">
                           <TableCell className="font-medium">
-                            {pagamento.membro.usuario.nome}
+                            {pagamento.membro?.usuario?.nome || pagamento.payerNome || "Sem vinculo"}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="flex items-center w-fit border-primary/30 text-primary">

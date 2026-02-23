@@ -48,11 +48,16 @@ export async function GET(request: NextRequest) {
 
     // Search by member name
     if (search) {
-      where.membro = {
-        usuario: {
-          nome: { contains: search, mode: 'insensitive' }
-        }
-      }
+      where.OR = [
+        {
+          membro: {
+            usuario: {
+              nome: { contains: search, mode: 'insensitive' }
+            }
+          }
+        },
+        { payerNome: { contains: search, mode: 'insensitive' } },
+      ]
     }
 
     const orderBy: Prisma.PagamentoOrderByWithRelationInput =
