@@ -51,7 +51,7 @@ function logHeader(message: string) {
 interface InactiveMemberData {
   usuario: {
     id: string
-    email: string
+    email: string | null
     nome: string | null
     criadoEm: Date
     atualizadoEm: Date
@@ -211,7 +211,7 @@ function displayPreviewTable(members: InactiveMemberData[]) {
 
   for (const member of members) {
     const nome = (member.usuario.nome || 'N/A').substring(0, 23).padEnd(25)
-    const email = member.usuario.email.substring(0, 28).padEnd(30)
+    const email = (member.usuario.email || 'N/A').substring(0, 28).padEnd(30)
     const daysInactive = calculateDaysInactive(member.membro.atualizadoEm)
       .toString()
       .padEnd(14)

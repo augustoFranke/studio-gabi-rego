@@ -76,7 +76,8 @@ implementation_plan.md
 
 # Generated/sensitive data exports
 backups/
-utility/logs/
+utility/logs/*
+!utility/logs/.gitkeep
 utility/csv/
 
 # Local assistant artifacts

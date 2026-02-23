@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { sanitizeAnamnesePayload } from '@/lib/anamnese'
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+} from '@/lib/anamnese'
 
 interface Params {
   params: Promise<{
@@ -33,10 +37,24 @@ export async function GET(
       return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
     }
 
-    // Use actual sexo field from database, fall back to heuristic if not set
+    // Use explicit DB-backed sexo; null when unset.
     const sexo = membro.sexo
       ? (membro.sexo === 'FEMININO' ? 'Feminino' : 'Masculino')
-      : determineSexo(membro)
+      : null
+
+    const normalized = normalizeAnamneseRecord(
+      extractCanonicalAnamneseData(membro.anamnese)
+    )
+    if ('error' in normalized) {
+      return NextResponse.json({ error: 'Dados de anamnese inválidos' }, { status: 500 })
+    }
+
+    if (membro.anamnese && normalized.changed) {
+      await prisma.anamnese.update({
+        where: { membroId: id },
+        data: normalized.data,
+      })
+    }
 
     return NextResponse.json({
       member: {
@@ -44,7 +62,7 @@ export async function GET(
         nome: membro.usuario.nome,
         sexo,
       },
-      anamnese: membro.anamnese,
+      anamnese: membro.anamnese ? normalized.data : null,
     })
   }, { requiredRole: 'ADMIN' })
 }
@@ -68,9 +86,15 @@ export async function POST(
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
 
-    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
-    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>, {
+      ignoreUnknownFields: true,
+      fillMissingFields: true,
+    })
+    if ('error' in sanitized) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
+    if (sanitized.ignoredKeys.length > 0) {
+      console.warn('[anamnese_sanitize] Campos ignorados em membros/[id]/anamnese:', sanitized.ignoredKeys)
     }
 
     const membro = await prisma.membro.findUnique({
@@ -93,43 +117,4 @@ export async function POST(
 
     return NextResponse.json(anamnese)
   }, { requiredRole: 'ADMIN' })
-}
-
-// Module-level Set for O(1) lookups instead of O(n) array.includes()
-const FEMALE_NAMES = new Set([
-  'maria', 'ana', 'julia', 'gabriela', 'fernanda', 'amanda', 'bruna', 'camila', 'carla', 'claudia', 'cristina',
-  'daniela', 'elaine', 'fabiana', 'juliana', 'larissa', 'leticia', 'luciana', 'marcia', 'patricia', 'priscila',
-  'renata', 'sandra', 'tatiana', 'vanessa', 'adriana', 'aline', 'beatriz', 'bianca', 'carolina', 'debora',
-  'denise', 'eduarda', 'eliana', 'elisabete', 'flavia', 'franciele', 'gisele', 'helena', 'isabela', 'jessica',
-  'joana', 'jussara', 'karen', 'karina', 'lais', 'lilian', 'livia', 'luana', 'lucia', 'luciane', 'luiza',
-  'mara', 'marcela', 'mariana', 'marina', 'marta', 'michele', 'milena', 'monica', 'natalia', 'paula',
-  'rafaela', 'raquel', 'regina', 'roberta', 'rosana', 'sabrina', 'samantha', 'simone', 'solange', 'sonia',
-  'suzana', 'tais', 'thais', 'vera', 'vivian', 'viviane',
-])
-
-const FEMALE_ENDINGS = ['a', 'e', 'ia', 'ana', 'ine', 'ene']
-
-// Helper function to determine gender
-// Fallback heuristic when sexo is not set.
-function determineSexo(membro: { usuario: { nome: string | null } }): "Masculino" | "Feminino" {
-  const nome = membro.usuario.nome?.toLowerCase().trim()
-
-  if (!nome) {
-    return "Masculino"
-  }
-
-  const firstName = nome.split(' ')[0]
-
-  if (FEMALE_NAMES.has(firstName)) {
-    return "Feminino"
-  }
-
-  // Check name endings
-  for (const ending of FEMALE_ENDINGS) {
-    if (firstName.endsWith(ending) && !firstName.endsWith('o')) {
-      return "Feminino"
-    }
-  }
-
-  return "Masculino"
 }

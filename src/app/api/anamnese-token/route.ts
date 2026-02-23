@@ -1,47 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
-import { sanitizeAnamnesePayload } from "@/lib/anamnese"
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+} from "@/lib/anamnese"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 const TOKEN_COOKIE_NAME = "anamnese_token"
 const isProduction = process.env.NODE_ENV === "production"
-
-// Module-level Set for O(1) lookups instead of O(n) array.includes()
-const FEMALE_NAMES = new Set([
-  "maria", "ana", "julia", "gabriela", "fernanda", "amanda", "bruna", "camila", "carla", "claudia", "cristina",
-  "daniela", "elaine", "fabiana", "juliana", "larissa", "leticia", "luciana", "marcia", "patricia", "priscila",
-  "renata", "sandra", "tatiana", "vanessa", "adriana", "aline", "beatriz", "bianca", "carolina", "debora",
-  "denise", "eduarda", "eliana", "elisabete", "flavia", "franciele", "gisele", "helena", "isabela", "jessica",
-  "joana", "jussara", "karen", "karina", "lais", "lilian", "livia", "luana", "lucia", "luciane", "luiza",
-  "mara", "marcela", "mariana", "marina", "marta", "michele", "milena", "monica", "natalia", "paula",
-  "rafaela", "raquel", "regina", "roberta", "rosana", "sabrina", "samantha", "simone", "solange", "sonia",
-  "suzana", "tais", "thais", "vera", "vivian", "viviane",
-])
-
-const FEMALE_ENDINGS = ["a", "e", "ia", "ana", "ine", "ene"]
-
-function determineSexoEnum(nome?: string | null): "FEMININO" | "MASCULINO" {
-  const normalized = nome?.toLowerCase().trim()
-
-  if (!normalized) {
-    return "MASCULINO"
-  }
-
-  const firstName = normalized.split(" ")[0]
-
-  if (FEMALE_NAMES.has(firstName)) {
-    return "FEMININO"
-  }
-
-  for (const ending of FEMALE_ENDINGS) {
-    if (firstName.endsWith(ending) && !firstName.endsWith("o")) {
-      return "FEMININO"
-    }
-  }
-
-  return "MASCULINO"
-}
 
 async function findMemberByToken(token: string) {
   return prisma.membro.findFirst({
@@ -111,11 +79,27 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    const sexo = membro.sexo ?? determineSexoEnum(membro.usuario.nome)
+    const sexo = membro.sexo ?? null
+    const normalized = normalizeAnamneseRecord(
+      extractCanonicalAnamneseData(membro.anamnese)
+    )
+    if ("error" in normalized) {
+      return NextResponse.json(
+        { error: "Dados de anamnese inválidos" },
+        { status: 500 }
+      )
+    }
+
+    if (membro.anamnese && normalized.changed) {
+      await prisma.anamnese.update({
+        where: { membroId: membro.id },
+        data: normalized.data,
+      })
+    }
 
     const response = NextResponse.json({
       sexo,
-      anamnese: membro.anamnese || null,
+      anamnese: membro.anamnese ? normalized.data : null,
     })
 
     if (source && source !== "cookie") {
@@ -161,9 +145,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
     }
 
-    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>)
-    if ('error' in sanitized || Object.keys(sanitized.data).length === 0) {
+    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>, {
+      ignoreUnknownFields: true,
+      fillMissingFields: true,
+    })
+    if ('error' in sanitized) {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
+    }
+    if (sanitized.ignoredKeys.length > 0) {
+      console.warn("[anamnese_sanitize] Campos ignorados em anamnese-token:", sanitized.ignoredKeys)
     }
 
     const anamneseData = sanitized.data

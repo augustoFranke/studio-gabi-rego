@@ -44,42 +44,31 @@ async function processNotifications<T>({
 }: NotificationProcessOptions<T>) {
   if (!items.length) return 0
 
-  // Batch skip-check: single query instead of N findFirst calls
-  const skipFilters = items.map(shouldSkipWhere)
-  const existing = await prisma.notificacao.findMany({
-    where: { OR: skipFilters },
-    select: { membroId: true, tipo: true },
-  })
-  const alreadySent = new Set(
-    existing.map((n) => `${n.membroId}-${n.tipo}`)
-  )
-
-  const toProcess = items.filter((item) => {
-    const { membroId, tipo } = shouldSkipWhere(item)
-    return !alreadySent.has(`${membroId}-${tipo}`)
-  })
-
-  // Process in parallel batches of 5 to avoid overwhelming external APIs
-  const BATCH_SIZE = 5
   let processed = 0
-  for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
-    const batch = toProcess.slice(i, i + BATCH_SIZE)
-    const results = await Promise.allSettled(
-      batch.map(async (item) => {
-        const notificacao = await prisma.notificacao.create({
-          data: buildNotification(item),
-        })
 
-        if (sendEmail) await sendEmail(item)
-        if (sendWhatsapp) await sendWhatsapp(item)
+  for (const item of items) {
+    const existingNotificacao = await prisma.notificacao.findFirst({
+      where: shouldSkipWhere(item),
+    })
 
-        await prisma.notificacao.update({
-          where: { id: notificacao.id },
-          data: { enviada: true, enviadaEm: new Date() },
-        })
-      })
-    )
-    processed += results.filter((r) => r.status === 'fulfilled').length
+    if (existingNotificacao) {
+      processed++
+      continue
+    }
+
+    const notificacao = await prisma.notificacao.create({
+      data: buildNotification(item),
+    })
+
+    if (sendEmail) await sendEmail(item)
+    if (sendWhatsapp) await sendWhatsapp(item)
+
+    await prisma.notificacao.update({
+      where: { id: notificacao.id },
+      data: { enviada: true, enviadaEm: new Date() },
+    })
+
+    processed++
   }
 
   return processed
@@ -150,6 +139,9 @@ export async function processarLembretesAula() {
     sendEmail: resendEnabled
       ? async (agendamento) => {
           const { membro, horario, nome, dataFormatada } = getContext(agendamento)
+          if (!membro.usuario.email) {
+            return
+          }
           const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
           await enviarEmail({
             para: membro.usuario.email,
@@ -247,6 +239,9 @@ export async function processarCobrancas() {
     sendEmail: resendEnabled
       ? async (pagamento) => {
           const { membro, nome, valor, vencimento } = getContext(pagamento)
+          if (!membro.usuario.email) {
+            return
+          }
           const html = emailTemplates.cobranca(nome, valor, vencimento)
           await enviarEmail({
             para: membro.usuario.email,
@@ -270,29 +265,38 @@ export async function processarAniversarios() {
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
-  // Filter birthdays at the database level instead of loading all members
-  const birthdayIds = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT m.id FROM "Membro" m
-    WHERE m.status = 'ATIVO'
-      AND m."dataNascimento" IS NOT NULL
-      AND EXTRACT(MONTH FROM m."dataNascimento") = ${mes}
-      AND EXTRACT(DAY FROM m."dataNascimento") = ${dia}
-  `
+  type AniversarianteRow = {
+    id: string
+    telefone: string | null
+    usuarioNome: string | null
+    usuarioEmail: string | null
+  }
 
-  const aniversariantes = birthdayIds.length
-    ? await prisma.membro.findMany({
-        where: { id: { in: birthdayIds.map((b) => b.id) } },
-        include: { usuario: true },
-      })
-    : []
+  const aniversariantesRows = await prisma.$queryRaw<AniversarianteRow[]>(
+    Prisma.sql`
+      SELECT
+        m.id,
+        m.telefone,
+        u.nome AS "usuarioNome",
+        u.email AS "usuarioEmail"
+      FROM membros m
+      INNER JOIN usuarios u ON u.id = m.usuario_id
+      WHERE m.status = CAST(${'ATIVO'} AS "StatusMembro")
+        AND m.data_nascimento IS NOT NULL
+        AND EXTRACT(MONTH FROM m.data_nascimento) = ${mes}
+        AND EXTRACT(DAY FROM m.data_nascimento) = ${dia}
+    `
+  )
 
-  const getContext = (membro: typeof aniversariantes[number]) => ({
+  const getContext = (membro: AniversarianteRow) => ({
     membro,
-    nome: membro.usuario.nome || 'Aluno(a)',
+    nome: membro.usuarioNome || 'Aluno(a)',
+    email: membro.usuarioEmail,
+    telefone: membro.telefone,
   })
 
   return processNotifications({
-    items: aniversariantes,
+    items: aniversariantesRows,
     shouldSkipWhere: (membro) => ({
       membroId: membro.id,
       tipo: TipoNotificacao.ANIVERSARIO,
@@ -313,10 +317,13 @@ export async function processarAniversarios() {
     },
     sendEmail: resendEnabled
       ? async (membro) => {
-          const { nome } = getContext(membro)
+          const { nome, email } = getContext(membro)
+          if (!email) {
+            return
+          }
           const html = emailTemplates.aniversario(nome)
           await enviarEmail({
-            para: membro.usuario.email,
+            para: email,
             assunto: '🎂 Feliz Aniversário!',
             html,
           })
@@ -324,8 +331,8 @@ export async function processarAniversarios() {
       : undefined,
     sendWhatsapp: whatsappEnabled
       ? async (membro) => {
-          const { nome } = getContext(membro)
-          const to = formatWhatsappNumber(membro.telefone || '')
+          const { nome, telefone } = getContext(membro)
+          const to = formatWhatsappNumber(telefone || '')
           if (!to) {
             return
           }

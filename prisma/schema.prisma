@@ -73,7 +73,7 @@ enum PagamentoImportRunStatus {
 
 model Usuario {
   id            String    @id @default(cuid())
-  email         String    @unique
+  email         String?   @unique
   senha         String
   senhaDefinida Boolean   @default(false) @map("senha_definida")
   nome          String?
@@ -128,6 +128,7 @@ model Membro {
   anamnese        Anamnese?
   horariosFixos   HorarioFixo[]
 
+  @@index([status])
   @@map("membros")
 }
 
@@ -179,6 +180,7 @@ model Agendamento {
   membro          Membro              @relation(fields: [membroId], references: [id], onDelete: Cascade)
   horario         HorarioDisponivel   @relation(fields: [horarioId], references: [id])
 
+  @@index([data])
   @@unique([membroId, horarioId, data])
   @@map("agendamentos")
 }
