@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { passwordPolicySchema } from '@/schemas/password-policy.schema'
 
 const diaSemanaSchema = z.enum([
   'SEGUNDA',
@@ -35,8 +36,10 @@ const baseSchema = z.object({
   horariosFixos: z.array(horarioFixoSchema).optional(),
 })
 
+const optionalPasswordSchema = z.union([z.literal(''), passwordPolicySchema]).optional()
+
 export const membroCreateSchema = baseSchema.extend({
-  senha: z.string().optional(),
+  senha: optionalPasswordSchema,
   precoCustomizado: z
     .union([z.string(), z.number(), z.null()])
     .optional()
@@ -49,7 +52,7 @@ export const membroCreateSchema = baseSchema.extend({
 
 export const membroUpdateSchema = baseSchema.extend({
   email: z.string().email('Email inválido').optional().or(z.literal('')),
-  senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional().or(z.literal('')),
+  senha: optionalPasswordSchema,
   precoCustomizado: z
     .union([z.number(), z.string(), z.null()])
     .optional()

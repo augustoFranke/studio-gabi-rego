@@ -10,6 +10,7 @@ const { prismaMock, resendMock } = vi.hoisted(() => ({
     },
     anamnese: {
       upsert: vi.fn(),
+      update: vi.fn(),
     },
     usuario: {
       update: vi.fn(),
@@ -54,7 +55,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     expect(res.status).toBe(404)
   })
 
-  it('GET infers sexo from name when not set', async () => {
+  it('GET returns null sexo when not set', async () => {
     prismaMock.membro.findFirst.mockResolvedValue({
       id: 'm-1',
       usuarioId: 'u-1',
@@ -67,8 +68,30 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     const json = await res.json()
 
     expect(res.status).toBe(200)
-    expect(json.sexo).toBe('FEMININO')
+    expect(json.sexo).toBeNull()
     expect(json.anamnese).toBeNull()
+  })
+
+  it('GET normalizes anamnese and persists self-heal updates', async () => {
+    prismaMock.membro.findFirst.mockResolvedValue({
+      id: 'm-1',
+      usuarioId: 'u-1',
+      sexo: 'FEMININO',
+      usuario: { nome: 'Maria Silva', email: 'maria@example.com', onboardingCompleto: false },
+      anamnese: { id: 'a-1', objetivo: '  Força  ', parq1: 'Sim' },
+    })
+
+    const res = await GET(reqWithToken('t-1'))
+    const json = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(json.anamnese.objetivo).toBe('Força')
+    expect(prismaMock.anamnese.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { membroId: 'm-1' },
+        data: expect.objectContaining({ objetivo: 'Força' }),
+      })
+    )
   })
 
   it('POST returns 400 when JSON body is invalid', async () => {
@@ -104,7 +127,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       reqWithToken('t-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ altura: '165', pesoAtual: '60', objetivo: 'Força' }),
+        body: JSON.stringify({ altura: '165', pesoAtual: '60', objetivo: 'Força', role: 'MEMBRO' }),
       })
     )
     const json = await res.json()

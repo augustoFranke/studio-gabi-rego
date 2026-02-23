@@ -1,4 +1,5 @@
 import NextAuth from "next-auth"
+import type { Session } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { cache } from "react"
@@ -94,4 +95,4 @@ export const { handlers, signIn, signOut } = nextAuth
 
 // Wrap auth with React.cache for request deduplication
 // This ensures multiple auth() calls in the same request share the same result
-export const auth = cache(nextAuth.auth)
+export const auth = cache(async (): Promise<Session | null> => nextAuth.auth())

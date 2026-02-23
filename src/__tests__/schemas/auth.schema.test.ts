@@ -10,6 +10,7 @@ import {
   redefinirSenhaSchema,
 } from '@/schemas/auth.schema'
 import { validarEmail } from '@/lib/validators'
+import { PASSWORD_POLICY_MESSAGE } from '@/schemas/password-policy.schema'
 
 describe('auth schemas', () => {
   beforeEach(() => {
@@ -47,6 +48,9 @@ describe('auth schemas', () => {
     })
 
     expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(PASSWORD_POLICY_MESSAGE)
+    }
   })
 
   it('reenviarVerificacaoSchema uses email validator', () => {

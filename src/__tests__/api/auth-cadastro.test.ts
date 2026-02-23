@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/auth/cadastro/route'
+import { PASSWORD_POLICY_MESSAGE } from '@/schemas/password-policy.schema'
 
 const {
   prismaMock,
@@ -112,10 +113,12 @@ describe('Auth API - POST /api/auth/cadastro', () => {
   }
 
   it('returns 429 when rate limit denies request', async () => {
-    rateLimitMock.mockResolvedValue({ success: false })
+    rateLimitMock.mockResolvedValue({ success: false, error: 'Rate limit unavailable' })
 
     const res = await post({ email: 'x@example.com', senha: 'Senha123' })
+    const json = await res.json()
     expect(res.status).toBe(429)
+    expect(json.error).toBe('Muitas tentativas. Tente novamente em instantes.')
   })
 
   it('returns 400 for invalid email', async () => {
@@ -127,10 +130,16 @@ describe('Auth API - POST /api/auth/cadastro', () => {
 
   it('returns 400 when password is missing complexity requirements', async () => {
     const noUppercase = await post({ email: 'x@example.com', senha: 'senha123' })
+    const noUppercaseJson = await noUppercase.json()
     expect(noUppercase.status).toBe(400)
+    expect(noUppercaseJson.error).toBe(PASSWORD_POLICY_MESSAGE)
 
     const noNumber = await post({ email: 'x@example.com', senha: 'SenhaLonga' })
+    const noNumberJson = await noNumber.json()
     expect(noNumber.status).toBe(400)
+    expect(noNumberJson.error).toBe(PASSWORD_POLICY_MESSAGE)
+    expect(prismaMock.usuario.create).not.toHaveBeenCalled()
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled()
   })
 
   it('creates a new user and returns success for simple signup (email + password only)', async () => {
