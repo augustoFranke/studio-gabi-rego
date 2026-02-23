@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     })
 
     // Send welcome email (fire-and-forget)
-    if (isResendConfigured() && usuario.nome) {
+    if (isResendConfigured() && usuario.nome && usuario.email) {
       enviarEmail({
         para: usuario.email,
         assunto: "Bem-vindo(a) ao Gabi Studio!",

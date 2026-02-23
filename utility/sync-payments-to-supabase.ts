@@ -126,7 +126,13 @@ async function main() {
         continue
       }
 
-      const memberIds = Array.from(new Set(missingInRemote.map((payment) => payment.membroId)))
+      const memberIds = Array.from(
+        new Set(
+          missingInRemote
+            .map((payment) => payment.membroId)
+            .filter((id): id is string => Boolean(id))
+        )
+      )
       const planIds = Array.from(new Set(missingInRemote.map((payment) => payment.planoId)))
 
       const [remoteMembers, remotePlans] = await Promise.all([
@@ -148,12 +154,12 @@ async function main() {
       const missingPlanIds = new Set<string>()
 
       for (const payment of missingInRemote) {
-        const memberOk = remoteMemberIds.has(payment.membroId)
+        const memberOk = payment.membroId !== null && remoteMemberIds.has(payment.membroId)
         const planOk = remotePlanIds.has(payment.planoId)
         if (memberOk && planOk) {
           validPayments.push(payment)
         } else {
-          if (!memberOk) missingMemberIds.add(payment.membroId)
+          if (!memberOk) missingMemberIds.add(payment.membroId ?? '<null>')
           if (!planOk) missingPlanIds.add(payment.planoId)
         }
       }

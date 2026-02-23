@@ -6,6 +6,7 @@ import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
 import { rateLimitByIp } from "@/lib/rate-limit"
 import { sanitizeAnamnesePayload } from "@/lib/anamnese"
+import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
 
 export async function POST(request: Request) {
   try {
@@ -31,21 +32,21 @@ export async function POST(request: Request) {
     // Validate password
     if (!senha || senha.length < 8) {
       return NextResponse.json(
-        { error: "A senha deve ter no mínimo 8 caracteres" },
+        { error: PASSWORD_POLICY_MESSAGE },
         { status: 400 }
       )
     }
 
     if (!/[A-Z]/.test(senha)) {
       return NextResponse.json(
-        { error: "A senha deve conter pelo menos uma letra maiúscula" },
+        { error: PASSWORD_POLICY_MESSAGE },
         { status: 400 }
       )
     }
 
     if (!/[0-9]/.test(senha)) {
       return NextResponse.json(
-        { error: "A senha deve conter pelo menos um número" },
+        { error: PASSWORD_POLICY_MESSAGE },
         { status: 400 }
       )
     }
