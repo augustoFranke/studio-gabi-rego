@@ -189,6 +189,9 @@ export async function processarCobrancas() {
         gte: agora,
         lte: limite,
       },
+      membro: {
+        isNot: null,
+      },
     },
     include: {
       membro: {
@@ -199,7 +202,14 @@ export async function processarCobrancas() {
     },
   })
 
-  const getContext = (pagamento: typeof pagamentos[number]) => {
+  const pagamentosComMembro = pagamentos.filter(
+    (
+      pagamento
+    ): pagamento is typeof pagamentos[number] & { membro: NonNullable<typeof pagamento.membro> } =>
+      pagamento.membro !== null
+  )
+
+  const getContext = (pagamento: typeof pagamentosComMembro[number]) => {
     const { membro } = pagamento
     return {
       membro,
@@ -210,7 +220,7 @@ export async function processarCobrancas() {
   }
 
   return processNotifications({
-    items: pagamentos,
+    items: pagamentosComMembro,
     shouldSkipWhere: (pagamento) => ({
       membroId: pagamento.membro.id,
       tipo: TipoNotificacao.COBRANCA,

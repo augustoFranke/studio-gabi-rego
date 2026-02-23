@@ -53,6 +53,22 @@ enum Sexo {
   FEMININO
 }
 
+enum PagamentoImportDecision {
+  MATCHED
+  AMBIGUOUS
+  UNMATCHED
+  SKIPPED_NON_NUMERIC
+  SKIPPED_IDEMPOTENT
+  ERROR
+}
+
+enum PagamentoImportRunStatus {
+  DRY_RUN
+  APPLIED
+  ROLLED_BACK
+  FAILED
+}
+
 // ==================== MODELS ====================
 
 model Usuario {
@@ -184,8 +200,9 @@ model HorarioFixo {
 
 model Pagamento {
   id              String          @id @default(cuid())
-  membroId        String          @map("membro_id")
+  membroId        String?         @map("membro_id")
   planoId         String          @map("plano_id")
+  payerNome       String?         @map("payer_nome")
   valor           Decimal         @db.Decimal(10, 2)
   dataVencimento  DateTime        @map("data_vencimento") @db.Date
   dataPagamento   DateTime?       @map("data_pagamento")
@@ -193,15 +210,67 @@ model Pagamento {
   formaPagamento  String?         @map("forma_pagamento") // PIX, Cartão, Dinheiro
   comprovante     String?         // URL do comprovante
   observacao      String?
+  importRunId     String?         @map("import_run_id")
+  importKey       String?         @unique @map("import_key")
   criadoEm        DateTime        @default(now()) @map("criado_em")
   atualizadoEm    DateTime        @updatedAt @map("atualizado_em")
 
   // Relações
-  membro          Membro          @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  membro          Membro?         @relation(fields: [membroId], references: [id], onDelete: SetNull)
   plano           Plano           @relation(fields: [planoId], references: [id])
+  importRun       PagamentoImportRun? @relation(fields: [importRunId], references: [id], onDelete: SetNull)
 
   @@index([status, dataVencimento])
+  @@index([importRunId])
   @@map("pagamentos")
+}
+
+model PagamentoImportRun {
+  id                    String                    @id @default(cuid())
+  batchId               String                    @unique @map("batch_id")
+  sourceFilename        String                    @map("source_filename")
+  sourceBasename        String                    @map("source_basename")
+  competenciaMes        DateTime                  @map("competencia_mes") @db.Date
+  status                PagamentoImportRunStatus
+  totalRowsSeen         Int                       @default(0) @map("total_rows_seen")
+  rowsWithNumericPago   Int                       @default(0) @map("rows_with_numeric_pago")
+  inserted              Int                       @default(0)
+  skipped               Int                       @default(0)
+  matched               Int                       @default(0)
+  ambiguous             Int                       @default(0)
+  unmatched             Int                       @default(0)
+  dryRun                Boolean                   @default(true) @map("dry_run")
+  rollbackOfRunId       String?                   @map("rollback_of_run_id")
+  criadoEm              DateTime                  @default(now()) @map("criado_em")
+  atualizadoEm          DateTime                  @updatedAt @map("atualizado_em")
+  pagamentos            Pagamento[]
+  logs                  PagamentoImportLog[]
+
+  @@index([competenciaMes])
+  @@map("pagamento_import_runs")
+}
+
+model PagamentoImportLog {
+  id                    String                  @id @default(cuid())
+  importRunId           String                  @map("import_run_id")
+  rowIndex              Int                     @map("row_index")
+  rawName               String?                 @map("raw_name")
+  normalizedName        String?                 @map("normalized_name")
+  rawPago               String?                 @map("raw_pago")
+  parsedAmount          Decimal?                @db.Decimal(10, 2) @map("parsed_amount")
+  decision              PagamentoImportDecision
+  matchScore            Decimal?                @db.Decimal(5, 4) @map("match_score")
+  matchedMembroId       String?                 @map("matched_membro_id")
+  matchedMembroNome     String?                 @map("matched_membro_nome")
+  importKey             String?                 @map("import_key")
+  pagamentoId           String?                 @map("pagamento_id")
+  detalhe               String?
+  criadoEm              DateTime                @default(now()) @map("criado_em")
+  importRun             PagamentoImportRun      @relation(fields: [importRunId], references: [id], onDelete: Cascade)
+
+  @@index([importRunId, rowIndex])
+  @@index([decision])
+  @@map("pagamento_import_logs")
 }
 
 model FichaTreino {

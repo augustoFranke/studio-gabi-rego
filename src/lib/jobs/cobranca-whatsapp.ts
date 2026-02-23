@@ -65,8 +65,10 @@ export async function runCobrancaWhatsappT1(): Promise<JobSummary> {
       status: 'PENDENTE',
       dataVencimento: targetDate,
       membro: {
-        status: 'ATIVO',
-        telefone: { not: null },
+        is: {
+          status: 'ATIVO',
+          telefone: { not: null },
+        },
       },
     },
     include: {
@@ -85,7 +87,10 @@ export async function runCobrancaWhatsappT1(): Promise<JobSummary> {
 
   const grouped = new Map<string, PagamentoWithMembro[]>()
   for (const pagamento of pagamentos) {
-    const key = pagamento.membroId
+    if (!pagamento.membro) {
+      continue
+    }
+    const key = pagamento.membro.id
     const current = grouped.get(key) ?? []
     current.push(pagamento)
     grouped.set(key, current)
@@ -102,7 +107,11 @@ export async function runCobrancaWhatsappT1(): Promise<JobSummary> {
   const vencimento = formatBrFromYmd(targetYmd)
 
   for (const [membroId, items] of grouped.entries()) {
-    const membro = items[0].membro
+    const membro = items[0]?.membro
+    if (!membro) {
+      summary.skipped += 1
+      continue
+    }
     const nome = membro.usuario?.nome || 'Aluno(a)'
     const telefone = membro.telefone || ''
     const numero = formatWhatsappNumber(telefone, getCountryCode())
