@@ -9,11 +9,28 @@ import {
   type ParsedDocxRow,
 } from '@/lib/payments/feb2026-import'
 
+type FakePrisma = {
+  membro: { findMany: ReturnType<typeof vi.fn> }
+  plano: { findFirst: ReturnType<typeof vi.fn> }
+  pagamento: {
+    findUnique: ReturnType<typeof vi.fn>
+    create: ReturnType<typeof vi.fn>
+    deleteMany: ReturnType<typeof vi.fn>
+  }
+  pagamentoImportRun: {
+    create: ReturnType<typeof vi.fn>
+    update: ReturnType<typeof vi.fn>
+    findUnique: ReturnType<typeof vi.fn>
+  }
+  pagamentoImportLog: { create: ReturnType<typeof vi.fn> }
+  $transaction: ReturnType<typeof vi.fn>
+}
+
 function createFakePrisma() {
   const paymentsByImportKey = new Map<string, { id: string }>()
   let runCounter = 0
 
-  const fakeTx: any = {
+  const fakeTx = {
     membro: {
       findMany: vi.fn(async () => [
         { id: 'm1', planoId: 'pl1', usuario: { nome: 'Geni Stray' } },
@@ -44,8 +61,10 @@ function createFakePrisma() {
     pagamentoImportLog: {
       create: vi.fn(async () => ({ id: `log-${Math.random()}` })),
     },
-    $transaction: vi.fn(async (cb: (tx: any) => Promise<unknown>) => cb(fakeTx)),
-  }
+    $transaction: vi.fn(),
+  } as FakePrisma
+
+  fakeTx.$transaction.mockImplementation(async (cb: (tx: FakePrisma) => Promise<unknown>) => cb(fakeTx))
 
   return { fakePrisma: fakeTx, paymentsByImportKey }
 }
