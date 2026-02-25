@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deployment Health Check Script for Gabi-Studio
-# Usage: ./scripts/check-deployment.sh [domain]
+# Usage: ./ops/check-deployment.sh [domain]
 
 # Configuration
 DOMAIN="${1:-studiogabirego.com}"

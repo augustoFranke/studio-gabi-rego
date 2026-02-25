@@ -31,13 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (secrets - never commit)
-.env
-.env.development
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.production
+.env*
 
 # Keep example/template files (safe to commit)
 !.env.example
@@ -82,3 +76,21 @@ utility/csv/
 
 # Local assistant artifacts
 .claude/
+
+# Production-only repo curation (keep local, do not track remotely)
+/.planning/
+/skills/
+/utility/
+/scripts/
+/docker/
+/docker-compose.yml
+/.husky/
+/RUNBOOK.md
+/README.md
+/components.json
+/docs/
+/specs/
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+**/AGENTS.md
