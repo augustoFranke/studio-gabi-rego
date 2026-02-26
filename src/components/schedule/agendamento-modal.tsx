@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Trash2, Loader2 } from 'lucide-react'
 import { formatDateBR, formatHour, parseDateFromAPI, HOURS } from '@/lib/schedule'
+import { sortByTextPtBr } from '@/lib/select-options'
 import type { Agendamento, Membro } from '@/types/schedule'
 
 interface AgendamentoModalProps {
@@ -62,6 +64,14 @@ export function AgendamentoModal({
   )
   const [observacao, setObservacao] = useState(agendamento?.observacao || '')
   const [recurrenceScope, setRecurrenceScope] = useState<'single' | 'weekly'>('weekly')
+  const memberOptions = useMemo(
+    () =>
+      sortByTextPtBr(membros, (membro) => membro.usuario.nome).map((membro) => ({
+        value: membro.id,
+        label: membro.usuario.nome,
+      })),
+    [membros]
+  )
 
   const handleSave = () => {
     if (mode === 'create') {
@@ -203,26 +213,14 @@ export function AgendamentoModal({
           {/* Member selection */}
           <div className="space-y-2">
             <Label htmlFor="membro">Membro</Label>
-            <Select value={selectedMembro} onValueChange={setSelectedMembro}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um membro" />
-              </SelectTrigger>
-              <SelectContent>
-                {membros.map((membro) => (
-                  <SelectItem key={membro.id} value={membro.id}>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={membro.fotoUrl || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(membro.usuario.nome)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {membro.usuario.nome}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={selectedMembro}
+              onValueChange={setSelectedMembro}
+              options={memberOptions}
+              placeholder="Selecione um membro"
+              searchPlaceholder="Buscar membro..."
+              emptyMessage="Nenhum membro encontrado."
+            />
           </div>
 
           {/* Hour selection */}
