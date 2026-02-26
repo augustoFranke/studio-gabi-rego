@@ -6,14 +6,18 @@ import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/searchable-select"
+import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { groupPlansByCategory } from "@/lib/planos"
+import { cn } from "@/lib/utils"
 
 interface PlanoOption {
   id: string
@@ -38,23 +42,29 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
   const [planoValue, setPlanoValue] = useState(plano ?? "todos")
   const [orderValue, setOrderValue] = useState(order ?? "recent_desc")
 
-  const groupedPlanos = useMemo(() => {
-    // Single-pass categorization instead of multiple filter iterations
-    const planosGabi: typeof planos = []
-    const planosEstagiarios: typeof planos = []
-    const planosOutros: typeof planos = []
-    for (const p of planos) {
-      const nameLower = p.nome.toLowerCase()
-      if (nameLower.includes("gabi")) {
-        planosGabi.push(p)
-      } else if (nameLower.includes("estagiário") || nameLower.includes("estagiarios")) {
-        planosEstagiarios.push(p)
-      } else {
-        planosOutros.push(p)
-      }
-    }
-    return { planosGabi, planosEstagiarios, planosOutros }
-  }, [planos])
+  const groupedPlanos = useMemo(() => groupPlansByCategory(planos), [planos])
+
+  const planoOptions = useMemo<SearchableSelectOption[]>(
+    () => [
+      { value: "todos", label: "Todos Planos", keywords: ["todos"] },
+      ...groupedPlanos.planosGabi.map((plano) => ({
+        value: plano.id,
+        label: plano.nome,
+        group: "Gabi",
+      })),
+      ...groupedPlanos.planosEstagiarios.map((plano) => ({
+        value: plano.id,
+        label: plano.nome,
+        group: "Estagiários",
+      })),
+      ...groupedPlanos.planosOutros.map((plano) => ({
+        value: plano.id,
+        label: plano.nome,
+        group: "Outros",
+      })),
+    ],
+    [groupedPlanos]
+  )
 
   const buildQuery = useCallback((values: { search: string; status: string; plano: string; order: string }) => {
     const params = new URLSearchParams()
@@ -141,67 +151,36 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         </SelectContent>
       </Select>
 
-      <Select
+      <SearchableSelect
         value={planoValue}
-        onValueChange={(value) => {
-          setPlanoValue(value)
+        onValueChange={setPlanoValue}
+        options={planoOptions}
+        placeholder="Plano"
+        searchPlaceholder="Buscar plano..."
+        emptyMessage="Nenhum plano encontrado."
+        className="w-[220px] border-input/50"
+        renderOption={(option) => {
+          const dotClass =
+            option.group === "Gabi"
+              ? "bg-amber-400"
+              : option.group === "Estagiários"
+                ? "bg-sky-400"
+                : option.group === "Outros"
+                  ? "bg-violet-400"
+                  : null
+
+          if (!dotClass) {
+            return option.label
+          }
+
+          return (
+            <span className="flex items-center gap-2">
+              <span className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+              {option.label}
+            </span>
+          )
         }}
-      >
-        <SelectTrigger className="w-[220px] border-input/50">
-          <SelectValue placeholder="Plano" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="todos">Todos Planos</SelectItem>
-          {groupedPlanos.planosGabi.length > 0 && (
-            <SelectGroup>
-              <SelectLabel className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                Gabi
-              </SelectLabel>
-              {groupedPlanos.planosGabi.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="pl-6">
-                  <span className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                    {p.nome}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
-          {groupedPlanos.planosEstagiarios.length > 0 && (
-            <SelectGroup>
-              <SelectLabel className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                Estagiários
-              </SelectLabel>
-              {groupedPlanos.planosEstagiarios.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="pl-6">
-                  <span className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                    {p.nome}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
-          {groupedPlanos.planosOutros.length > 0 && (
-            <SelectGroup>
-              <SelectLabel className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-violet-500"></span>
-                Outros
-              </SelectLabel>
-              {groupedPlanos.planosOutros.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="pl-6">
-                  <span className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-                    {p.nome}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
-        </SelectContent>
-      </Select>
+      />
 
       <Select
         value={orderValue}

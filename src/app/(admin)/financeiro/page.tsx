@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,12 +20,14 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/searchable-select"
 import {
   Table,
   TableBody,
@@ -56,6 +58,8 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Prisma } from '@prisma/client'
+import { groupPlansByCategory } from "@/lib/planos"
+import { sortByTextPtBr } from "@/lib/select-options"
 
 type FinanceiroStats = {
   totalPlanos: number
@@ -111,24 +115,6 @@ function formatCurrency(value: string | number): string {
 
 function formatDate(date: string): string {
   return new Date(date).toLocaleDateString("pt-BR")
-}
-
-function categorizePlanos(planos: Plano[], activeOnly = false) {
-  const planosGabi: Plano[] = []
-  const planosEstagiarios: Plano[] = []
-  const planosOutros: Plano[] = []
-  for (const p of planos) {
-    if (activeOnly && !p.ativo) continue
-    const nameLower = p.nome.toLowerCase()
-    if (nameLower.includes('gabi')) {
-      planosGabi.push(p)
-    } else if (nameLower.includes('estagiário') || nameLower.includes('estagiarios')) {
-      planosEstagiarios.push(p)
-    } else {
-      planosOutros.push(p)
-    }
-  }
-  return { planosGabi, planosEstagiarios, planosOutros }
 }
 
 function getStatusBadge(status: Pagamento["status"]) {
@@ -197,6 +183,52 @@ export default function FinanceiroPage() {
   // Validation error states
   const [planoErrors, setPlanoErrors] = useState<Record<string, string>>({})
   const [pagamentoErrors, setPagamentoErrors] = useState<Record<string, string>>({})
+  const sortedMembros = useMemo(
+    () => sortByTextPtBr(membros, (membro) => membro.usuario.nome ?? ""),
+    [membros]
+  )
+  const groupedPlanosAtivos = useMemo(
+    () => groupPlansByCategory(planos.filter((plano) => plano.ativo)),
+    [planos]
+  )
+  const groupedTodosPlanos = useMemo(
+    () => groupPlansByCategory(planos),
+    [planos]
+  )
+  const pagamentoMembroOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      sortedMembros.map((membro) => ({
+        value: membro.id,
+        label: membro.usuario.nome ?? "Sem nome",
+        keywords: [membro.usuario.nome, membro.usuario.email].filter(
+          (keyword): keyword is string => Boolean(keyword)
+        ),
+      })),
+    [sortedMembros]
+  )
+  const pagamentoPlanoOptions = useMemo<SearchableSelectOption[]>(
+    () => [
+      ...groupedPlanosAtivos.planosGabi.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - ${formatCurrency(plano.valor)}`,
+        keywords: [plano.nome, "gabi"],
+        group: "Planos com Gabi",
+      })),
+      ...groupedPlanosAtivos.planosEstagiarios.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - ${formatCurrency(plano.valor)}`,
+        keywords: [plano.nome, "estagiario", "estagiários"],
+        group: "Planos com Estagiários",
+      })),
+      ...groupedPlanosAtivos.planosOutros.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - ${formatCurrency(plano.valor)}`,
+        keywords: [plano.nome],
+        group: "Outros Planos",
+      })),
+    ],
+    [groupedPlanosAtivos]
+  )
   const getMemberPlanDefaults = (memberId: string) => {
     const member = membros.find((m) => m.id === memberId)
     if (!member) {
@@ -735,13 +767,13 @@ export default function FinanceiroPage() {
                         <Label htmlFor="membro" className={pagamentoErrors.membroId ? "text-destructive" : ""}>
                           Aluno
                         </Label>
-                        <Select
+                        <SearchableSelect
                           value={pagamentoForm.membroId}
-                          onValueChange={(v) => {
-                            const defaults = getMemberPlanDefaults(v)
+                          onValueChange={(value) => {
+                            const defaults = getMemberPlanDefaults(value)
                             setPagamentoForm({
                               ...pagamentoForm,
-                              membroId: v,
+                              membroId: value,
                               planoId: defaults.planoId,
                               valor: defaults.valor,
                             })
@@ -752,19 +784,13 @@ export default function FinanceiroPage() {
                               setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
                             }
                           }}
+                          options={pagamentoMembroOptions}
+                          placeholder="Selecione o aluno"
+                          searchPlaceholder="Buscar aluno..."
+                          emptyMessage="Nenhum aluno encontrado."
                           disabled={submitting}
-                        >
-                          <SelectTrigger className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}>
-                            <SelectValue placeholder="Selecione o aluno" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {membros.map((m) => (
-                              <SelectItem key={m.id} value={m.id}>
-                                {m.usuario.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}
+                        />
                         {pagamentoErrors.membroId && (
                           <p className="text-xs text-destructive">{pagamentoErrors.membroId}</p>
                         )}
@@ -773,81 +799,47 @@ export default function FinanceiroPage() {
                         <Label htmlFor="plano" className={pagamentoErrors.planoId ? "text-destructive" : ""}>
                           Plano
                         </Label>
-                        {(() => {
-                          const { planosGabi, planosEstagiarios, planosOutros } = categorizePlanos(planos, true)
+                        <SearchableSelect
+                          value={pagamentoForm.planoId}
+                          onValueChange={(value) => {
+                            const plano = planos.find((p) => p.id === value)
+                            setPagamentoForm({
+                              ...pagamentoForm,
+                              planoId: value,
+                              valor: plano ? String(plano.valor) : pagamentoForm.valor,
+                            })
+                            if (pagamentoErrors.planoId) {
+                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
+                            }
+                          }}
+                          options={pagamentoPlanoOptions}
+                          placeholder="Selecione o plano"
+                          searchPlaceholder="Buscar plano..."
+                          emptyMessage="Nenhum plano encontrado."
+                          disabled={submitting}
+                          className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}
+                          renderOption={(option) => {
+                            const dotClass =
+                              option.group === "Planos com Gabi"
+                                ? "bg-amber-400"
+                                : option.group === "Planos com Estagiários"
+                                  ? "bg-sky-400"
+                                  : option.group === "Outros Planos"
+                                    ? "bg-violet-400"
+                                    : null
 
-                          return (
-                            <Select
-                              value={pagamentoForm.planoId}
-                              onValueChange={(v) => {
-                                const plano = planos.find((p) => p.id === v)
-                                setPagamentoForm({
-                                  ...pagamentoForm,
-                                  planoId: v,
-                                  valor: plano ? String(plano.valor) : pagamentoForm.valor,
-                                })
-                                if (pagamentoErrors.planoId) {
-                                  setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
-                                }
-                              }}
-                              disabled={submitting}
-                            >
-                              <SelectTrigger className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}>
-                                <SelectValue placeholder="Selecione o plano" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {planosGabi.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                      Planos com Gabi
-                                    </SelectLabel>
-                                    {planosGabi.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                                {planosEstagiarios.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                                      Planos com Estagiários
-                                    </SelectLabel>
-                                    {planosEstagiarios.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                                {planosOutros.length > 0 && (
-                                  <SelectGroup>
-                                    <SelectLabel className="flex items-center gap-2">
-                                      <span className="h-2 w-2 rounded-full bg-violet-500"></span>
-                                      Outros Planos
-                                    </SelectLabel>
-                                    {planosOutros.map((p) => (
-                                      <SelectItem key={p.id} value={p.id} className="pl-6">
-                                        <span className="flex items-center gap-2">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-                                          {p.nome} - {formatCurrency(p.valor)}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          )
-                        })()}
+                            if (!dotClass) {
+                              return option.label
+                            }
+
+                            return (
+                              <span className="flex items-center gap-2">
+                                <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                                {option.label}
+                              </span>
+                            )
+                          }}
+                        />
                         {pagamentoErrors.planoId && (
                           <p className="text-xs text-destructive">{pagamentoErrors.planoId}</p>
                         )}
@@ -1331,12 +1323,7 @@ export default function FinanceiroPage() {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {(() => {
-                    const { planosGabi, planosEstagiarios, planosOutros } = categorizePlanos(planos)
-
-                    return (
-                      <>
-                        {planosGabi.length > 0 && (
+                  {groupedTodosPlanos.planosGabi.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/30">
@@ -1347,11 +1334,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Atendimento personalizado pela Gabi</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 ml-auto">
-                                {planosGabi.length} {planosGabi.length === 1 ? 'plano' : 'planos'}
+                                {groupedTodosPlanos.planosGabi.length} {groupedTodosPlanos.planosGabi.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosGabi.map((plano) => (
+                              {groupedTodosPlanos.planosGabi.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1423,7 +1410,7 @@ export default function FinanceiroPage() {
                           </div>
                         )}
 
-                        {planosEstagiarios.length > 0 && (
+                    {groupedTodosPlanos.planosEstagiarios.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-blue-500/30">
@@ -1434,11 +1421,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Atendimento pela equipe de estagiários</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-sky-400 to-blue-500 text-white border-0 ml-auto">
-                                {planosEstagiarios.length} {planosEstagiarios.length === 1 ? 'plano' : 'planos'}
+                                {groupedTodosPlanos.planosEstagiarios.length} {groupedTodosPlanos.planosEstagiarios.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosEstagiarios.map((plano) => (
+                              {groupedTodosPlanos.planosEstagiarios.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 dark:from-sky-950/20 dark:to-blue-950/10 dark:border-sky-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1510,7 +1497,7 @@ export default function FinanceiroPage() {
                           </div>
                         )}
 
-                        {planosOutros.length > 0 && (
+                  {groupedTodosPlanos.planosOutros.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30">
@@ -1521,11 +1508,11 @@ export default function FinanceiroPage() {
                                 <p className="text-xs text-muted-foreground">Planos especiais e personalizados</p>
                               </div>
                               <Badge className="bg-gradient-to-r from-violet-400 to-purple-500 text-white border-0 ml-auto">
-                                {planosOutros.length} {planosOutros.length === 1 ? 'plano' : 'planos'}
+                                {groupedTodosPlanos.planosOutros.length} {groupedTodosPlanos.planosOutros.length === 1 ? 'plano' : 'planos'}
                               </Badge>
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {planosOutros.map((plano) => (
+                              {groupedTodosPlanos.planosOutros.map((plano) => (
                                 <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10 dark:border-violet-800/30 hover:shadow-lg hover:shadow-purple-500/10 transition-shadow`}>
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -1596,9 +1583,6 @@ export default function FinanceiroPage() {
                             </div>
                           </div>
                         )}
-                      </>
-                    )
-                  })()}
                 </div>
               )}
             </CardContent>

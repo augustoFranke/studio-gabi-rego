@@ -1,3 +1,5 @@
+import { sortByNomePtBr } from "@/lib/select-options"
+
 export type PlanoNome = { nome: string }
 
 export function groupPlansByCategory<T extends PlanoNome>(planos: T[]) {
@@ -19,5 +21,9 @@ export function groupPlansByCategory<T extends PlanoNome>(planos: T[]) {
     }
   }
 
-  return { planosGabi, planosEstagiarios, planosOutros }
+  return {
+    planosGabi: sortByNomePtBr(planosGabi),
+    planosEstagiarios: sortByNomePtBr(planosEstagiarios),
+    planosOutros: sortByNomePtBr(planosOutros),
+  }
 }
