@@ -35,6 +35,7 @@ import {
     updateExercise as updateExerciseEditor,
 } from '@/lib/treino/editor';
 import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
+import { sortByTextPtBr } from '@/lib/select-options';
 
 type Exercise = {
     id: string;
@@ -102,7 +103,8 @@ export default function TrainingPlanGeneratorPage() {
                 const response = await fetch('/api/membros?status=ATIVO&fields=compact');
                 if (response.ok) {
                     const data = await response.json();
-                    setMembers(data.membros || data);
+                    const loadedMembers: Member[] = data.membros || data;
+                    setMembers(sortByTextPtBr(loadedMembers, (member) => member.usuario.nome));
                 }
             } catch (error) {
                 console.error('Error loading members:', error);
@@ -119,7 +121,8 @@ export default function TrainingPlanGeneratorPage() {
                 const response = await fetch('/api/treinos/templates');
                 if (response.ok) {
                     const data = await response.json();
-                    setTemplates(data || []);
+                    const loadedTemplates: Template[] = data || [];
+                    setTemplates(sortByTextPtBr(loadedTemplates, (template) => template.nome));
                 }
             } catch (error) {
                 console.error('Error loading templates:', error);
