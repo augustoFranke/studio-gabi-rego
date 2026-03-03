@@ -22,12 +22,14 @@ import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/searchable-select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { validarCPF, formatarCPF, formatarTelefone } from "@/lib/validators"
 import { DiaSemanaLabel, HOURS, formatHour } from "@/lib/schedule"
@@ -110,6 +112,29 @@ export function MemberForm({
   const { planosGabi, planosEstagiarios, planosOutros } = useMemo(
     () => groupPlansByCategory(planos),
     [planos]
+  )
+  const planoOptions = useMemo<SearchableSelectOption[]>(
+    () => [
+      ...planosGabi.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - R$ ${Number(plano.valor).toFixed(2)}`,
+        keywords: [plano.nome, "gabi"],
+        group: "Planos com Gabi",
+      })),
+      ...planosEstagiarios.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - R$ ${Number(plano.valor).toFixed(2)}`,
+        keywords: [plano.nome, "estagiario", "estagiários"],
+        group: "Planos com Estagiários",
+      })),
+      ...planosOutros.map((plano) => ({
+        value: plano.id,
+        label: `${plano.nome} - R$ ${Number(plano.valor).toFixed(2)}`,
+        keywords: [plano.nome],
+        group: "Outros Planos",
+      })),
+    ],
+    [planosEstagiarios, planosGabi, planosOutros]
   )
 
   const form = useForm<FormValues>({
@@ -399,63 +424,39 @@ export function MemberForm({
                   return (
                     <FormItem>
                       <FormLabel>Plano</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um plano" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {planosGabi.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                Planos com Gabi
-                              </SelectLabel>
-                              {planosGabi.map((plano) => (
-                                <SelectItem key={plano.id} value={plano.id} className="pl-6">
-                                  <span className="flex items-center gap-2">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                    {plano.nome} - R$ {Number(plano.valor).toFixed(2)}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          )}
-                          {planosEstagiarios.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-sky-500"></span>
-                                Planos com Estagiários
-                              </SelectLabel>
-                              {planosEstagiarios.map((plano) => (
-                                <SelectItem key={plano.id} value={plano.id} className="pl-6">
-                                  <span className="flex items-center gap-2">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                                    {plano.nome} - R$ {Number(plano.valor).toFixed(2)}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          )}
-                          {planosOutros.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-violet-500"></span>
-                                Outros Planos
-                              </SelectLabel>
-                              {planosOutros.map((plano) => (
-                                <SelectItem key={plano.id} value={plano.id} className="pl-6">
-                                  <span className="flex items-center gap-2">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-                                    {plano.nome} - R$ {Number(plano.valor).toFixed(2)}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          options={planoOptions}
+                          placeholder="Selecione um plano"
+                          searchPlaceholder="Buscar plano..."
+                          emptyMessage="Nenhum plano encontrado."
+                          disabled={planos.length === 0}
+                          className="border-input"
+                          renderOption={(option) => {
+                            const dotClass =
+                              option.group === "Planos com Gabi"
+                                ? "bg-amber-400"
+                                : option.group === "Planos com Estagiários"
+                                  ? "bg-sky-400"
+                                  : option.group === "Outros Planos"
+                                    ? "bg-violet-400"
+                                    : null
+
+                            if (!dotClass) {
+                              return option.label
+                            }
+
+                            return (
+                              <span className="flex items-center gap-2">
+                                <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                                {option.label}
+                              </span>
+                            )
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )
