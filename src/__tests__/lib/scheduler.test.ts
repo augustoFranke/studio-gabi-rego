@@ -3,9 +3,6 @@ import { TipoNotificacao } from '@prisma/client'
 
 const {
   prismaMock,
-  isResendConfiguredMock,
-  enviarEmailMock,
-  aniversarioTemplateMock,
   isEvolutionConfiguredMock,
   formatWhatsappNumberMock,
   sendWhatsappTextMock,
@@ -21,9 +18,6 @@ const {
       ...prismaBaseMock,
       $queryRaw: vi.fn(),
     },
-    isResendConfiguredMock: vi.fn(),
-    enviarEmailMock: vi.fn(),
-    aniversarioTemplateMock: vi.fn(),
     isEvolutionConfiguredMock: vi.fn(),
     formatWhatsappNumberMock: vi.fn(),
     sendWhatsappTextMock: vi.fn(),
@@ -32,14 +26,6 @@ const {
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
-}))
-
-vi.mock('@/lib/resend', () => ({
-  enviarEmail: enviarEmailMock,
-  emailTemplates: {
-    aniversario: aniversarioTemplateMock,
-  },
-  isResendConfigured: isResendConfiguredMock,
 }))
 
 vi.mock('@/lib/whatsapp/evolution', () => ({
@@ -58,10 +44,8 @@ describe('processarAniversarios', () => {
     vi.setSystemTime(now)
     vi.clearAllMocks()
 
-    isResendConfiguredMock.mockReturnValue(false)
     isEvolutionConfiguredMock.mockReturnValue(false)
     formatWhatsappNumberMock.mockImplementation((telefone: string) => telefone || null)
-    aniversarioTemplateMock.mockImplementation((nome: string) => `<p>Feliz aniversario ${nome}</p>`)
 
     prismaMock.notificacao.findFirst.mockResolvedValue(null)
     prismaMock.notificacao.create.mockResolvedValue({ id: 'notificacao-1' })
@@ -121,8 +105,7 @@ describe('processarAniversarios', () => {
     )
   })
 
-  it('preserva guardas de envio quando email e telefone estao ausentes', async () => {
-    isResendConfiguredMock.mockReturnValue(true)
+  it('preserva guardas de envio quando telefone esta ausente', async () => {
     isEvolutionConfiguredMock.mockReturnValue(true)
     formatWhatsappNumberMock.mockReturnValueOnce(null)
 
@@ -136,12 +119,10 @@ describe('processarAniversarios', () => {
       data: expect.objectContaining({
         membroId: 'm-3',
         tipo: TipoNotificacao.ANIVERSARIO,
-        canalEmail: true,
+        canalEmail: false,
         canalWhatsapp: true,
       }),
     })
-    expect(aniversarioTemplateMock).not.toHaveBeenCalled()
-    expect(enviarEmailMock).not.toHaveBeenCalled()
     expect(formatWhatsappNumberMock).toHaveBeenCalledWith('')
     expect(sendWhatsappTextMock).not.toHaveBeenCalled()
   })

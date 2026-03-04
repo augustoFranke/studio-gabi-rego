@@ -255,13 +255,11 @@ model PagamentoImportLog {
   importRunId           String                  @map("import_run_id")
   rowIndex              Int                     @map("row_index")
   rawName               String?                 @map("raw_name")
-  normalizedName        String?                 @map("normalized_name")
   rawPago               String?                 @map("raw_pago")
   parsedAmount          Decimal?                @db.Decimal(10, 2) @map("parsed_amount")
   decision              PagamentoImportDecision
   matchScore            Decimal?                @db.Decimal(5, 4) @map("match_score")
   matchedMembroId       String?                 @map("matched_membro_id")
-  matchedMembroNome     String?                 @map("matched_membro_nome")
   importKey             String?                 @map("import_key")
   pagamentoId           String?                 @map("pagamento_id")
   detalhe               String?
@@ -351,7 +349,6 @@ model Notificacao {
   tipo            TipoNotificacao
   titulo          String
   mensagem        String
-  refKey          String?         @unique @map("ref_key")
   enviada         Boolean         @default(false)
   enviadaEm       DateTime?       @map("enviada_em")
   agendadaPara    DateTime?       @map("agendada_para")

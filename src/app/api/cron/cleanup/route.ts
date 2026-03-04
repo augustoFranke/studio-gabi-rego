@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runCobrancaWhatsappT1 } from '@/lib/jobs/cobranca-whatsapp'
+import { runCleanup } from '@/lib/cleanup'
 import { validateCronRequest } from '@/lib/security/cron-auth'
-import { isEvolutionConfigured } from '@/lib/whatsapp/evolution'
 
 export async function GET(request: NextRequest) {
   return POST(request)
@@ -17,14 +16,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (process.env.NODE_ENV === 'production' && !isEvolutionConfigured()) {
-    return NextResponse.json({ error: 'Evolution API not configured' }, { status: 500 })
-  }
-
   try {
-    const summary = await runCobrancaWhatsappT1()
-    const status = summary.failed > 0 ? 500 : 200
-    return NextResponse.json(summary, { status })
+    const summary = await runCleanup()
+    return NextResponse.json(summary)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro interno do servidor'
     return NextResponse.json({ error: message }, { status: 500 })
