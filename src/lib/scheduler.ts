@@ -13,7 +13,6 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { enviarEmail, emailTemplates, isResendConfigured } from '@/lib/resend'
 import { formatarData, formatarMoeda } from '@/lib/validators'
 import { Prisma, TipoNotificacao } from '@prisma/client'
 import {
@@ -75,110 +74,16 @@ async function processNotifications<T>({
 }
 
 /**
- * Processa lembretes de aula para as próximas horas
- */
-export async function processarLembretesAula() {
-  const horasAntecedencia = 2 // Configurável
-
-  const agora = new Date()
-  const limite = new Date(agora.getTime() + horasAntecedencia * 60 * 60 * 1000)
-  const resendEnabled = isResendConfigured()
-  const whatsappEnabled = isEvolutionConfigured()
-  const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
-
-  // Buscar agendamentos das próximas horas que ainda não receberam lembrete
-  const agendamentos = await prisma.agendamento.findMany({
-    where: {
-      data: {
-        gte: agora,
-        lte: limite,
-      },
-    },
-    include: {
-      membro: {
-        select: {
-          id: true,
-          telefone: true,
-          usuario: { select: { nome: true, email: true } },
-        },
-      },
-      horario: { select: { horaInicio: true, horaFim: true } },
-    },
-  })
-
-  const getContext = (agendamento: typeof agendamentos[number]) => {
-    const { membro, horario } = agendamento
-    return {
-      membro,
-      horario,
-      nome: membro.usuario.nome || 'Aluno(a)',
-      dataFormatada: formatarData(agendamento.data),
-    }
-  }
-
-  return processNotifications({
-    items: agendamentos,
-    shouldSkipWhere: (agendamento) => ({
-      membroId: agendamento.membro.id,
-      tipo: TipoNotificacao.LEMBRETE_AULA,
-      criadoEm: {
-        gte: since, // Últimas 24h
-      },
-    }),
-    buildNotification: (agendamento) => {
-      const { membro, horario, dataFormatada } = getContext(agendamento)
-      return {
-        membroId: membro.id,
-        tipo: TipoNotificacao.LEMBRETE_AULA,
-        titulo: 'Lembrete de Aula',
-        mensagem: `Sua aula está agendada para ${horario.horaInicio} em ${dataFormatada}`,
-        canalWhatsapp: whatsappEnabled,
-        canalEmail: resendEnabled,
-      }
-    },
-    sendEmail: resendEnabled
-      ? async (agendamento) => {
-          const { membro, horario, nome, dataFormatada } = getContext(agendamento)
-          if (!membro.usuario.email) {
-            return
-          }
-          const html = emailTemplates.lembreteAula(nome, horario.horaInicio, dataFormatada)
-          await enviarEmail({
-            para: membro.usuario.email,
-            assunto: '📅 Lembrete: Sua aula está chegando!',
-            html,
-          })
-        }
-      : undefined,
-    sendWhatsapp: whatsappEnabled
-      ? async (agendamento) => {
-          const { membro, horario, nome, dataFormatada } = getContext(agendamento)
-          const to = formatWhatsappNumber(membro.telefone || '')
-          if (!to) {
-            return
-          }
-
-          await sendWhatsappText({
-            to,
-            text: `Oi ${nome}! Lembrete: sua aula esta agendada para ${horario.horaInicio} em ${dataFormatada}.`,
-          })
-        }
-      : undefined,
-  })
-}
-
-/**
  * Processa cobranças próximas do vencimento
  */
 export async function processarCobrancas() {
-  const diasAntecedencia = 3 // Configurável
+  const diasAntecedencia = 1
 
   const agora = new Date()
   const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000)
-  const resendEnabled = isResendConfigured()
+  const whatsappEnabled = isEvolutionConfigured()
   const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
 
-  // Buscar pagamentos pendentes próximos do vencimento
   const pagamentos = await prisma.pagamento.findMany({
     where: {
       status: 'PENDENTE',
@@ -222,7 +127,7 @@ export async function processarCobrancas() {
       membroId: pagamento.membro.id,
       tipo: TipoNotificacao.COBRANCA,
       criadoEm: {
-        gte: since, // Últimas 24h
+        gte: since,
       },
     }),
     buildNotification: (pagamento) => {
@@ -232,21 +137,20 @@ export async function processarCobrancas() {
         tipo: TipoNotificacao.COBRANCA,
         titulo: 'Lembrete de Pagamento',
         mensagem: `Seu pagamento de ${valor} vence em ${vencimento}`,
-        canalWhatsapp: false,
-        canalEmail: resendEnabled,
+        canalWhatsapp: whatsappEnabled,
+        canalEmail: false,
       }
     },
-    sendEmail: resendEnabled
+    sendWhatsapp: whatsappEnabled
       ? async (pagamento) => {
           const { membro, nome, valor, vencimento } = getContext(pagamento)
-          if (!membro.usuario.email) {
+          const to = formatWhatsappNumber(membro.telefone || '')
+          if (!to) {
             return
           }
-          const html = emailTemplates.cobranca(nome, valor, vencimento)
-          await enviarEmail({
-            para: membro.usuario.email,
-            assunto: '💰 Lembrete: Pagamento próximo do vencimento',
-            html,
+          await sendWhatsappText({
+            to,
+            text: `Oi ${nome}! Lembrete: seu pagamento de ${valor} vence em ${vencimento}. Qualquer dúvida, fale com a gente!`,
           })
         }
       : undefined,
@@ -260,7 +164,6 @@ export async function processarAniversarios() {
   const hoje = new Date()
   const mes = hoje.getMonth() + 1
   const dia = hoje.getDate()
-  const resendEnabled = isResendConfigured()
   const whatsappEnabled = isEvolutionConfigured()
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
@@ -312,23 +215,9 @@ export async function processarAniversarios() {
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
         canalWhatsapp: whatsappEnabled,
-        canalEmail: resendEnabled,
+        canalEmail: false,
       }
     },
-    sendEmail: resendEnabled
-      ? async (membro) => {
-          const { nome, email } = getContext(membro)
-          if (!email) {
-            return
-          }
-          const html = emailTemplates.aniversario(nome)
-          await enviarEmail({
-            para: email,
-            assunto: '🎂 Feliz Aniversário!',
-            html,
-          })
-        }
-      : undefined,
     sendWhatsapp: whatsappEnabled
       ? async (membro) => {
           const { nome, telefone } = getContext(membro)
@@ -379,11 +268,10 @@ export async function executarTodasTarefas() {
   // then run the rest in parallel (they query non-overlapping date windows)
   const pagamentosAtualizados = await atualizarPagamentosAtrasados()
 
-  const [lembretesAula, cobrancas, aniversarios] = await Promise.all([
-    processarLembretesAula(),
+  const [cobrancas, aniversarios] = await Promise.all([
     processarCobrancas(),
     processarAniversarios(),
   ])
 
-  return { pagamentosAtualizados, lembretesAula, cobrancas, aniversarios }
+  return { pagamentosAtualizados, cobrancas, aniversarios }
 }

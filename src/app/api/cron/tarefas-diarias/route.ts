@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { executarTodasTarefas } from '@/lib/scheduler'
 import { validateCronRequest } from '@/lib/security/cron-auth'
 
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
+
 export async function POST(request: NextRequest) {
   const authResult = validateCronRequest(request, process.env.CRON_SECRET)
   if (!authResult.ok) {
