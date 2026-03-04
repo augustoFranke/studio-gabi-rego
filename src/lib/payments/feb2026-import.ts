@@ -48,13 +48,11 @@ export type MatchResult = {
 export type RowDecision = {
   rowIndex: number
   rawName: string
-  normalizedName: string
   rawPago: string
   parsedAmount: number | null
   decision: ImportDecision
   matchScore: number | null
   matchedMembroId: string | null
-  matchedMembroNome: string | null
   importKey: string | null
   detalhe: string | null
 }
@@ -419,13 +417,11 @@ async function executeDryRun(
       decisions.push({
         rowIndex: row.rowIndex,
         rawName: row.rawName,
-        normalizedName,
         rawPago: row.rawPago,
         parsedAmount: null,
         decision: DECISION.SKIPPED_NON_NUMERIC,
         matchScore: null,
         matchedMembroId: null,
-        matchedMembroNome: null,
         importKey: null,
         detalhe: 'PAGO nao numerico',
       })
@@ -440,13 +436,11 @@ async function executeDryRun(
 
     let decision: ImportDecision = DECISION.UNMATCHED
     let matchedMembroId: string | null = null
-    let matchedMembroNome: string | null = null
 
     if (match.decision === 'matched' && match.best) {
       matched += 1
       decision = DECISION.MATCHED
       matchedMembroId = match.best.membroId
-      matchedMembroNome = match.best.nome
     } else if (match.decision === 'ambiguous') {
       ambiguous += 1
       decision = DECISION.AMBIGUOUS
@@ -460,13 +454,11 @@ async function executeDryRun(
     decisions.push({
       rowIndex: row.rowIndex,
       rawName: row.rawName,
-      normalizedName,
       rawPago: row.rawPago,
       parsedAmount,
       decision,
       matchScore: match.score ?? null,
       matchedMembroId,
-      matchedMembroNome,
       importKey,
       detalhe: buildDetailText(match),
     })
@@ -533,13 +525,11 @@ async function executeApply(
         decisions.push({
           rowIndex: row.rowIndex,
           rawName: row.rawName,
-          normalizedName,
           rawPago: row.rawPago,
           parsedAmount: null,
           decision,
           matchScore: null,
           matchedMembroId: null,
-          matchedMembroNome: null,
           importKey: null,
           detalhe: 'PAGO nao numerico',
         })
@@ -549,7 +539,6 @@ async function executeApply(
             importRunId: run.id,
             rowIndex: row.rowIndex,
             rawName: row.rawName,
-            normalizedName,
             rawPago: row.rawPago,
             decision,
             detalhe: 'PAGO nao numerico',
@@ -573,13 +562,11 @@ async function executeApply(
         decisions.push({
           rowIndex: row.rowIndex,
           rawName: row.rawName,
-          normalizedName,
           rawPago: row.rawPago,
           parsedAmount,
           decision,
           matchScore: match.score ?? null,
           matchedMembroId: null,
-          matchedMembroNome: null,
           importKey,
           detalhe: 'Pagamento ja existente para import_key',
         })
@@ -589,7 +576,6 @@ async function executeApply(
             importRunId: run.id,
             rowIndex: row.rowIndex,
             rawName: row.rawName,
-            normalizedName,
             rawPago: row.rawPago,
             parsedAmount: new Prisma.Decimal(parsedAmount),
             decision,
@@ -603,13 +589,11 @@ async function executeApply(
       }
 
       let resolvedMembroId: string | null = null
-      let resolvedMembroNome: string | null = null
       let resolvedPlanoId = defaultPlanId
       let decision: ImportDecision = DECISION.UNMATCHED
 
       if (match.decision === 'matched' && match.best) {
         resolvedMembroId = match.best.membroId
-        resolvedMembroNome = match.best.nome
         if (match.best.planoId) {
           resolvedPlanoId = match.best.planoId
         }
@@ -646,13 +630,11 @@ async function executeApply(
       decisions.push({
         rowIndex: row.rowIndex,
         rawName: row.rawName,
-        normalizedName,
         rawPago: row.rawPago,
         parsedAmount,
         decision,
         matchScore: match.score ?? null,
         matchedMembroId: resolvedMembroId,
-        matchedMembroNome: resolvedMembroNome,
         importKey,
         detalhe: detail,
       })
@@ -662,13 +644,11 @@ async function executeApply(
           importRunId: run.id,
           rowIndex: row.rowIndex,
           rawName: row.rawName,
-          normalizedName,
           rawPago: row.rawPago,
           parsedAmount: new Prisma.Decimal(parsedAmount),
           decision,
           matchScore: match.score != null ? new Prisma.Decimal(match.score) : null,
           matchedMembroId: resolvedMembroId,
-          matchedMembroNome: resolvedMembroNome,
           importKey,
           pagamentoId: pagamento.id,
           detalhe: detail,
