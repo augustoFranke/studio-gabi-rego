@@ -60,6 +60,7 @@ import { toast } from "sonner"
 import type { Prisma } from '@prisma/client'
 import { groupPlansByCategory } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
+import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 
 type FinanceiroStats = {
   totalPlanos: number
@@ -114,7 +115,16 @@ function formatCurrency(value: string | number): string {
 }
 
 function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("pt-BR")
+  return formatDateBR(parseDateFromAPI(date))
+}
+
+function getNextBillingDate(date: Date): string {
+  const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1, 12, 0, 0)
+  const maxDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate()
+
+  nextMonth.setDate(Math.min(date.getDate(), maxDay))
+
+  return formatDateISO(nextMonth)
 }
 
 function getStatusBadge(status: Pagamento["status"]) {
@@ -147,6 +157,7 @@ export default function FinanceiroPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [loadingPagamentos, setLoadingPagamentos] = useState(false)
   const pagamentosRequestId = useRef(0)
+  const pagamentoDueDateRequestId = useRef(0)
   const ITEMS_PER_PAGE = 10
 
   // Dialog states
@@ -250,6 +261,38 @@ export default function FinanceiroPage() {
 
     return { planoId, valor }
   }
+
+  const getMemberNextBillingDate = useCallback(async (memberId: string) => {
+    const requestId = ++pagamentoDueDateRequestId.current
+
+    try {
+      const params = new URLSearchParams({
+        membroId: memberId,
+        limit: "1",
+        sort: "vencimento_desc",
+      })
+
+      const res = await fetch(`/api/pagamentos?${params.toString()}`)
+      if (!res.ok) {
+        return null
+      }
+
+      const response = await res.json()
+      if (requestId !== pagamentoDueDateRequestId.current) {
+        return null
+      }
+
+      const latestPagamento = response.data?.[0]
+      if (!latestPagamento?.dataVencimento) {
+        return null
+      }
+
+      return getNextBillingDate(parseDateFromAPI(latestPagamento.dataVencimento))
+    } catch (error) {
+      console.error("Erro ao carregar a próxima data de vencimento:", error)
+      return null
+    }
+  }, [])
 
   // Stats state
   const [stats, setStats] = useState<FinanceiroStats>({
@@ -490,26 +533,17 @@ export default function FinanceiroPage() {
         membroId: pagamento.membroId || "",
         planoId: pagamento.planoId,
         valor: String(pagamento.valor),
-        dataVencimento: pagamento.dataVencimento.split("T")[0],
+        dataVencimento: formatDateISO(parseDateFromAPI(pagamento.dataVencimento)),
         formaPagamento: pagamento.formaPagamento || "",
         observacao: pagamento.observacao || "",
       })
     } else {
-      // Calculate default due date: day 10 of current month (or next month if already past day 10)
+      // Default to one month from today
       const today = new Date()
-      const defaultDueDay = 10
-      let defaultDate: Date
-
-      if (today.getDate() > defaultDueDay) {
-        // If we're past day 10, default to day 10 of next month
-        defaultDate = new Date(today.getFullYear(), today.getMonth() + 1, defaultDueDay)
-      } else {
-        // Otherwise, day 10 of current month
-        defaultDate = new Date(today.getFullYear(), today.getMonth(), defaultDueDay)
-      }
+      const defaultDate = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
 
       // Format as YYYY-MM-DD for the date input
-      const defaultDateStr = defaultDate.toISOString().split("T")[0]
+      const defaultDateStr = formatDateISO(defaultDate)
 
       setEditingPagamento(null)
       setPagamentoForm({
@@ -771,18 +805,30 @@ export default function FinanceiroPage() {
                           value={pagamentoForm.membroId}
                           onValueChange={(value) => {
                             const defaults = getMemberPlanDefaults(value)
-                            setPagamentoForm({
-                              ...pagamentoForm,
+                            setPagamentoForm((current) => ({
+                              ...current,
                               membroId: value,
                               planoId: defaults.planoId,
                               valor: defaults.valor,
-                            })
+                            }))
                             if (pagamentoErrors.membroId) {
                               setPagamentoErrors({ ...pagamentoErrors, membroId: "" })
                             }
                             if (pagamentoErrors.planoId || pagamentoErrors.valor) {
                               setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
                             }
+
+                            void getMemberNextBillingDate(value).then((nextBillingDate) => {
+                              if (!nextBillingDate) {
+                                return
+                              }
+
+                              setPagamentoForm((current) =>
+                                current.membroId === value
+                                  ? { ...current, dataVencimento: nextBillingDate }
+                                  : current
+                              )
+                            })
                           }}
                           options={pagamentoMembroOptions}
                           placeholder="Selecione o aluno"

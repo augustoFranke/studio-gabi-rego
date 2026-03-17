@@ -3,13 +3,10 @@ import { TipoNotificacao } from '@prisma/client'
 
 const {
   prismaMock,
-  isEvolutionConfiguredMock,
-  formatWhatsappNumberMock,
-  sendWhatsappTextMock,
 } = vi.hoisted(() => {
   const { createPrismaMock } = globalThis.__testUtils
   const prismaBaseMock = createPrismaMock({
-    notificacao: ['findFirst', 'create', 'update'],
+    notificacao: ['findFirst', 'create'],
     membro: ['findMany'],
   })
 
@@ -18,20 +15,11 @@ const {
       ...prismaBaseMock,
       $queryRaw: vi.fn(),
     },
-    isEvolutionConfiguredMock: vi.fn(),
-    formatWhatsappNumberMock: vi.fn(),
-    sendWhatsappTextMock: vi.fn(),
   }
 })
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
-}))
-
-vi.mock('@/lib/whatsapp/evolution', () => ({
-  formatWhatsappNumber: formatWhatsappNumberMock,
-  isEvolutionConfigured: isEvolutionConfiguredMock,
-  sendWhatsappText: sendWhatsappTextMock,
 }))
 
 import { processarAniversarios } from '@/lib/scheduler'
@@ -44,12 +32,8 @@ describe('processarAniversarios', () => {
     vi.setSystemTime(now)
     vi.clearAllMocks()
 
-    isEvolutionConfiguredMock.mockReturnValue(false)
-    formatWhatsappNumberMock.mockImplementation((telefone: string) => telefone || null)
-
     prismaMock.notificacao.findFirst.mockResolvedValue(null)
     prismaMock.notificacao.create.mockResolvedValue({ id: 'notificacao-1' })
-    prismaMock.notificacao.update.mockResolvedValue({ id: 'notificacao-1', enviada: true })
   })
 
   afterEach(() => {
@@ -67,8 +51,8 @@ describe('processarAniversarios', () => {
 
   it('mantem dedupe no mesmo dia ao evitar criar notificacao ja enviada', async () => {
     prismaMock.$queryRaw.mockResolvedValueOnce([
-      { id: 'm-1', telefone: '11999999999', usuarioNome: 'Ana', usuarioEmail: 'ana@gabi.dev' },
-      { id: 'm-2', telefone: '11888888888', usuarioNome: 'Bia', usuarioEmail: 'bia@gabi.dev' },
+      { id: 'm-1', usuarioNome: 'Ana', usuarioEmail: 'ana@gabi.dev' },
+      { id: 'm-2', usuarioNome: 'Bia', usuarioEmail: 'bia@gabi.dev' },
     ])
 
     prismaMock.notificacao.findFirst
@@ -80,7 +64,6 @@ describe('processarAniversarios', () => {
     expect(totalProcessado).toBe(2)
     expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.create).toHaveBeenCalledTimes(1)
-    expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(1)
     expect(prismaMock.notificacao.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         membroId: 'm-2',
@@ -103,27 +86,5 @@ describe('processarAniversarios', () => {
         }),
       })
     )
-  })
-
-  it('preserva guardas de envio quando telefone esta ausente', async () => {
-    isEvolutionConfiguredMock.mockReturnValue(true)
-    formatWhatsappNumberMock.mockReturnValueOnce(null)
-
-    prismaMock.$queryRaw.mockResolvedValueOnce([
-      { id: 'm-3', telefone: null, usuarioNome: 'Carlos', usuarioEmail: null },
-    ])
-
-    await processarAniversarios()
-
-    expect(prismaMock.notificacao.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        membroId: 'm-3',
-        tipo: TipoNotificacao.ANIVERSARIO,
-        canalEmail: false,
-        canalWhatsapp: true,
-      }),
-    })
-    expect(formatWhatsappNumberMock).toHaveBeenCalledWith('')
-    expect(sendWhatsappTextMock).not.toHaveBeenCalled()
   })
 })

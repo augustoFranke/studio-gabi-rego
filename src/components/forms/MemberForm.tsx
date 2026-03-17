@@ -417,6 +417,7 @@ export function MemberForm({
                 )}
               />
 
+              <div className="grid grid-cols-1 gap-6 md:col-span-2 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="planoId"
@@ -467,10 +468,11 @@ export function MemberForm({
                 control={form.control}
                 name="precoCustomizado"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:pt-6">
                     <FormLabel>Valor Personalizado (R$)</FormLabel>
                     <FormControl>
                       <Input
+                        className="md:mt-0.5"
                         placeholder="Opcional - Substitui o valor do plano"
                         type="number"
                         step="0.01"
@@ -489,6 +491,7 @@ export function MemberForm({
                   </FormItem>
                 )}
               />
+              </div>
             </div>
 
             <div className="space-y-4">
