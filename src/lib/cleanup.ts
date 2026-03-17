@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { archiveOldPayments, type PaymentArchiveSummary } from '@/lib/payment-export'
 
 export type CleanupSummary = {
   notificacoesDeleted: number
@@ -6,6 +7,7 @@ export type CleanupSummary = {
   importDryRunsDeleted: number
   agendamentosDeleted: number
   tokensCleared: number
+  pagamentosArchived: PaymentArchiveSummary
 }
 
 export async function runCleanup(): Promise<CleanupSummary> {
@@ -29,6 +31,7 @@ export async function runCleanup(): Promise<CleanupSummary> {
     { count: importLogsDeleted },
     { count: agendamentosDeleted },
     tokensCleared,
+    pagamentosArchived,
   ] = await Promise.all([
     prisma.notificacao.deleteMany({
       where: { enviada: true, criadoEm: { lt: notificacoesCutoff } },
@@ -43,6 +46,7 @@ export async function runCleanup(): Promise<CleanupSummary> {
       where: { data: { lt: agendamentoCutoff } },
     }),
     clearExpiredTokens(),
+    archiveOldPayments(30),
   ])
 
   return {
@@ -51,6 +55,7 @@ export async function runCleanup(): Promise<CleanupSummary> {
     importDryRunsDeleted,
     agendamentosDeleted,
     tokensCleared,
+    pagamentosArchived,
   }
 }
 

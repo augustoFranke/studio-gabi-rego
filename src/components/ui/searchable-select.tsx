@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,6 +39,14 @@ interface SearchableSelectProps {
   renderOption?: (option: SearchableSelectOption) => ReactNode
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+}
+
 export function SearchableSelect({
   value,
   options,
@@ -52,17 +60,58 @@ export function SearchableSelect({
   renderOption,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const resetListScroll = useCallback(() => {
+    requestAnimationFrame(() => {
+      listRef.current?.scrollTo({ top: 0 })
+    })
+  }, [])
+
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setOpen(nextOpen)
+    setSearch("")
+
+    if (nextOpen) {
+      resetListScroll()
+    }
+  }, [resetListScroll])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    resetListScroll()
+  }, [open, search, resetListScroll])
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
     [options, value]
   )
 
+  const filteredOptions = useMemo(() => {
+    const normalizedSearch = normalizeSearchText(search)
+
+    if (!normalizedSearch) {
+      return options
+    }
+
+    return options.filter((option) => {
+      const candidates = [option.label, option.value, ...(option.keywords ?? [])]
+
+      return candidates.some((candidate) =>
+        normalizeSearchText(candidate).includes(normalizedSearch)
+      )
+    })
+  }, [options, search])
+
   const { groupedEntries, ungrouped } = useMemo(() => {
     const ungroupedOptions: SearchableSelectOption[] = []
     const groupedMap = new Map<string, SearchableSelectOption[]>()
 
-    for (const option of options) {
+    for (const option of filteredOptions) {
       if (!option.group) {
         ungroupedOptions.push(option)
         continue
@@ -81,18 +130,19 @@ export function SearchableSelect({
       groupedEntries: Array.from(groupedMap.entries()),
       ungrouped: ungroupedOptions,
     }
-  }, [options])
+  }, [filteredOptions])
 
   const hasGroups = groupedEntries.length > 0
 
   const renderItem = (option: SearchableSelectOption) => (
     <CommandItem
       key={option.value}
-      value={option.label}
+      value={option.value}
       keywords={option.keywords}
       disabled={option.disabled}
       onSelect={() => {
         onValueChange(option.value)
+        setSearch("")
         setOpen(false)
       }}
     >
@@ -107,7 +157,7 @@ export function SearchableSelect({
   )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -129,9 +179,13 @@ export function SearchableSelect({
         align="start"
         className={cn("w-[var(--radix-popover-trigger-width)] p-0", contentClassName)}
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList ref={listRef}>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             {ungrouped.length > 0 && <CommandGroup>{ungrouped.map(renderItem)}</CommandGroup>}
             {hasGroups &&
