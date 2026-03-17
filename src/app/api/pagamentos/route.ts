@@ -13,7 +13,7 @@ const pagamentoSchema = z.object({
   valor: z.number().positive('Valor deve ser maior que zero'),
   dataVencimento: requiredString('Informe a data de vencimento'),
   formaPagamento: requiredString('Selecione a forma de pagamento'),
-  observacao: z.string().optional(),
+  observacao: z.string().nullable().optional(),
 })
 
 // GET /api/pagamentos - Listar pagamentos

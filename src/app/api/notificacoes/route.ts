@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
       const body = await request.json()
-      const { membroId, tipo, titulo, mensagem, canalWhatsapp, canalEmail, agendadaPara } = body
+      const { membroId, tipo, titulo, mensagem, canalEmail, agendadaPara } = body
 
       if (!tipo || !titulo || !mensagem) {
         return NextResponse.json(
@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
           tipo,
           titulo,
           mensagem,
-          canalWhatsapp: canalWhatsapp ?? false,
           canalEmail: canalEmail ?? false,
           agendadaPara: agendadaPara ? new Date(agendadaPara) : null,
         },

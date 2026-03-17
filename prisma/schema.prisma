@@ -352,7 +352,6 @@ model Notificacao {
   enviada         Boolean         @default(false)
   enviadaEm       DateTime?       @map("enviada_em")
   agendadaPara    DateTime?       @map("agendada_para")
-  canalWhatsapp   Boolean         @default(false) @map("canal_whatsapp")
   canalEmail      Boolean         @default(false) @map("canal_email")
   criadoEm        DateTime        @default(now()) @map("criado_em")
 
@@ -427,13 +426,3 @@ model Anamnese {
   @@map("anamneses")
 }
 
-// Configurações gerais do sistema
-model Configuracao {
-  id              String    @id @default(cuid())
-  chave           String    @unique
-  valor           String
-  descricao       String?
-  atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
-
-  @@map("configuracoes")
-}

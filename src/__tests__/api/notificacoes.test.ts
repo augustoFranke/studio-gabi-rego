@@ -79,7 +79,7 @@ describe('Notificacoes API', () => {
         tipo: 'INFO',
         titulo: 'Oi',
         mensagem: 'Mensagem',
-        canalWhatsapp: true,
+        canalEmail: true,
       }),
     })
 
@@ -93,7 +93,7 @@ describe('Notificacoes API', () => {
           tipo: 'INFO',
           titulo: 'Oi',
           mensagem: 'Mensagem',
-          canalWhatsapp: true,
+          canalEmail: true,
         }),
       })
     )

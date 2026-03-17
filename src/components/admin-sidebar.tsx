@@ -26,7 +26,6 @@ import {
   Calendar,
   DollarSign,
   Dumbbell,
-  Settings,
   ChevronUp,
   LogOut,
 } from "lucide-react"
@@ -60,11 +59,6 @@ const menuItems = [
     title: "Treinos",
     url: "/treinos",
     icon: Dumbbell,
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
   },
 ]
 
