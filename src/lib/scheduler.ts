@@ -1,11 +1,10 @@
 /**
  * Agendador de tarefas
  * Responsável por agendar e executar tarefas automáticas como:
- * - Lembretes de aula
- * - Cobranças
- * - Aniversários
+ * - Cobranças (notificações internas)
+ * - Aniversários (notificações internas)
  * - Atualização de status de pagamentos atrasados
- * 
+ *
  * Em produção, considerar usar:
  * - Vercel Cron Jobs
  * - Upstash QStash
@@ -15,11 +14,6 @@
 import { prisma } from '@/lib/prisma'
 import { formatarData, formatarMoeda } from '@/lib/validators'
 import { Prisma, TipoNotificacao } from '@prisma/client'
-import {
-  formatWhatsappNumber,
-  isEvolutionConfigured,
-  sendWhatsappText,
-} from '@/lib/whatsapp/evolution'
 
 type NotificationSkipWhere = Prisma.NotificacaoWhereInput & {
   membroId: string
@@ -30,16 +24,12 @@ type NotificationProcessOptions<T> = {
   items: T[]
   shouldSkipWhere: (item: T) => NotificationSkipWhere
   buildNotification: (item: T) => Prisma.NotificacaoCreateInput
-  sendEmail?: (item: T) => Promise<void>
-  sendWhatsapp?: (item: T) => Promise<void>
 }
 
 async function processNotifications<T>({
   items,
   shouldSkipWhere,
   buildNotification,
-  sendEmail,
-  sendWhatsapp,
 }: NotificationProcessOptions<T>) {
   if (!items.length) return 0
 
@@ -55,16 +45,8 @@ async function processNotifications<T>({
       continue
     }
 
-    const notificacao = await prisma.notificacao.create({
+    await prisma.notificacao.create({
       data: buildNotification(item),
-    })
-
-    if (sendEmail) await sendEmail(item)
-    if (sendWhatsapp) await sendWhatsapp(item)
-
-    await prisma.notificacao.update({
-      where: { id: notificacao.id },
-      data: { enviada: true, enviadaEm: new Date() },
     })
 
     processed++
@@ -81,7 +63,6 @@ export async function processarCobrancas() {
 
   const agora = new Date()
   const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000)
-  const whatsappEnabled = isEvolutionConfigured()
   const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
 
   const pagamentos = await prisma.pagamento.findMany({
@@ -137,23 +118,9 @@ export async function processarCobrancas() {
         tipo: TipoNotificacao.COBRANCA,
         titulo: 'Lembrete de Pagamento',
         mensagem: `Seu pagamento de ${valor} vence em ${vencimento}`,
-        canalWhatsapp: whatsappEnabled,
         canalEmail: false,
       }
     },
-    sendWhatsapp: whatsappEnabled
-      ? async (pagamento) => {
-          const { membro, nome, valor, vencimento } = getContext(pagamento)
-          const to = formatWhatsappNumber(membro.telefone || '')
-          if (!to) {
-            return
-          }
-          await sendWhatsappText({
-            to,
-            text: `Oi ${nome}! Lembrete: seu pagamento de ${valor} vence em ${vencimento}. Qualquer dúvida, fale com a gente!`,
-          })
-        }
-      : undefined,
   })
 }
 
@@ -164,13 +131,11 @@ export async function processarAniversarios() {
   const hoje = new Date()
   const mes = hoje.getMonth() + 1
   const dia = hoje.getDate()
-  const whatsappEnabled = isEvolutionConfigured()
   const startOfToday = new Date(hoje)
   startOfToday.setHours(0, 0, 0, 0)
 
   type AniversarianteRow = {
     id: string
-    telefone: string | null
     usuarioNome: string | null
     usuarioEmail: string | null
   }
@@ -179,7 +144,6 @@ export async function processarAniversarios() {
     Prisma.sql`
       SELECT
         m.id,
-        m.telefone,
         u.nome AS "usuarioNome",
         u.email AS "usuarioEmail"
       FROM membros m
@@ -191,13 +155,6 @@ export async function processarAniversarios() {
     `
   )
 
-  const getContext = (membro: AniversarianteRow) => ({
-    membro,
-    nome: membro.usuarioNome || 'Aluno(a)',
-    email: membro.usuarioEmail,
-    telefone: membro.telefone,
-  })
-
   return processNotifications({
     items: aniversariantesRows,
     shouldSkipWhere: (membro) => ({
@@ -208,30 +165,15 @@ export async function processarAniversarios() {
       },
     }),
     buildNotification: (membro) => {
-      const { nome } = getContext(membro)
+      const nome = membro.usuarioNome || 'Aluno(a)'
       return {
         membroId: membro.id,
         tipo: TipoNotificacao.ANIVERSARIO,
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
-        canalWhatsapp: whatsappEnabled,
         canalEmail: false,
       }
     },
-    sendWhatsapp: whatsappEnabled
-      ? async (membro) => {
-          const { nome, telefone } = getContext(membro)
-          const to = formatWhatsappNumber(telefone || '')
-          if (!to) {
-            return
-          }
-
-          await sendWhatsappText({
-            to,
-            text: `Feliz aniversario, ${nome}! Que seu dia seja incrivel. Parabens!`,
-          })
-        }
-      : undefined,
   })
 }
 

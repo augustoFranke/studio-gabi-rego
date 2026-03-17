@@ -794,7 +794,7 @@ export default function CadastroPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="telefone" className="text-sm font-medium flex items-center gap-1.5">
                       <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Telefone / WhatsApp
+                      Telefone
                     </Label>
                     <Input
                       id="telefone"

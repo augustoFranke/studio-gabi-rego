@@ -44,7 +44,6 @@ const {
     enviarEmail: vi.fn(async () => ({ success: true, id: 'email-1' })),
     isResendConfigured: vi.fn(() => true),
     emailTemplates: {
-      completarPerfil: vi.fn((_nome: string | null, link: string) => `completar:${link}`),
       verificacaoEmail: vi.fn((_nome: string | null, link: string) => `verificar:${link}`),
     },
   },
