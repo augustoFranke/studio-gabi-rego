@@ -135,7 +135,6 @@ export async function processarAniversarios() {
         tipo: TipoNotificacao.ANIVERSARIO,
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
-        canalWhatsapp: whatsappEnabled,
         canalEmail: false,
       }
     },
