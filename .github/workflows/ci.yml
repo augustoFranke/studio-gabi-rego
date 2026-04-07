@@ -35,6 +35,9 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
@@ -45,7 +48,7 @@ jobs:
         run: npm run build
 
   db:
-    name: db
+    name: db-migrations
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -91,10 +94,3 @@ jobs:
       # Helpful debugging signal (won't fail the job unless Prisma exits non-zero)
       - name: Migration status
         run: npx prisma migrate status
-
-      # If you later split tests, replace with: npm run test:integration
-      - name: Tests (with DB available)
-        run: npm run test:run
-
-      - name: Build
-        run: npm run build
