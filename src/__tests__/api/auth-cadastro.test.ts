@@ -4,6 +4,7 @@ import { PASSWORD_POLICY_MESSAGE } from '@/schemas/password-policy.schema'
 
 const {
   prismaMock,
+  txMock,
   resendMock,
   rateLimitMock,
   bcryptMock,
@@ -11,6 +12,20 @@ const {
   validatorsMock,
   anamneseMock,
 } = vi.hoisted(() => ({
+  txMock: {
+    usuario: {
+      update: vi.fn(),
+      create: vi.fn(async () => ({ id: 'new-user-id' })),
+    },
+    membro: {
+      findUnique: vi.fn(async () => null),
+      create: vi.fn(async () => ({ id: 'new-membro-id' })),
+      delete: vi.fn(),
+    },
+    anamnese: {
+      create: vi.fn(),
+    },
+  },
   prismaMock: {
     usuario: {
       findUnique: vi.fn(),
@@ -25,20 +40,7 @@ const {
     anamnese: {
       create: vi.fn(),
     },
-    $transaction: vi.fn((fn: (tx: unknown) => Promise<void>) => fn({
-      usuario: {
-        update: vi.fn(),
-        create: vi.fn(async () => ({ id: 'new-user-id' })),
-      },
-      membro: {
-        findUnique: vi.fn(async () => null),
-        create: vi.fn(async () => ({ id: 'new-membro-id' })),
-        delete: vi.fn(),
-      },
-      anamnese: {
-        create: vi.fn(),
-      },
-    })),
+    $transaction: vi.fn((fn: (tx: unknown) => Promise<void>) => fn(txMock)),
   },
   resendMock: {
     enviarEmail: vi.fn(async () => ({ success: true, id: 'email-1' })),
@@ -89,6 +91,9 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     resendMock.isResendConfigured.mockReturnValue(true)
     resendMock.enviarEmail.mockResolvedValue({ success: true, id: 'email-1' })
     prismaMock.usuario.findUnique.mockResolvedValue(null)
+    txMock.usuario.create.mockResolvedValue({ id: 'new-user-id' })
+    txMock.membro.findUnique.mockResolvedValue(null)
+    txMock.membro.create.mockResolvedValue({ id: 'new-membro-id' })
     anamneseMock.sanitizeAnamnesePayload.mockReturnValue({ data: { altura: '1.70' } })
   })
 
@@ -198,6 +203,46 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(json.success).toBe(true)
     expect(prismaMock.$transaction).toHaveBeenCalled()
     expect(resendMock.enviarEmail).toHaveBeenCalled()
+  })
+
+  it('persists medical history, experience, and PAR-Q fields in full signup', async () => {
+    anamneseMock.sanitizeAnamnesePayload.mockReturnValue({
+      data: {
+        altura: '1.70',
+        condicaoMedica: 'Sim',
+        condicaoMedicaQual: 'Asma',
+        experienciaMusculacao: 'Intermediário',
+        expectativas: 'Ganhar força',
+        parq1: 'Não',
+        parq7: 'Sim',
+      },
+    })
+
+    const res = await post({
+      ...fullPayload,
+      anamnese: {
+        altura: '1.70',
+        condicaoMedica: 'Sim',
+        condicaoMedicaQual: 'Asma',
+        experienciaMusculacao: 'Intermediário',
+        expectativas: 'Ganhar força',
+        parq1: 'Não',
+        parq7: 'Sim',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(txMock.anamnese.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        membroId: 'new-membro-id',
+        condicaoMedica: 'Sim',
+        condicaoMedicaQual: 'Asma',
+        experienciaMusculacao: 'Intermediário',
+        expectativas: 'Ganhar força',
+        parq1: 'Não',
+        parq7: 'Sim',
+      }),
+    })
   })
 
   it('returns 400 when nome is too short in full payload', async () => {

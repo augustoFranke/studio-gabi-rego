@@ -166,7 +166,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
 
   // Authorization check: Only ADMIN or the member themselves can access
   if (session.user.role !== "ADMIN" && session.user.membroId !== membro.id) {
-    redirect("/meus-dados")
+    redirect("/inicio")
   }
 
   // Calculate age outside of the render return for purity

@@ -13,8 +13,9 @@ const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock, ensureOwne
 
   return {
     prismaMock: createPrismaMock({
-      agendamento: ['findUnique', 'findFirst', 'count', 'update', 'delete'],
+      agendamento: ['findUnique', 'findFirst', 'count', 'update', 'delete', 'deleteMany'],
       horarioDisponivel: ['findUnique'],
+      horarioFixo: ['findFirst', 'create', 'update', 'delete', 'deleteMany'],
     }),
     sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
@@ -189,6 +190,58 @@ describe('Agendamentos API - /api/agendamentos/[id]', () => {
     expect(res.status).toBe(400)
   })
 
+  it('PATCH future scope starts from the selected occurrence date', async () => {
+    prismaMock.agendamento.findUnique.mockResolvedValue({
+      id: 'a-1',
+      membroId: 'm-1',
+      horarioId: 'h-1',
+      data: new Date('2025-01-20T12:00:00'),
+    })
+    prismaMock.agendamento.findFirst.mockResolvedValue(null)
+    prismaMock.agendamento.count.mockResolvedValue(0)
+    prismaMock.horarioDisponivel.findUnique
+      .mockResolvedValueOnce({
+        id: 'h-2',
+        ativo: true,
+        vagasTotal: 10,
+        diaSemana: 'TERCA',
+        horaInicio: '11:00',
+      })
+      .mockResolvedValueOnce({
+        id: 'h-1',
+        ativo: true,
+        vagasTotal: 10,
+        diaSemana: 'SEGUNDA',
+        horaInicio: '10:00',
+      })
+    prismaMock.horarioFixo.findFirst
+      .mockResolvedValueOnce({ id: 'hf-2' })
+      .mockResolvedValueOnce(null)
+    prismaMock.agendamento.update.mockResolvedValue({ id: 'a-1' })
+
+    const res = await PATCH(
+      new NextRequest('http://localhost:3000/api/agendamentos/a-1', {
+        method: 'PATCH',
+        body: JSON.stringify({ horarioId: 'h-2', data: '2025-01-21', scope: 'future' }),
+      }),
+      params('a-1')
+    )
+
+    expect(res.status).toBe(200)
+    expect(prismaMock.agendamento.deleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          data: expect.objectContaining({
+            gte: expect.any(Date),
+          }),
+        }),
+      })
+    )
+
+    const deleteManyCall = prismaMock.agendamento.deleteMany.mock.calls[0]?.[0]
+    expect(deleteManyCall?.where.data.gte.toISOString().startsWith('2025-01-20')).toBe(true)
+  })
+
   it('PATCH updates simple fields without move checks', async () => {
     prismaMock.agendamento.findUnique.mockResolvedValue({
       id: 'a-1',
@@ -209,6 +262,41 @@ describe('Agendamentos API - /api/agendamentos/[id]', () => {
     expect(res.status).toBe(200)
     expect(prismaMock.agendamento.findFirst).not.toHaveBeenCalled()
     expect(prismaMock.horarioDisponivel.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('DELETE future scope starts from the selected occurrence date', async () => {
+    prismaMock.agendamento.findUnique.mockResolvedValue({
+      id: 'a-1',
+      membroId: 'm-1',
+      horarioId: 'h-1',
+      data: new Date('2025-01-20T12:00:00'),
+      horario: {
+        diaSemana: 'SEGUNDA',
+        horaInicio: '10:00',
+      },
+    })
+
+    const res = await DELETE(
+      new NextRequest('http://localhost:3000/api/agendamentos/a-1', {
+        method: 'DELETE',
+        body: JSON.stringify({ scope: 'future' }),
+      }),
+      params('a-1')
+    )
+
+    expect(res.status).toBe(200)
+    expect(prismaMock.agendamento.deleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          data: expect.objectContaining({
+            gte: expect.any(Date),
+          }),
+        }),
+      })
+    )
+
+    const deleteManyCall = prismaMock.agendamento.deleteMany.mock.calls[0]?.[0]
+    expect(deleteManyCall?.where.data.gte.toISOString().startsWith('2025-01-20')).toBe(true)
   })
 
   it('DELETE returns 404 when booking does not exist', async () => {

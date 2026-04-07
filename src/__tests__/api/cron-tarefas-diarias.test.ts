@@ -56,10 +56,30 @@ describe('Cron tarefas diarias', () => {
   })
 
   it('runs scheduled tasks and returns summary', async () => {
+    const startDate = new Date('2026-01-05T00:00:00.000Z')
+    const endDate = new Date('2026-05-05T00:00:00.000Z')
+
     executarTodasTarefasMock.mockResolvedValueOnce({
       pagamentosAtualizados: 2,
-      cobrancas: 3,
-      aniversarios: 1,
+      cobrancas: {
+        targetDate: '2026-02-05',
+        candidates: 3,
+        sent: 2,
+        skipped: 1,
+        failed: 0,
+      },
+      aniversarios: {
+        targetDate: '2026-02-04',
+        candidates: 1,
+        sent: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      recorrencias: {
+        created: 12,
+        startDate,
+        endDate,
+      },
     })
 
     const res = await POST(createRequest('test-secret'))
@@ -68,8 +88,25 @@ describe('Cron tarefas diarias', () => {
     expect(res.status).toBe(200)
     expect(json).toEqual({
       pagamentosAtualizados: 2,
-      cobrancas: 3,
-      aniversarios: 1,
+      cobrancas: {
+        targetDate: '2026-02-05',
+        candidates: 3,
+        sent: 2,
+        skipped: 1,
+        failed: 0,
+      },
+      aniversarios: {
+        targetDate: '2026-02-04',
+        candidates: 1,
+        sent: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      recorrencias: {
+        created: 12,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      },
     })
     expect(executarTodasTarefasMock).toHaveBeenCalledTimes(1)
   })
@@ -82,5 +119,39 @@ describe('Cron tarefas diarias', () => {
 
     expect(res.status).toBe(500)
     expect(json.error).toBe('boom')
+  })
+
+  it('returns 500 when any scheduled delivery summary reports failures', async () => {
+    const startDate = new Date('2026-01-05T00:00:00.000Z')
+    const endDate = new Date('2026-05-05T00:00:00.000Z')
+
+    executarTodasTarefasMock.mockResolvedValueOnce({
+      pagamentosAtualizados: 2,
+      cobrancas: {
+        targetDate: '2026-02-05',
+        candidates: 3,
+        sent: 2,
+        skipped: 0,
+        failed: 1,
+      },
+      aniversarios: {
+        targetDate: '2026-02-04',
+        candidates: 1,
+        sent: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      recorrencias: {
+        created: 0,
+        startDate,
+        endDate,
+      },
+    })
+
+    const res = await POST(createRequest('test-secret'))
+    const json = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(json.cobrancas.failed).toBe(1)
   })
 })

@@ -71,6 +71,10 @@ async function clearExpiredTokens(): Promise<number> {
       where: { tokenReset: { not: null }, tokenResetExpira: { lt: now } },
       data: { tokenReset: null, tokenResetExpira: null },
     }),
+    prisma.usuario.updateMany({
+      where: { tokenPerfil: { not: null }, tokenPerfilExpira: { lt: now } },
+      data: { tokenPerfil: null, tokenPerfilExpira: null },
+    }),
     prisma.membro.updateMany({
       where: { anamneseToken: { not: null }, anamneseTokenExpira: { lt: now } },
       data: { anamneseToken: null, anamneseTokenExpira: null },

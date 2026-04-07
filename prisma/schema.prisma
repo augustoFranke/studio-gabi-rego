@@ -48,6 +48,12 @@ enum TipoNotificacao {
   AVISO_GERAL
 }
 
+enum StatusEntregaNotificacao {
+  PENDENTE
+  ENVIADA
+  FALHA
+}
+
 enum Sexo {
   MASCULINO
   FEMININO
@@ -89,6 +95,10 @@ model Usuario {
   // Password reset
   tokenReset            String?   @unique @map("token_reset")
   tokenResetExpira      DateTime? @map("token_reset_expira")
+
+  // Legacy profile completion
+  tokenPerfil           String?   @unique @map("token_perfil")
+  tokenPerfilExpira     DateTime? @map("token_perfil_expira")
 
   // Onboarding tracking
   etapaOnboarding       Int       @default(1) @map("etapa_onboarding")
@@ -163,6 +173,7 @@ model HorarioDisponivel {
   // Relações
   agendamentos    Agendamento[]
 
+  @@unique([diaSemana, horaInicio, ativo])
   @@map("horarios_disponiveis")
 }
 
@@ -353,6 +364,11 @@ model Notificacao {
   enviadaEm       DateTime?       @map("enviada_em")
   agendadaPara    DateTime?       @map("agendada_para")
   canalEmail      Boolean         @default(false) @map("canal_email")
+  statusEntrega   StatusEntregaNotificacao @default(PENDENTE) @map("status_entrega")
+  tentativasEntrega Int          @default(0) @map("tentativas_entrega")
+  ultimaTentativaEm DateTime?    @map("ultima_tentativa_em")
+  ultimoErro      String?        @map("ultimo_erro")
+  chaveDedupe     String?        @unique @map("chave_dedupe")
   criadoEm        DateTime        @default(now()) @map("criado_em")
 
   // Relações

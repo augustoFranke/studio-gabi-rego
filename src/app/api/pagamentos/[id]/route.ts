@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ensureOwnerOrAdmin, validateRequest, withApiAuth } from '@/lib/api'
-import { parseLocalDate } from '@/lib/schedule'
-import { Prisma, StatusPagamento } from '@prisma/client'
+import { StatusPagamento } from '@prisma/client'
 import { z } from 'zod'
+import {
+  deletePagamentoById,
+  getPagamentoById,
+  PagamentoServiceError,
+  updatePagamentoById,
+} from '@/services/pagamento.service'
 
 const pagamentoUpdateSchema = z.object({
   membroId: z.string().min(1).optional(),
@@ -19,26 +24,13 @@ const pagamentoUpdateSchema = z.object({
   message: 'Nenhum dado para atualizar',
 })
 
-// GET /api/pagamentos/[id] - Obter um pagamento específico
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async (session) => {
     const { id } = await params
-    const pagamento = await prisma.pagamento.findUnique({
-      where: { id },
-      include: {
-        membro: {
-          include: {
-            usuario: {
-              select: { nome: true, email: true }
-            }
-          }
-        },
-        plano: true
-      }
-    })
+    const pagamento = await getPagamentoById(id)
 
     if (!pagamento) {
       return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 })
@@ -53,7 +45,6 @@ export async function GET(
   })
 }
 
-// PUT /api/pagamentos/[id] - Atualizar pagamento (admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -78,45 +69,18 @@ export async function PUT(
         dataPagamento,
         comprovante,
       } = validation.data
-
-      const updateData: Prisma.PagamentoUpdateInput = {}
-
-      if (membroId !== undefined) updateData.membro = { connect: { id: membroId } }
-      if (planoId !== undefined) updateData.plano = { connect: { id: planoId } }
-      if (valor !== undefined) updateData.valor = valor
-      if (dataVencimento !== undefined) updateData.dataVencimento = parseLocalDate(dataVencimento)
-      if (status !== undefined) updateData.status = status
-      if (formaPagamento !== undefined) updateData.formaPagamento = formaPagamento
-      if (observacao !== undefined) updateData.observacao = observacao
-      if (comprovante !== undefined) updateData.comprovante = comprovante
-
-      if (status === 'PAGO') {
-        updateData.dataPagamento = new Date()
-      } else if (status === 'PENDENTE' || status === 'CANCELADO') {
-        updateData.dataPagamento = null
-      }
-
-      if (dataPagamento !== undefined) {
-        updateData.dataPagamento = dataPagamento ? new Date(dataPagamento) : null
-      }
-
-      const pagamento = await prisma.pagamento.update({
-        where: { id },
-        data: updateData,
-        include: {
-          membro: {
-            include: {
-              usuario: {
-                select: { nome: true }
-              }
-            }
-          },
-          plano: true
-        }
+      const pagamento = await updatePagamentoById(id, {
+        membroId,
+        planoId,
+        valor,
+        dataVencimento,
+        formaPagamento,
+        observacao,
+        status,
+        dataPagamento,
+        comprovante,
       })
 
-      // Keep the recurring billing day aligned with the latest recognized
-      // billing date, not the timestamp when the payment was marked as paid.
       const shouldSyncNextPendingBillingDate =
         pagamento.status === 'PAGO'
         && pagamento.membroId
@@ -149,13 +113,16 @@ export async function PUT(
 
       return NextResponse.json(pagamento)
     } catch (error) {
+      if (error instanceof PagamentoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
+      }
+
       console.error('Erro ao atualizar pagamento:', error)
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   }, { requiredRole: 'ADMIN' })
 }
 
-// DELETE /api/pagamentos/[id] - Cancelar pagamento (admin only)
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -163,23 +130,18 @@ export async function DELETE(
   return withApiAuth(async () => {
     try {
       const { id } = await params
-      const pagamento = await prisma.pagamento.findUnique({ where: { id } })
+      const result = await deletePagamentoById(id)
 
-      if (!pagamento) {
-        return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 })
+      if ('status' in result && result.status === 'CANCELADO') {
+        return NextResponse.json({ ...result, message: 'Pagamento cancelado' })
       }
 
-      if (pagamento.status === 'PAGO') {
-        const updated = await prisma.pagamento.update({
-          where: { id },
-          data: { status: 'CANCELADO' }
-        })
-        return NextResponse.json({ ...updated, message: 'Pagamento cancelado' })
-      }
-
-      await prisma.pagamento.delete({ where: { id } })
       return NextResponse.json({ message: 'Pagamento removido com sucesso' })
     } catch (error) {
+      if (error instanceof PagamentoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
+      }
+
       console.error('Erro ao remover pagamento:', error)
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }

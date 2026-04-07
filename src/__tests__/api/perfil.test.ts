@@ -2,22 +2,43 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/perfil/route'
 
-const { prismaMock, authMock, validarCpfMock, randomBytesMock } = vi.hoisted(() => ({
-  prismaMock: {
+const { prismaMock, authMock, validarCpfMock, randomBytesMock } = vi.hoisted(() => {
+  const prismaMock = {} as {
+    $transaction: ReturnType<typeof vi.fn>
     usuario: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
+      findUnique: ReturnType<typeof vi.fn>
+      update: ReturnType<typeof vi.fn>
+    }
     membro: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
-    },
-  },
-  authMock: vi.fn(),
-  validarCpfMock: vi.fn(),
-  randomBytesMock: vi.fn(),
-}))
+      findUnique: ReturnType<typeof vi.fn>
+      update: ReturnType<typeof vi.fn>
+      create: ReturnType<typeof vi.fn>
+    }
+  }
+  prismaMock.$transaction = vi.fn(async (callbackOrOperations: unknown) => {
+    if (typeof callbackOrOperations === 'function') {
+      return callbackOrOperations(prismaMock)
+    }
+
+    return Promise.all(callbackOrOperations as Promise<unknown>[])
+  })
+  prismaMock.usuario = {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  }
+  prismaMock.membro = {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    create: vi.fn(),
+  }
+
+  return {
+    prismaMock,
+    authMock: vi.fn(),
+    validarCpfMock: vi.fn(),
+    randomBytesMock: vi.fn(),
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
@@ -88,7 +109,8 @@ describe('Perfil API', () => {
   it('creates new member and sets anamnese cookie for token flow', async () => {
     prismaMock.usuario.findUnique.mockResolvedValueOnce({
       id: 'u-1',
-      tokenResetExpira: new Date(Date.now() + 60 * 60 * 1000),
+      tokenPerfil: 'token',
+      tokenPerfilExpira: new Date(Date.now() + 60 * 60 * 1000),
     })
     prismaMock.membro.findUnique
       .mockResolvedValueOnce(null)
@@ -100,6 +122,11 @@ describe('Perfil API', () => {
       createRequest({ token: 'token', nome: 'Aluno', cpf: '123.456.789-00', telefone: '11999999999' })
     )
     expect(res.status).toBe(200)
+    expect(prismaMock.usuario.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tokenPerfil: 'token' },
+      })
+    )
     expect(prismaMock.membro.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

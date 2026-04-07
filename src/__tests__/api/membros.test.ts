@@ -1,45 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { POST } from '@/app/api/membros/route'
-import { prisma } from '@/lib/prisma'
 import { createJsonRequest } from '@/__tests__/test-utils'
 
-// Mocks
-const { withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+const {
+  withApiAuthMock,
+  validateRequestMock,
+  createAdminMembroMock,
+  MembroServiceErrorMock,
+} = vi.hoisted(() => {
   const { createSessionRef, createValidateRequestMock, mockWithApiAuth } = globalThis.__testUtils
   const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
+
+  class MembroServiceErrorMock extends Error {
+    constructor(
+      message: string,
+      public code: string,
+      public status: number
+    ) {
+      super(message)
+      this.name = 'MembroServiceError'
+    }
+  }
 
   return {
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
     validateRequestMock: createValidateRequestMock(),
+    createAdminMembroMock: vi.fn(),
+    MembroServiceErrorMock,
   }
 })
-
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    membro: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    usuario: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    $transaction: vi.fn((callback) => callback(prisma)),
-  },
-}))
 
 vi.mock('@/lib/api', () => ({
   withApiAuth: withApiAuthMock,
   validateRequest: validateRequestMock,
 }))
 
-vi.mock('bcryptjs', () => ({
-  hash: vi.fn((pwd) => Promise.resolve(`hashed_${pwd}`)),
-}))
-
-vi.mock('@/lib/validators', () => ({
-  validarCPF: vi.fn(() => true),
-  validarEmail: vi.fn(() => true),
+vi.mock('@/services/membro.service', () => ({
+  createAdminMembro: createAdminMembroMock,
+  listMembros: vi.fn(),
+  MembroServiceError: MembroServiceErrorMock,
 }))
 
 describe('Membros API - POST /api/membros', () => {
@@ -58,31 +57,26 @@ describe('Membros API - POST /api/membros', () => {
       senha: 'Senha123',
     }
 
-    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null) // Email check
-    vi.mocked(prisma.membro.findUnique).mockResolvedValue(null) // CPF check
-    const createdUser = { id: 'user-123' } satisfies { id: string }
-    vi.mocked(prisma.usuario.create).mockResolvedValue(createdUser)
-    const createdMember = {
+    createAdminMembroMock.mockResolvedValueOnce({
       id: 'membro-123',
       usuarioId: 'user-123',
       status: 'ATIVO',
-    } satisfies { id: string; usuarioId: string; status: string }
-    vi.mocked(prisma.membro.create).mockResolvedValue(createdMember)
+    })
 
     const req = createRequest(validBody)
     const res = await POST(req)
     const json = await res.json()
 
     expect(res.status).toBe(201)
-    expect(prisma.usuario.create).toHaveBeenCalled()
-    expect(prisma.membro.create).toHaveBeenCalled()
+    expect(createAdminMembroMock).toHaveBeenCalledWith(validBody)
     expect(json.id).toBe('membro-123')
   })
 
   it('should return error if email already exists', async () => {
-    const existingUser = { id: 'existing' } satisfies { id: string }
-    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(existingUser)
-    
+    createAdminMembroMock.mockRejectedValueOnce(
+      new MembroServiceErrorMock('Este email já está cadastrado no sistema.', 'EMAIL_ALREADY_EXISTS', 400)
+    )
+
     const req = createRequest({ email: 'exists@example.com' })
     const res = await POST(req)
     const json = await res.json()
@@ -92,39 +86,33 @@ describe('Membros API - POST /api/membros', () => {
   })
 
   it('should return error if CPF already exists', async () => {
-     vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
-     const existingMember = { id: 'existing' } satisfies { id: string }
-     vi.mocked(prisma.membro.findUnique).mockResolvedValue(existingMember)
+    createAdminMembroMock.mockRejectedValueOnce(
+      new MembroServiceErrorMock('Este CPF já está cadastrado para outro membro.', 'CPF_ALREADY_EXISTS', 400)
+    )
 
-     const req = createRequest({ cpf: '123.456.789-00', email: 'new@example.com' })
-     const res = await POST(req)
-     const json = await res.json()
+    const req = createRequest({ cpf: '123.456.789-00', email: 'new@example.com' })
+    const res = await POST(req)
+    const json = await res.json()
 
-     expect(res.status).toBe(400)
-     expect(json.error).toContain('CPF já está cadastrado')
+    expect(res.status).toBe(400)
+    expect(json.error).toContain('CPF já está cadastrado')
   })
 
   it('should create member with null email when email is missing', async () => {
-    vi.mocked(prisma.usuario.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.membro.findUnique).mockResolvedValue(null)
-    const createdUser = { id: 'user-456' } satisfies { id: string }
-    vi.mocked(prisma.usuario.create).mockResolvedValue(createdUser)
-    const createdMember = {
+    createAdminMembroMock.mockResolvedValueOnce({
       id: 'membro-456',
       usuarioId: 'user-456',
       status: 'ATIVO',
-    } satisfies { id: string; usuarioId: string; status: string }
-    vi.mocked(prisma.membro.create).mockResolvedValue(createdMember)
+    })
 
     const req = createRequest({ nome: 'Sem Email', cpf: '123.456.789-11' })
     const res = await POST(req)
 
     expect(res.status).toBe(201)
-    expect(prisma.usuario.create).toHaveBeenCalledWith(
+    expect(createAdminMembroMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          email: null,
-        }),
+        nome: 'Sem Email',
+        cpf: '123.456.789-11',
       })
     )
   })

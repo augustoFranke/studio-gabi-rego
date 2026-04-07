@@ -8,7 +8,7 @@ const { prismaMock, sessionRef, resendMock, withApiAuthMock } = vi.hoisted(() =>
   return {
     prismaMock: createPrismaMock({
       membro: ['findUnique'],
-      anamnese: ['upsert'],
+      anamnese: ['upsert', 'update'],
       usuario: ['update'],
     }),
     sessionRef,
@@ -53,7 +53,7 @@ describe('Minha Anamnese API', () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce({
       id: 'm-1',
       sexo: 'MASCULINO',
-      anamnese: { id: 'a-1' },
+      anamnese: { id: 'a-1', objetivo: '  Saúde  ', experienciaMusculacao: '  Intermediário  ', parq1: 'Sim' },
     })
 
     const res = await GET()
@@ -61,7 +61,21 @@ describe('Minha Anamnese API', () => {
 
     expect(res.status).toBe(200)
     expect(json.sexo).toBe('MASCULINO')
-    expect(json.anamnese).toEqual({ id: 'a-1' })
+    expect(json.anamnese).toMatchObject({
+      objetivo: 'Saúde',
+      experienciaMusculacao: 'Intermediário',
+      parq1: 'Sim',
+    })
+    expect(prismaMock.anamnese.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { membroId: 'm-1' },
+        data: expect.objectContaining({
+          objetivo: 'Saúde',
+          experienciaMusculacao: 'Intermediário',
+          parq1: 'Sim',
+        }),
+      })
+    )
   })
 
   it('POST returns 404 when member not found', async () => {
@@ -128,6 +142,49 @@ describe('Minha Anamnese API', () => {
         update: expect.objectContaining({
           objetivo: 'Saude',
           altura: null,
+        }),
+      })
+    )
+  })
+
+  it('POST persists medical history, experience, and PAR-Q fields', async () => {
+    prismaMock.membro.findUnique.mockResolvedValueOnce({
+      id: 'm-1',
+      usuario: { email: 'user@example.com', nome: 'Aluno', onboardingCompleto: true },
+    })
+
+    const req = new NextRequest('http://localhost:3000/api/minha-anamnese', {
+      method: 'POST',
+      body: JSON.stringify({
+        condicaoMedica: 'Sim',
+        condicaoMedicaQual: 'Asma',
+        experienciaMusculacao: 'Intermediário',
+        expectativas: 'Ganhar força',
+        parq1: 'Não',
+        parq7: 'Sim',
+      }),
+    })
+    const res = await POST(req)
+
+    expect(res.status).toBe(200)
+    expect(prismaMock.anamnese.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          membroId: 'm-1',
+          condicaoMedica: 'Sim',
+          condicaoMedicaQual: 'Asma',
+          experienciaMusculacao: 'Intermediário',
+          expectativas: 'Ganhar força',
+          parq1: 'Não',
+          parq7: 'Sim',
+        }),
+        update: expect.objectContaining({
+          condicaoMedica: 'Sim',
+          condicaoMedicaQual: 'Asma',
+          experienciaMusculacao: 'Intermediário',
+          expectativas: 'Ganhar força',
+          parq1: 'Não',
+          parq7: 'Sim',
         }),
       })
     )

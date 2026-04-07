@@ -7,11 +7,11 @@ The system is a single Next.js App Router application that serves:
 - Auth/onboarding flows (`(auth)` routes)
 - JSON API routes under `src/app/api/**`
 
-It uses Prisma for all persistence, NextAuth credentials-based login with JWT sessions, and middleware/API wrappers for authorization boundaries.
+It uses Prisma for all persistence, NextAuth credentials-based login with JWT sessions, and route-proxy/API wrappers for authorization boundaries.
 
 ## Component Interaction Model
 - Browser requests page routes.
-- `src/middleware.ts` performs route-level session/role checks before render.
+- `src/proxy.ts` performs route-level session/role checks before render.
 - Server components/layouts call `auth()` (`src/lib/auth.ts`) for session-aware rendering.
 - Client components fetch APIs through `fetch`/SWR (`src/lib/fetcher.ts`).
 - API handlers are typically wrapped by `withApiAuth` (`src/lib/api.ts`) and call Prisma or service-layer helpers.
@@ -24,8 +24,8 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 
 ## Data Flow
 ### Request Lifecycle (Typical Protected Resource)
-1. Request hits middleware and is route-classified (`PUBLIC_ROUTES`, `ADMIN_ROUTES`, `MEMBER_ROUTES`).
-2. Middleware reads JWT cookie via `next-auth/jwt` and redirects on mismatch.
+1. Request hits the route proxy and is route-classified (`PUBLIC_ROUTES`, `ADMIN_ROUTES`, `MEMBER_ROUTES`).
+2. The route proxy reads JWT cookie via `next-auth/jwt` and redirects on mismatch.
 3. API request enters `route.ts`; `withApiAuth` validates session and optional role.
 4. Request body is schema-validated (Zod) where applicable.
 5. Handler executes Prisma queries directly or via `src/services/*`.
@@ -77,7 +77,7 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 - Session strategy: JWT (`session.strategy = "jwt"`, 24h max age)
 
 ## Authorization
-- Middleware route gating by role.
+- Route-proxy gating by role.
 - API role gating with `withApiAuth(..., { requiredRole })`.
 - Ownership enforcement on per-resource reads (`ensureOwnerOrAdmin`) for member-owned records (payments, training plans, bookings).
 
@@ -94,12 +94,14 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 
 ## Deployment And Runtime Topology
 ## Vercel Path
+- Vercel is the only production deployment target.
 - `vercel.json` uses `npm run vercel-build`.
 - `vercel-build` script runs Prisma generate, optional migration deploy, tests, then Next build.
 
 ## Docker Path
-- Multi-stage Dockerfile builds standalone Next output and ships Prisma runtime assets.
-- `docker-compose.yml` defines app + postgres, health checks, and network wiring.
+- Docker is local-only for smoke and integration testing.
+- `Dockerfile` and `docker-compose.local.yml` define a reproducible app + postgres test harness.
+- Production hosting and scaling assumptions must not depend on Docker.
 
 ## CI
 - `.github/workflows/ci.yml` runs:
@@ -115,7 +117,7 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 
 ## Evidence
 ### Files
-- Auth and guardrails: `src/lib/auth.ts`, `src/lib/api.ts`, `src/middleware.ts`, `src/app/api/auth/[...nextauth]/route.ts`
+- Auth and guardrails: `src/lib/auth.ts`, `src/lib/api.ts`, `src/proxy.ts`, `src/app/api/auth/[...nextauth]/route.ts`
 - API domains: `src/app/api/**/route.ts`
 - Services: `src/services/agendamento.service.ts`, `src/services/treino.service.ts`
 - Scheduler/jobs: `src/lib/scheduler.ts`, `src/lib/jobs/cobranca-whatsapp.ts`
@@ -124,7 +126,7 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 - Runtime/deploy: `next.config.ts`, `vercel.json`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`
 
 ### Commits
-- `a0e14a9` - standardized Next.js middleware entrypoint.
+- `a0e14a9` - standardized Next.js route proxy entrypoint.
 - `1a16a42` - hardened auth/data endpoints, rate-limit surface expansion.
 - `8df24b4` - tightened cron auth + extracted anamnese sanitization.
 - `8f771b7` - fixed-slot recurrence model introduction.

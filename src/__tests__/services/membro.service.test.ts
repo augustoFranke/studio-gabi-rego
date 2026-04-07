@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getMembroById, listMembros } from '@/services/membro.service'
+import { createAdminMembro, getMembroById, listMembros } from '@/services/membro.service'
 import { prisma } from '@/lib/prisma'
 
 vi.mock('@/lib/prisma', () => ({
@@ -7,8 +7,30 @@ vi.mock('@/lib/prisma', () => ({
     membro: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      create: vi.fn(),
     },
+    usuario: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    plano: {
+      findUnique: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
   },
+}))
+
+vi.mock('bcryptjs', () => ({
+  hash: vi.fn((value: string) => Promise.resolve(`hashed:${value}`)),
+}))
+
+vi.mock('@/lib/email', () => ({
+  normalizeEmailForStorage: vi.fn((value: string) => value?.trim().toLowerCase() ?? null),
+}))
+
+vi.mock('@/lib/validators', () => ({
+  validarCPF: vi.fn(() => true),
+  validarEmail: vi.fn(() => true),
 }))
 
 describe('membro.service', () => {
@@ -64,5 +86,48 @@ describe('membro.service', () => {
         }),
       })
     )
+  })
+
+  it('createAdminMembro creates user and member with normalized data', async () => {
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.plano.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.usuario.create).mockResolvedValueOnce({ id: 'u-1' })
+    vi.mocked(prisma.membro.create).mockResolvedValueOnce({ id: 'm-1' })
+
+    const member = await createAdminMembro({
+      nome: '  Ana  ',
+      email: 'ANA@EXAMPLE.COM',
+      senha: 'Senha123',
+      cpf: '123.456.789-00',
+      telefone: '(11) 99999-9999',
+      sexo: 'FEMININO',
+      horariosFixos: [],
+    })
+
+    expect(prisma.usuario.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          nome: '  Ana  ',
+          email: 'ana@example.com',
+          senha: 'hashed:Senha123',
+          senhaDefinida: true,
+          role: 'MEMBRO',
+          onboardingCompleto: true,
+          etapaOnboarding: 4,
+        }),
+      })
+    )
+    expect(prisma.membro.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          usuarioId: 'u-1',
+          cpf: '12345678900',
+          telefone: '11999999999',
+          sexo: 'FEMININO',
+        }),
+      })
+    )
+    expect(member).toEqual({ id: 'm-1' })
   })
 })

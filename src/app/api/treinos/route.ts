@@ -49,13 +49,15 @@ export async function POST(request: NextRequest) {
 
     const { membroId, nome, data, objetivo, observacoes, exercicios } = validation.data
 
-    // Desativar fichas anteriores do membro (only if membroId provided)
-    if (membroId) {
-      await deactivateActiveFichas(membroId)
+    if (!membroId) {
+      return NextResponse.json({ error: 'membroId é obrigatório' }, { status: 400 })
     }
 
+    // Desativar fichas anteriores do membro (only if membroId provided)
+    await deactivateActiveFichas(membroId)
+
     const ficha = await createFichaTreino({
-      membroId: membroId || '',
+      membroId,
       nome,
       data,
       objetivo,
