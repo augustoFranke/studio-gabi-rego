@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const summary = await executarTodasTarefas()
-    return NextResponse.json(summary)
+    const hasFailures = summary.cobrancas.failed > 0 || summary.aniversarios.failed > 0
+    return NextResponse.json(summary, { status: hasFailures ? 500 : 200 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro interno do servidor'
     return NextResponse.json({ error: message }, { status: 500 })

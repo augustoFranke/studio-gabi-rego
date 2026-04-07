@@ -18,7 +18,7 @@ export default async function AdminLayout({
   }
 
   if (session.user.role !== "ADMIN") {
-    redirect("/meus-dados")
+    redirect("/inicio")
   }
 
   const { cookies } = await import("next/headers")

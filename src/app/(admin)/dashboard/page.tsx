@@ -6,6 +6,14 @@ import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { unstable_cache } from "next/cache"
 import { DiaSemana } from "@prisma/client"
+import {
+  addDaysYmd,
+  combineYmdAndTime,
+  getAppTimezone,
+  getDateFromYmd,
+  getTimeHmInTimeZone,
+  getYmdInTimeZone,
+} from "@/lib/dates"
 
 export const dynamic = "force-dynamic"
 
@@ -26,46 +34,17 @@ const dayMap: DiaSemana[] = [
   DiaSemana.SABADO,
 ]
 
-// Helper function to check if a time string (HH:MM) is before the current time
-const isTimeInPast = (timeString: string, currentHour: number, currentMinute: number): boolean => {
-  const [hours, minutes] = timeString.split(':').map(Number)
-  if (hours < currentHour) return true
-  if (hours === currentHour && minutes < currentMinute) return true
-  return false
-}
-
 export default async function DashboardPage() {
-  // Get current time in Brazil (America/Cuiaba)
   const now = new Date()
-  const timeZone = 'America/Cuiaba'
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: false
-  })
+  const timeZone = getAppTimezone()
+  const todayYmd = getYmdInTimeZone(now, timeZone)
+  const currentTimeHm = getTimeHmInTimeZone(now, timeZone)
+  const today = getDateFromYmd(todayYmd)
+  const tomorrow = getDateFromYmd(addDaysYmd(todayYmd, 1))
+  const diaSemanaHoje = dayMap[today.getDay()]
 
-  const parts = formatter.formatToParts(now)
-  const getPart = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10)
-
-  const year = getPart('year')
-  const month = getPart('month') - 1 // JS months are 0-based
-  const day = getPart('day')
-  const currentHour = getPart('hour')
-  const currentMinute = getPart('minute')
-
-  // Construct "today" as UTC midnight for the current day in Brazil
-  // This matches how Prisma reads @db.Date columns (UTC midnight)
-  const today = new Date(Date.UTC(year, month, day))
-  const diaSemanaHoje = dayMap[today.getUTCDay()]
-
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const firstDayOfMonth = getDateFromYmd(`${todayYmd.slice(0, 7)}-01`)
+  const currentDateTimeKey = combineYmdAndTime(todayYmd, currentTimeHm)
 
   const getDashboardData = unstable_cache(
     async () => {
@@ -173,7 +152,7 @@ export default async function DashboardPage() {
         pagamentosPendentes,
       }
     },
-    ['dashboard-metrics', today.toISOString().slice(0, 10)],
+    ['dashboard-metrics', todayYmd],
     { revalidate: 30 }
   )
 
@@ -188,21 +167,9 @@ export default async function DashboardPage() {
 
   // Filter appointments to show only upcoming classes (not classes that already happened today)
   const proximosAgendamentos = todosAgendamentos.filter((agendamento) => {
-    const agendamentoDate = new Date(agendamento.data)
-    agendamentoDate.setHours(0, 0, 0, 0)
-
-    // If the appointment is for a future day, include it
-    if (agendamentoDate.getTime() > today.getTime()) {
-      return true
-    }
-
-    // If the appointment is for today, check if the start time hasn't passed yet
-    if (agendamentoDate.getTime() === today.getTime()) {
-      return !isTimeInPast(agendamento.horario.horaInicio, currentHour, currentMinute)
-    }
-
-    // Shouldn't happen due to query filter, but exclude past days
-    return false
+    const scheduledYmd = getYmdInTimeZone(agendamento.data, timeZone)
+    const scheduledKey = combineYmdAndTime(scheduledYmd, agendamento.horario.horaInicio)
+    return scheduledKey > currentDateTimeKey
   }).slice(0, 5) // Take only the first 5 after filtering
 
   const ocupacaoHoje = totalVagasHoje._sum.vagasTotal
@@ -214,7 +181,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Visão geral do seu estúdio - {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+          Visão geral do seu estúdio - {format(today, "dd 'de' MMMM", { locale: ptBR })}
         </p>
       </div>
 

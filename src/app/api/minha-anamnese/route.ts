@@ -2,7 +2,11 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { withApiAuth } from "@/lib/api"
-import { sanitizeAnamnesePayload } from "@/lib/anamnese"
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+} from "@/lib/anamnese"
 
 // GET - Fetch member's anamnesis
 export async function GET() {
@@ -20,9 +24,26 @@ export async function GET() {
         )
       }
 
+      const normalized = normalizeAnamneseRecord(
+        extractCanonicalAnamneseData(membro.anamnese)
+      )
+      if ("error" in normalized) {
+        return NextResponse.json(
+          { error: "Dados de anamnese inválidos" },
+          { status: 500 }
+        )
+      }
+
+      if (membro.anamnese && normalized.changed) {
+        await prisma.anamnese.update({
+          where: { membroId: membro.id },
+          data: normalized.data,
+        })
+      }
+
       return NextResponse.json({
         sexo: membro.sexo,
-        anamnese: membro.anamnese || null,
+        anamnese: membro.anamnese ? normalized.data : null,
       })
     } catch (error) {
       console.error("Erro ao buscar anamnese:", error)

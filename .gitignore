@@ -76,6 +76,8 @@ utility/csv/
 
 # Local assistant artifacts
 .claude/
+/.agents/skills
+/.agents/skills/
 
 # Production-only repo curation (keep local, do not track remotely)
 /.planning/
@@ -88,7 +90,6 @@ utility/csv/
 /RUNBOOK.md
 /README.md
 /components.json
-/docs/
 /specs/
 /AGENTS.md
 /CLAUDE.md

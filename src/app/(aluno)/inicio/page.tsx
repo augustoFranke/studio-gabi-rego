@@ -8,6 +8,13 @@ import { Calendar, Dumbbell, Clock, CheckCircle2, ArrowRight } from "lucide-reac
 import { format, startOfWeek, endOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import {
+  combineYmdAndTime,
+  getAppTimezone,
+  getDateFromYmd,
+  getTimeHmInTimeZone,
+  getYmdInTimeZone,
+} from "@/lib/dates"
 
 export const dynamic = "force-dynamic"
 
@@ -32,36 +39,28 @@ export default async function MemberDashboard() {
   const membroId = membro.id
   const firstName = session.user.name?.split(' ')[0] || 'Aluno'
   const now = new Date()
-  const todayStart = new Date(now)
-  todayStart.setHours(0, 0, 0, 0)
-  
-  // Set time to midnight for today to include classes from today that might be later?
-  // Actually 'now' is fine for "Next Class". 
-  // For "This Week", we need range.
-  
-  const startWeek = startOfWeek(now, { weekStartsOn: 1 }) // Monday
-  const endWeek = endOfWeek(now, { weekStartsOn: 1 })
+  const timeZone = getAppTimezone()
+  const todayYmd = getYmdInTimeZone(now, timeZone)
+  const currentTimeHm = getTimeHmInTimeZone(now, timeZone)
+  const today = getDateFromYmd(todayYmd)
+  const nowKey = combineYmdAndTime(todayYmd, currentTimeHm)
+  const startWeek = startOfWeek(today, { weekStartsOn: 1 })
+  const endWeek = endOfWeek(today, { weekStartsOn: 1 })
 
   // Parallel data fetching
-  const [nextClass, classesScheduledCount, classesAttendedCount] = await Promise.all([
-    // 1. Next upcoming class
-    prisma.agendamento.findFirst({
+  const [upcomingClasses, classesScheduledCount, classesAttendedCount] = await Promise.all([
+    prisma.agendamento.findMany({
       where: {
         membroId,
-        // Find classes where date is today or future
-        // Note: data is Date (midnight usually). Time is in horario.
-        // If data > today, it's future.
-        // If data == today, we need to check time.
-        // For simplicity, let's just get the first one >= today 
-        // and let the user see it even if it was 1 hour ago (today).
         data: {
-          gte: todayStart,
+          gte: today,
         },
       },
       orderBy: [
         { data: 'asc' },
         { horario: { horaInicio: 'asc' } }
       ],
+      take: 50,
       select: {
         data: true,
         presente: true,
@@ -74,7 +73,6 @@ export default async function MemberDashboard() {
       },
     }),
 
-    // 2. Weekly stats (attended vs total scheduled this week)
     prisma.agendamento.count({
       where: {
         membroId,
@@ -96,12 +94,21 @@ export default async function MemberDashboard() {
     }),
   ])
 
+  const nextClass = upcomingClasses.find((agendamento) => {
+    const scheduledYmd = getYmdInTimeZone(agendamento.data, timeZone)
+    const scheduledKey = combineYmdAndTime(scheduledYmd, agendamento.horario.horaInicio)
+    return scheduledKey > nowKey
+  }) ?? null
+  const nextClassDate = nextClass
+    ? getDateFromYmd(getYmdInTimeZone(nextClass.data, timeZone))
+    : null
+
   // Process Weekly Stats
   const classesAttended = classesAttendedCount
   const classesScheduled = classesScheduledCount
   
   // Determine greeting based on time of day
-  const hour = now.getHours()
+  const hour = Number(currentTimeHm.split(':')[0] || '0')
   let greeting = "Olá"
   if (hour < 12) greeting = "Bom dia"
   else if (hour < 18) greeting = "Boa tarde"
@@ -148,7 +155,7 @@ export default async function MemberDashboard() {
               <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
                 <div className="space-y-1">
                   <p className="font-medium text-lg capitalize">
-                    {format(nextClass.data, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                    {format(nextClassDate ?? nextClass.data, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                   </p>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />

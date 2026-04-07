@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { DiaSemana } from '@prisma/client'
+import { DiaSemana, Prisma } from '@prisma/client'
 
 // GET /api/horarios - Listar horarios disponiveis
 export async function GET(request: NextRequest) {
@@ -58,14 +58,25 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const horario = await prisma.horarioDisponivel.create({
-        data: {
-          diaSemana,
-          horaInicio,
-          horaFim,
-          vagasTotal,
-        },
-      })
+      let horario
+      try {
+        horario = await prisma.horarioDisponivel.create({
+          data: {
+            diaSemana,
+            horaInicio,
+            horaFim,
+            vagasTotal,
+          },
+        })
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return NextResponse.json(
+            { error: 'Ja existe um horario neste dia e hora' },
+            { status: 400 }
+          )
+        }
+        throw error
+      }
 
       return NextResponse.json(horario, { status: 201 })
     } catch (error) {

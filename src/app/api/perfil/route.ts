@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
-import { randomBytes } from "crypto"
-import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { withApiAuth, validateRequest } from "@/lib/api"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
+import {
+  completePerfilFromToken,
+  getPerfilByUsuarioId,
+  updatePerfilForUser,
+  savePerfilForUser,
+} from "@/services/perfil.service"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -28,33 +32,13 @@ const perfilUpdateSchema = z.object({
 
 export async function GET() {
   return withApiAuth(async (session) => {
-    const membro = await prisma.membro.findUnique({
-      where: { usuarioId: session.user.id },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-          },
-        },
-      },
-    })
+    const membro = await getPerfilByUsuarioId(session.user.id)
 
     if (!membro) {
       return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 })
     }
 
-    return NextResponse.json({
-      id: membro.id,
-      nome: membro.usuario.nome || "",
-      email: membro.usuario.email,
-      cpf: membro.cpf,
-      rg: membro.rg,
-      telefone: membro.telefone,
-      dataNascimento: membro.dataNascimento,
-      sexo: membro.sexo,
-    })
+    return NextResponse.json(membro)
   })
 }
 
@@ -86,29 +70,17 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const membro = await prisma.membro.findUnique({
-      where: { usuarioId: session.user.id },
-      select: { id: true },
+    const result = await updatePerfilForUser({
+      userId: session.user.id,
+      nome,
+      telefone,
+      dataNascimento,
+      sexo: normalizedSexo,
     })
 
-    if (!membro) {
-      return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 })
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status })
     }
-
-    await prisma.$transaction([
-      prisma.usuario.update({
-        where: { id: session.user.id },
-        data: { nome },
-      }),
-      prisma.membro.update({
-        where: { id: membro.id },
-        data: {
-          telefone: normalizedTelefone,
-          dataNascimento: normalizedDataNascimento,
-          sexo: normalizedSexo,
-        },
-      }),
-    ])
 
     return NextResponse.json({ success: true })
   })
@@ -127,42 +99,6 @@ export async function POST(request: Request) {
     }
 
     const { token, nome, cpf, rg, telefone, dataNascimento, sexo } = validation.data
-
-    let userId: string | null = null
-
-    // Check for profile completion token (onboarding flow)
-    if (token) {
-      const usuario = await prisma.usuario.findUnique({
-        where: { tokenReset: token },
-      })
-
-      if (!usuario) {
-        return NextResponse.json(
-          { error: "Token inválido ou expirado" },
-          { status: 401 }
-        )
-      }
-
-      if (usuario.tokenResetExpira && usuario.tokenResetExpira < new Date()) {
-        return NextResponse.json(
-          { error: "Token expirado. Faça login novamente." },
-          { status: 401 }
-        )
-      }
-
-      userId = usuario.id
-    } else {
-      // Check for session (logged-in flow)
-      const session = await auth()
-      if (!session?.user?.id) {
-        return NextResponse.json(
-          { error: "Não autorizado" },
-          { status: 401 }
-        )
-      }
-      userId = session.user.id
-    }
-
     const hasCpf = cpf !== undefined
     const hasRg = rg !== undefined
     const hasTelefone = telefone !== undefined
@@ -171,14 +107,8 @@ export async function POST(request: Request) {
 
     const normalizedCpf = cpf ? cpf.replace(/\D/g, "") : null
     const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
-    const normalizedRg = rg && rg.trim() !== "" ? rg : null
-    const normalizedSexo = sexo ? sexo : null
     const normalizedDataNascimento =
       dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
-    const isDataNascimentoInvalid =
-      Boolean(dataNascimento) &&
-      normalizedDataNascimento !== null &&
-      Number.isNaN(normalizedDataNascimento.getTime())
 
     if (normalizedCpf && !validarCPF(normalizedCpf)) {
       return NextResponse.json({ error: "CPF inválido" }, { status: 400 })
@@ -188,89 +118,70 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Telefone inválido" }, { status: 400 })
     }
 
-    if (isDataNascimentoInvalid) {
+    if (
+      normalizedDataNascimento &&
+      Number.isNaN(normalizedDataNascimento.getTime())
+    ) {
       return NextResponse.json(
         { error: "Data de nascimento inválida" },
         { status: 400 }
       )
     }
 
-    const isTokenFlow = Boolean(token)
-    const anamneseToken = isTokenFlow ? randomBytes(32).toString("hex") : null
-    const anamneseTokenExpiry = isTokenFlow ? new Date(Date.now() + 60 * 60 * 1000) : null
+    let result
 
-    // Parallelize CPF check and member profile lookup
-    const [existingCpf, existingMembro] = await Promise.all([
-      normalizedCpf
-        ? prisma.membro.findUnique({ where: { cpf: normalizedCpf } })
-        : Promise.resolve(null),
-      prisma.membro.findUnique({ where: { usuarioId: userId } }),
-    ])
-
-    if (existingCpf && existingCpf.usuarioId !== userId) {
-      return NextResponse.json(
-        { error: "Este CPF já está cadastrado" },
-        { status: 400 }
-      )
-    }
-
-    if (existingMembro) {
-      // Update existing profile
-      await prisma.membro.update({
-        where: { usuarioId: userId },
-        data: {
-          ...(hasCpf ? { cpf: normalizedCpf } : {}),
-          ...(hasRg ? { rg: normalizedRg } : {}),
-          ...(hasTelefone ? { telefone: normalizedTelefone } : {}),
-          ...(hasDataNascimento ? { dataNascimento: normalizedDataNascimento } : {}),
-          ...(hasSexo ? { sexo: normalizedSexo as "MASCULINO" | "FEMININO" | null } : {}),
-          ...(isTokenFlow
-            ? {
-                anamneseToken,
-                anamneseTokenExpira: anamneseTokenExpiry,
-              }
-            : {}),
-        },
+    if (token) {
+      result = await completePerfilFromToken({
+        token,
+        nome,
+        cpf: normalizedCpf,
+        rg: rg && rg.trim() !== "" ? rg : null,
+        telefone: normalizedTelefone,
+        dataNascimento: normalizedDataNascimento?.toISOString() ?? null,
+        sexo: sexo === "" ? null : sexo,
+        hasCpf,
+        hasRg,
+        hasTelefone,
+        hasDataNascimento,
+        hasSexo,
       })
     } else {
-      // Create new member profile
-      await prisma.membro.create({
-        data: {
-          usuarioId: userId,
-          cpf: normalizedCpf,
-          rg: normalizedRg,
-          telefone: normalizedTelefone,
-          dataNascimento: normalizedDataNascimento,
-          sexo: normalizedSexo as "MASCULINO" | "FEMININO" | null,
-          status: "PENDENTE",
-          ...(isTokenFlow
-            ? {
-                anamneseToken,
-                anamneseTokenExpira: anamneseTokenExpiry,
-              }
-            : {}),
-        },
+      // Check for session (logged-in flow)
+      const session = await auth()
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: "Não autorizado" },
+          { status: 401 }
+        )
+      }
+      result = await savePerfilForUser({
+        userId: session.user.id,
+        nome,
+        cpf: normalizedCpf,
+        rg: rg && rg.trim() !== "" ? rg : null,
+        telefone: normalizedTelefone,
+        dataNascimento: normalizedDataNascimento?.toISOString() ?? null,
+        sexo: sexo === "" ? null : sexo,
+        hasCpf,
+        hasRg,
+        hasTelefone,
+        hasDataNascimento,
+        hasSexo,
       })
     }
 
-    // Update user name and advance onboarding
-    await prisma.usuario.update({
-      where: { id: userId },
-      data: {
-        nome,
-        etapaOnboarding: 3, // Move to anamnesis step
-        tokenReset: null, // Clear the profile token
-        tokenResetExpira: null,
-      },
-    })
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status })
+    }
 
     const response = NextResponse.json({
       success: true,
       message: "Perfil salvo com sucesso!",
+      anamneseToken: result.anamneseToken,
     })
 
-    if (isTokenFlow && anamneseToken) {
-      response.cookies.set("anamnese_token", anamneseToken, {
+    if (result.anamneseToken) {
+      response.cookies.set("anamnese_token", result.anamneseToken, {
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax",

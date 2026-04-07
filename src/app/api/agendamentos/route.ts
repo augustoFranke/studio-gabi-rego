@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { withApiAuth, validateRequest } from '@/lib/api'
-import { parseLocalDate } from '@/lib/schedule'
-import { syncAgendamentosRecorrentes, validateHorarioFixoLimit } from '@/services/agendamento.service'
+import {
+  AgendamentoServiceError,
+  createAgendamento,
+  listAgendamentos,
+} from '@/services/agendamento.service'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 const agendamentoSchema = z.object({
   membroId: z.string().optional(),
@@ -13,85 +14,27 @@ const agendamentoSchema = z.object({
   scope: z.enum(['single', 'weekly']).optional(),
 })
 
-const agendamentoSelect = {
-  id: true,
-  membroId: true,
-  horarioId: true,
-  data: true,
-  presente: true,
-  observacao: true,
-  membro: {
-    select: {
-      id: true,
-      fotoUrl: true,
-      usuario: {
-        select: { nome: true, email: true },
-      },
-    },
-  },
-  horario: {
-    select: {
-      id: true,
-      diaSemana: true,
-      horaInicio: true,
-      horaFim: true,
-      vagasTotal: true,
-    },
-  },
-} satisfies Prisma.AgendamentoSelect
-
 // GET /api/agendamentos - Listar agendamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
-    if (session.user.role === 'MEMBRO' && !session.user.membroId) {
-      return NextResponse.json({ error: 'Perfil incompleto' }, { status: 403 })
-    }
-
     const searchParams = request.nextUrl.searchParams
-    const dataInicio = searchParams.get('dataInicio')
-    const dataFim = searchParams.get('dataFim')
-    const membroId = searchParams.get('membroId')
+    try {
+      const agendamentos = await listAgendamentos({
+        sessionRole: session.user.role,
+        sessionMembroId: session.user.membroId,
+        membroId: searchParams.get('membroId'),
+        dataInicio: searchParams.get('dataInicio'),
+        dataFim: searchParams.get('dataFim'),
+      })
 
-    const where: Prisma.AgendamentoWhereInput = {}
-
-    // Se for membro, só pode ver seus próprios agendamentos
-    if (session.user.role === 'MEMBRO' && session.user.membroId) {
-      where.membroId = session.user.membroId
-    } else if (membroId) {
-      where.membroId = membroId
-    }
-
-    if (dataInicio && dataFim) {
-      const inicio = parseLocalDate(dataInicio)
-      const fim = parseLocalDate(dataFim)
-      const hoje = new Date()
-      hoje.setHours(12, 0, 0, 0)
-
-      if (fim >= hoje) {
-        const inicioSync = inicio > hoje ? inicio : hoje
-        const membroScope =
-          session.user.role === 'MEMBRO' ? session.user.membroId : membroId ?? undefined
-
-        await syncAgendamentosRecorrentes({
-          startDate: inicioSync,
-          endDate: fim,
-          membroId: membroScope,
-        })
+      return NextResponse.json(agendamentos)
+    } catch (error) {
+      if (error instanceof AgendamentoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      where.data = {
-        gte: inicio,
-        lte: fim,
-      }
+      throw error
     }
-
-    const agendamentos = await prisma.agendamento.findMany({
-      where,
-      select: agendamentoSelect,
-      orderBy: [{ data: 'asc' }, { horario: { horaInicio: 'asc' } }],
-    })
-
-    return NextResponse.json(agendamentos)
   })
 }
 
@@ -104,104 +47,20 @@ export async function POST(request: NextRequest) {
       return validation.error
     }
 
-    const { membroId, horarioId, data, scope } = validation.data
-    const recurrenceScope =
-      session.user.role === 'ADMIN' ? scope ?? 'single' : 'single'
-
-    // Se for membro, só pode agendar para si mesmo
-    const membroIdFinal =
-      session.user.role === 'MEMBRO' ? session.user.membroId : membroId
-
-    if (!membroIdFinal) {
-      return NextResponse.json({ error: 'Membro ID não identificado' }, { status: 400 })
-    }
-
-    if (!horarioId) {
-      return NextResponse.json({ error: 'Horário não informado' }, { status: 400 })
-    }
-
-    if (!data) {
-      return NextResponse.json({ error: 'Data não informada' }, { status: 400 })
-    }
-
-    // Parse date once for all queries
-    const dataAgendamento = parseLocalDate(data)
-
-    // Run all validation queries in parallel for better performance
-    const [horario, agendamentosExistentes, jaAgendado] = await Promise.all([
-      prisma.horarioDisponivel.findUnique({
-        where: { id: horarioId },
-      }),
-      prisma.agendamento.count({
-        where: {
-          horarioId,
-          data: dataAgendamento,
-        },
-      }),
-      prisma.agendamento.findFirst({
-        where: {
-          membroId: membroIdFinal,
-          horarioId,
-          data: dataAgendamento,
-        },
-      }),
-    ])
-
-    // Verificar se o horário existe e está ativo
-    if (!horario || !horario.ativo) {
-      return NextResponse.json({ error: 'Horário não disponível' }, { status: 400 })
-    }
-
-    // Verificar vagas disponíveis
-    if (agendamentosExistentes >= horario.vagasTotal) {
-      return NextResponse.json({ error: 'Não há vagas disponíveis neste horário' }, { status: 400 })
-    }
-
-    // Verificar se o membro já tem agendamento neste horário/data
-    if (jaAgendado) {
-      return NextResponse.json({ error: 'Você já tem um agendamento neste horário' }, { status: 400 })
-    }
-
-    if (recurrenceScope === 'weekly') {
-      const limitCheck = await validateHorarioFixoLimit({
-        membroId: membroIdFinal,
-        diaSemana: horario.diaSemana,
-        hora: horario.horaInicio,
+    try {
+      const agendamento = await createAgendamento({
+        sessionRole: session.user.role,
+        sessionMembroId: session.user.membroId,
+        ...validation.data,
       })
 
-      if (!limitCheck.ok) {
-        return NextResponse.json({ error: limitCheck.error }, { status: 400 })
+      return NextResponse.json(agendamento, { status: 201 })
+    } catch (error) {
+      if (error instanceof AgendamentoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      const horarioFixoExistente = await prisma.horarioFixo.findFirst({
-        where: {
-          membroId: membroIdFinal,
-          diaSemana: horario.diaSemana,
-          hora: horario.horaInicio,
-        },
-        select: { id: true },
-      })
-
-      if (!horarioFixoExistente) {
-        await prisma.horarioFixo.create({
-          data: {
-            membroId: membroIdFinal,
-            diaSemana: horario.diaSemana,
-            hora: horario.horaInicio,
-          },
-        })
-      }
+      throw error
     }
-
-    const agendamento = await prisma.agendamento.create({
-      data: {
-        membroId: membroIdFinal,
-        horarioId,
-        data: dataAgendamento,
-      },
-      select: agendamentoSelect,
-    })
-
-    return NextResponse.json(agendamento, { status: 201 })
   })
 }

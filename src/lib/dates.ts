@@ -1,3 +1,9 @@
+const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
+
+export function getAppTimezone(): string {
+  return process.env.APP_TIMEZONE || DEFAULT_APP_TIMEZONE
+}
+
 export function getYmdInTimeZone(date: Date, timeZone: string): string {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -15,6 +21,26 @@ export function getYmdInTimeZone(date: Date, timeZone: string): string {
   }
 
   return `${year}-${month}-${day}`
+}
+
+export function getTimeHmInTimeZone(date: Date, timeZone: string): string {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+
+  return formatter.format(date)
+}
+
+export function getDateFromYmd(ymd: string): Date {
+  const [year, month, day] = ymd.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)
+}
+
+export function combineYmdAndTime(ymd: string, time: string): string {
+  return `${ymd} ${time}`
 }
 
 export function addDaysYmd(ymd: string, days: number): string {

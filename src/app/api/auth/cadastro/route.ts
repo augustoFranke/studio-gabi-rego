@@ -113,7 +113,10 @@ export async function POST(request: Request) {
       }
 
       // Validate anamnesis data
-      const anamneseResult = sanitizeAnamnesePayload(anamnese)
+      const anamneseResult = sanitizeAnamnesePayload(anamnese, {
+        ignoreUnknownFields: true,
+        fillMissingFields: true,
+      })
       if ("error" in anamneseResult) {
         return NextResponse.json(
           { error: anamneseResult.error },
@@ -162,7 +165,10 @@ export async function POST(request: Request) {
 
     if (hasFullPayload) {
       // FULL REGISTRATION: Create/update user + membro + anamnese atomically
-      const sanitized = sanitizeAnamnesePayload(anamnese)
+      const sanitized = sanitizeAnamnesePayload(anamnese, {
+        ignoreUnknownFields: true,
+        fillMissingFields: true,
+      })
       if ("error" in sanitized) {
         return NextResponse.json(
           { error: sanitized.error },

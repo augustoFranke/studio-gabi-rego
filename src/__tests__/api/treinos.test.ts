@@ -75,6 +75,24 @@ describe('Treinos API - /api/treinos', () => {
     expect(res.status).toBe(403)
   })
 
+  it('POST returns 400 when membroId is missing', async () => {
+    const res = await POST(
+      new NextRequest('http://localhost:3000/api/treinos', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: 'Treino A',
+        }),
+      })
+    )
+
+    const json = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(json.error).toBe('membroId é obrigatório')
+    expect(prismaMock.fichaTreino.updateMany).not.toHaveBeenCalled()
+    expect(prismaMock.fichaTreino.create).not.toHaveBeenCalled()
+  })
+
   it('POST deactivates previous plans and creates mapped exercises', async () => {
     prismaMock.fichaTreino.updateMany.mockResolvedValue({ count: 1 })
     prismaMock.fichaTreino.create.mockResolvedValue({ id: 'f-1' })

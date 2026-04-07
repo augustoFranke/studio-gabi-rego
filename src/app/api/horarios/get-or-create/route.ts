@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { DiaSemana } from '@prisma/client'
+import { DiaSemana, Prisma } from '@prisma/client'
 import { MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
 
 // POST /api/horarios/get-or-create - Get existing or create new horario
@@ -31,14 +31,32 @@ export async function POST(request: NextRequest) {
       })
 
       if (!horario) {
-        horario = await prisma.horarioDisponivel.create({
-          data: {
-            diaSemana: diaSemana as DiaSemana,
-            horaInicio: horaInicioNorm,
-            horaFim: horaFimNorm,
-            vagasTotal: MAX_CAPACITY_PER_SLOT,
-          },
-        })
+        try {
+          horario = await prisma.horarioDisponivel.create({
+            data: {
+              diaSemana: diaSemana as DiaSemana,
+              horaInicio: horaInicioNorm,
+              horaFim: horaFimNorm,
+              vagasTotal: MAX_CAPACITY_PER_SLOT,
+            },
+          })
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            horario = await prisma.horarioDisponivel.findFirst({
+              where: {
+                diaSemana: diaSemana as DiaSemana,
+                horaInicio: horaInicioNorm,
+                ativo: true,
+              },
+            })
+          } else {
+            throw error
+          }
+        }
+      }
+
+      if (!horario) {
+        return NextResponse.json({ error: 'Nao foi possivel obter horario' }, { status: 409 })
       }
 
       return NextResponse.json(horario)

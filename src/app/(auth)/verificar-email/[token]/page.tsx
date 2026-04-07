@@ -57,7 +57,7 @@ export default function VerificarTokenPage({
 
   function handleContinue() {
     if (isAdmin) {
-      router.push("/admin")
+      router.push("/dashboard")
     } else {
       router.push("/login")
     }

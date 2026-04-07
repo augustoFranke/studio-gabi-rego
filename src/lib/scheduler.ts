@@ -1,141 +1,95 @@
-/**
- * Agendador de tarefas
- * Responsável por agendar e executar tarefas automáticas como:
- * - Cobranças (notificações internas)
- * - Aniversários (notificações internas)
- * - Atualização de status de pagamentos atrasados
- *
- * Em produção, considerar usar:
- * - Vercel Cron Jobs
- * - Upstash QStash
- * - node-cron (se self-hosted)
- */
-
 import { prisma } from '@/lib/prisma'
-import { formatarData, formatarMoeda } from '@/lib/validators'
+import { getAppTimezone, getYmdInTimeZone } from '@/lib/dates'
+import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
+import {
+  createOrRefreshNotification,
+  findExistingNotification,
+  isNotificationDelivered,
+  markNotificationDelivered,
+  markNotificationFailed,
+} from '@/lib/notification-delivery'
 import { Prisma, TipoNotificacao } from '@prisma/client'
-
-type NotificationSkipWhere = Prisma.NotificacaoWhereInput & {
-  membroId: string
-  tipo: TipoNotificacao
-}
+import {
+  formatWhatsappNumber,
+  isEvolutionConfigured,
+  sendWhatsappText,
+} from '@/lib/whatsapp/evolution'
+import { runCobrancaWhatsappT1, type NotificationJobSummary } from '@/lib/jobs/cobranca-whatsapp'
+import { addDays, subDays } from 'date-fns'
 
 type NotificationProcessOptions<T> = {
+  targetDate: string
   items: T[]
-  shouldSkipWhere: (item: T) => NotificationSkipWhere
-  buildNotification: (item: T) => Prisma.NotificacaoCreateInput
+  dedupeKey: (item: T) => string
+  legacyWhere: (item: T) => Prisma.NotificacaoWhereInput
+  buildNotification: (item: T) => Prisma.NotificacaoUncheckedCreateInput
+  sendEmail?: (item: T) => Promise<void>
+  sendWhatsapp?: (item: T) => Promise<void>
 }
 
 async function processNotifications<T>({
+  targetDate,
   items,
-  shouldSkipWhere,
+  dedupeKey,
+  legacyWhere,
   buildNotification,
+  sendEmail,
+  sendWhatsapp,
 }: NotificationProcessOptions<T>) {
-  if (!items.length) return 0
+  const summary: NotificationJobSummary = {
+    targetDate,
+    candidates: items.length,
+    sent: 0,
+    skipped: 0,
+    failed: 0,
+  }
 
-  let processed = 0
+  if (!items.length) {
+    return summary
+  }
 
   for (const item of items) {
-    const existingNotificacao = await prisma.notificacao.findFirst({
-      where: shouldSkipWhere(item),
+    const existingNotificacao = await findExistingNotification({
+      dedupeKey: dedupeKey(item),
+      legacyWhere: legacyWhere(item),
     })
 
-    if (existingNotificacao) {
-      processed++
+    if (isNotificationDelivered(existingNotificacao)) {
+      summary.skipped += 1
       continue
     }
 
-    await prisma.notificacao.create({
+    const notificacao = await createOrRefreshNotification({
+      existing: existingNotificacao,
+      dedupeKey: dedupeKey(item),
       data: buildNotification(item),
     })
 
-    processed++
-  }
-
-  return processed
-}
-
-/**
- * Processa cobranças próximas do vencimento
- */
-export async function processarCobrancas() {
-  const diasAntecedencia = 1
-
-  const agora = new Date()
-  const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000)
-  const since = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
-
-  const pagamentos = await prisma.pagamento.findMany({
-    where: {
-      status: 'PENDENTE',
-      dataVencimento: {
-        gte: agora,
-        lte: limite,
-      },
-      membro: {
-        isNot: null,
-      },
-    },
-    include: {
-      membro: {
-        include: {
-          usuario: true,
-        },
-      },
-    },
-  })
-
-  const pagamentosComMembro = pagamentos.filter(
-    (
-      pagamento
-    ): pagamento is typeof pagamentos[number] & { membro: NonNullable<typeof pagamento.membro> } =>
-      pagamento.membro !== null
-  )
-
-  const getContext = (pagamento: typeof pagamentosComMembro[number]) => {
-    const { membro } = pagamento
-    return {
-      membro,
-      nome: membro.usuario.nome || 'Aluno(a)',
-      valor: formatarMoeda(Number(pagamento.valor)),
-      vencimento: formatarData(pagamento.dataVencimento),
+    try {
+      if (sendEmail) await sendEmail(item)
+      if (sendWhatsapp) await sendWhatsapp(item)
+      await markNotificationDelivered(notificacao)
+      summary.sent += 1
+    } catch (error) {
+      await markNotificationFailed(notificacao, error)
+      summary.failed += 1
     }
   }
 
-  return processNotifications({
-    items: pagamentosComMembro,
-    shouldSkipWhere: (pagamento) => ({
-      membroId: pagamento.membro.id,
-      tipo: TipoNotificacao.COBRANCA,
-      criadoEm: {
-        gte: since,
-      },
-    }),
-    buildNotification: (pagamento) => {
-      const { membro, valor, vencimento } = getContext(pagamento)
-      return {
-        membroId: membro.id,
-        tipo: TipoNotificacao.COBRANCA,
-        titulo: 'Lembrete de Pagamento',
-        mensagem: `Seu pagamento de ${valor} vence em ${vencimento}`,
-        canalEmail: false,
-      }
-    },
-  })
+  return summary
 }
 
-/**
- * Processa aniversariantes do dia
- */
 export async function processarAniversarios() {
+  const timezone = getAppTimezone()
   const hoje = new Date()
-  const mes = hoje.getMonth() + 1
-  const dia = hoje.getDate()
-  const startOfToday = new Date(hoje)
-  startOfToday.setHours(0, 0, 0, 0)
+  const hojeYmd = getYmdInTimeZone(hoje, timezone)
+  const [, mes, dia] = hojeYmd.split('-').map(Number)
+  const whatsappEnabled = isEvolutionConfigured()
+  const legacyCutoff = new Date(hoje.getTime() - 24 * 60 * 60 * 1000)
 
   type AniversarianteRow = {
     id: string
+    telefone: string | null
     usuarioNome: string | null
     usuarioEmail: string | null
   }
@@ -144,6 +98,7 @@ export async function processarAniversarios() {
     Prisma.sql`
       SELECT
         m.id,
+        m.telefone,
         u.nome AS "usuarioNome",
         u.email AS "usuarioEmail"
       FROM membros m
@@ -155,37 +110,56 @@ export async function processarAniversarios() {
     `
   )
 
+  const getContext = (membro: AniversarianteRow) => ({
+    membro,
+    nome: membro.usuarioNome || 'Aluno(a)',
+    email: membro.usuarioEmail,
+    telefone: membro.telefone,
+  })
+
   return processNotifications({
+    targetDate: hojeYmd,
     items: aniversariantesRows,
-    shouldSkipWhere: (membro) => ({
+    dedupeKey: (membro) => `aniversario:${membro.id}:${hojeYmd}`,
+    legacyWhere: (membro) => ({
       membroId: membro.id,
       tipo: TipoNotificacao.ANIVERSARIO,
       criadoEm: {
-        gte: startOfToday,
+        gte: legacyCutoff,
       },
     }),
     buildNotification: (membro) => {
-      const nome = membro.usuarioNome || 'Aluno(a)'
+      const { nome } = getContext(membro)
       return {
         membroId: membro.id,
         tipo: TipoNotificacao.ANIVERSARIO,
         titulo: 'Feliz Aniversário!',
         mensagem: `Parabéns pelo seu aniversário, ${nome}!`,
+        canalWhatsapp: whatsappEnabled,
         canalEmail: false,
       }
     },
+    sendWhatsapp: whatsappEnabled
+      ? async (membro) => {
+          const { nome, telefone } = getContext(membro)
+          const to = formatWhatsappNumber(telefone || '')
+          if (!to) {
+            return
+          }
+
+          await sendWhatsappText({
+            to,
+            text: `Feliz aniversario, ${nome}! Que seu dia seja incrivel. Parabens!`,
+          })
+        }
+      : undefined,
   })
 }
 
-/**
- * Atualiza pagamentos pendentes que passaram da data de vencimento para ATRASADO
- * Deve ser executado diariamente (ex: via cron job)
- */
 export async function atualizarPagamentosAtrasados() {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
-  // Buscar pagamentos pendentes com data de vencimento anterior a hoje
   const pagamentosAtrasados = await prisma.pagamento.updateMany({
     where: {
       status: 'PENDENTE',
@@ -201,19 +175,26 @@ export async function atualizarPagamentosAtrasados() {
   return pagamentosAtrasados.count
 }
 
-/**
- * Executa todas as tarefas agendadas
- * Útil para ser chamado por um cron job ou endpoint de API
- */
+export async function sincronizarAgendamentosRecorrentes() {
+  const today = new Date()
+  const startDate = subDays(today, 30)
+  const endDate = addDays(today, 90)
+  const { created } = await syncAgendamentosRecorrentes({
+    startDate,
+    endDate,
+  })
+
+  return { created, startDate, endDate }
+}
+
 export async function executarTodasTarefas() {
-  // Run atualizarPagamentosAtrasados first (changes PENDENTE -> ATRASADO),
-  // then run the rest in parallel (they query non-overlapping date windows)
   const pagamentosAtualizados = await atualizarPagamentosAtrasados()
 
-  const [cobrancas, aniversarios] = await Promise.all([
-    processarCobrancas(),
+  const [cobrancas, aniversarios, recorrencias] = await Promise.all([
+    runCobrancaWhatsappT1(),
     processarAniversarios(),
+    sincronizarAgendamentosRecorrentes(),
   ])
 
-  return { pagamentosAtualizados, cobrancas, aniversarios }
+  return { pagamentosAtualizados, cobrancas, aniversarios, recorrencias }
 }
