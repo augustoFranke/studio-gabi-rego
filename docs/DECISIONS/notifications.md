@@ -13,6 +13,7 @@ Implement internal cron endpoints protected by `CRON_SECRET` and process notific
 - sends channel messages when configured
 - persists delivery status, attempts, and errors in DB
 - keeps one canonical cobrança reminder pipeline instead of parallel reminder paths
+- centralizes retry/delivery state helpers in `src/lib/notification-delivery.ts`
 
 ## Alternatives Considered (Inferable)
 - Always-on in-process scheduler only.
@@ -33,6 +34,7 @@ Cons:
 ## Impacted Areas
 - `src/lib/scheduler.ts`
 - `src/lib/jobs/cobranca-whatsapp.ts`
+- `src/lib/notification-delivery.ts`
 - `src/lib/whatsapp/evolution.ts`
 - `src/app/api/cron/cobrancas-whatsapp/route.ts`
 - `src/app/api/cron/tarefas-diarias/route.ts`

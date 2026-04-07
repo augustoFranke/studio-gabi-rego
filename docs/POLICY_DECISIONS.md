@@ -18,13 +18,19 @@ This document captures policies enforced (or implied) by code/config, including 
   - `src/app/api/*/route.ts` using `withApiAuth`
 
 ## 2) Password + Email Verification Requirements
-- Policy: Signup/reset passwords must satisfy complexity; login is blocked until email verification and password setup are complete.
+- Policy: Signup/reset passwords must satisfy complexity; login is blocked until email verification and password setup are complete. Onboarding completion is service-driven and uses dedicated token namespaces for email verification, profile completion, and anamnesis handoff.
 - Enforcement:
   - `src/app/api/auth/cadastro/route.ts`
   - `src/app/api/auth/redefinir-senha/route.ts`
+  - `src/app/api/auth/verificar-email/route.ts`
+  - `src/app/api/anamnese-token/route.ts`
+  - `src/app/api/membros/[id]/perfil-link/route.ts`
+  - `src/services/perfil.service.ts`
+  - `src/services/membro.service.ts`
   - `src/lib/auth.ts`
 - Gaps/TODOs:
   - No account lockout policy beyond rate limiting.
+  - The onboarding state machine should remain centralized in service code rather than route/page side effects.
 - Evidence:
   - `src/lib/auth.ts`
   - `src/schemas/auth.schema.ts`
@@ -172,6 +178,7 @@ This document captures policies enforced (or implied) by code/config, including 
   - `docs/DECISIONS/deployment.md`
   - `docs/DEPLOYMENT.md`
   - `docker-compose.local.yml`
+  - `src/proxy.ts`
 - Gaps/TODOs:
   - No formal production Docker support should be added back without an explicit architecture decision.
   - Next.js middleware has been migrated to the `proxy` convention in source, but if upstream tooling changes again the route gate should be rechecked.

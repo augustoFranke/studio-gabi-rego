@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/planos/route'
 
-const { prismaMock, withApiAuthMock, sessionRef } = vi.hoisted(() => {
-  const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+const { prismaMock, withApiAuthMock, validateRequestMock, sessionRef } = vi.hoisted(() => {
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
   const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
   return {
     prismaMock: createPrismaMock({
@@ -11,6 +16,7 @@ const { prismaMock, withApiAuthMock, sessionRef } = vi.hoisted(() => {
     }),
     sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
   }
 })
 
@@ -20,6 +26,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/api', () => ({
   withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Planos API', () => {

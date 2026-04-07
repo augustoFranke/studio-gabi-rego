@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { randomBytes } from "crypto"
-import { prisma } from "@/lib/prisma"
 import { withApiAuth } from "@/lib/api"
+import {
+  createAnamneseLinkForMembro,
+  OnboardingServiceError,
+} from "@/services/onboarding.service"
 
 interface Params {
   params: Promise<{
@@ -16,31 +18,17 @@ export async function POST(
   return withApiAuth(async () => {
     try {
       const { id } = await params
-      const membro = await prisma.membro.findUnique({
-        where: { id },
-        select: { id: true },
-      })
-
-      if (!membro) {
-        return NextResponse.json({ error: "Membro não encontrado" }, { status: 404 })
+      return NextResponse.json(
+        await createAnamneseLinkForMembro(id, request.nextUrl.origin)
+      )
+    } catch (error) {
+      if (error instanceof OnboardingServiceError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: error.status }
+        )
       }
 
-      const token = randomBytes(32).toString("hex")
-      const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000)
-
-      await prisma.membro.update({
-        where: { id },
-        data: {
-          anamneseToken: token,
-          anamneseTokenExpira: tokenExpiry,
-        },
-      })
-
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-      const link = `${baseUrl}/anamnese#token=${token}`
-
-      return NextResponse.json({ link, expiresAt: tokenExpiry })
-    } catch (error) {
       console.error("Erro ao gerar link de anamnese:", error)
       return NextResponse.json(
         { error: "Erro interno ao gerar link" },

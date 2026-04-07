@@ -1,0 +1,710 @@
+import { hash } from "bcryptjs"
+import { randomBytes } from "crypto"
+import { prisma } from "@/lib/prisma"
+import {
+  extractCanonicalAnamneseData,
+  normalizeAnamneseRecord,
+  sanitizeAnamnesePayload,
+  type CanonicalAnamneseData,
+} from "@/lib/anamnese"
+import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
+
+const TOKEN_EXPIRY_MS = 60 * 60 * 1000
+const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
+
+export class OnboardingServiceError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public status: number
+  ) {
+    super(message)
+    this.name = "OnboardingServiceError"
+  }
+}
+
+export type SignupInput = {
+  email: string
+  senha: string
+  nome?: string
+  cpf?: string | null
+  rg?: string | null
+  telefone?: string | null
+  dataNascimento?: string | null
+  sexo?: "MASCULINO" | "FEMININO" | null
+  anamnese?: CanonicalAnamneseData
+}
+
+export type VerificationStep =
+  | "dashboard"
+  | "login"
+  | "complete_profile"
+  | "complete_anamnese"
+
+export type VerifyEmailResult = {
+  success: true
+  message: string
+  isAdmin: boolean
+  nextStep: VerificationStep
+  redirectUrl: string
+}
+
+export type GenericSuccessResult = {
+  success: true
+  message: string
+}
+
+function createToken() {
+  return randomBytes(32).toString("hex")
+}
+
+function createTokenExpiry() {
+  return new Date(Date.now() + TOKEN_EXPIRY_MS)
+}
+
+function getBaseUrl(origin?: string) {
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : origin) ||
+    "https://studiogabirego.com"
+  )
+}
+
+function queueWelcomeEmail(nome: string | null | undefined, email: string | null | undefined) {
+  if (!email || !isResendConfigured()) {
+    return
+  }
+
+  void enviarEmail({
+    para: email,
+    assunto: "Bem-vindo(a) ao Studio Gabi Rego",
+    html: emailTemplates.boasVindas(nome || "Aluno(a)"),
+  }).catch((error) => {
+    console.error("Failed to send welcome email:", error)
+  })
+}
+
+async function sendVerificationEmail(params: {
+  email: string
+  nome?: string | null
+  verificationToken: string
+  origin?: string
+}) {
+  if (!isResendConfigured()) {
+    throw new OnboardingServiceError(
+      "Serviço de email não configurado. Contate o suporte.",
+      "EMAIL_NOT_CONFIGURED",
+      500
+    )
+  }
+
+  const verificationLink = `${getBaseUrl(params.origin)}/verificar-email/${params.verificationToken}`
+  const result = await enviarEmail({
+    para: params.email,
+    assunto: "Verifique seu email - Gabi Studio",
+    html: emailTemplates.verificacaoEmail(params.nome ?? null, verificationLink),
+  })
+
+  if (!result.success) {
+    throw new OnboardingServiceError(
+      "Não foi possível enviar o email agora. Tente novamente.",
+      "EMAIL_SEND_FAILED",
+      500
+    )
+  }
+}
+
+async function issueProfileTokenForUser(userId: string) {
+  const token = createToken()
+  const expiresAt = createTokenExpiry()
+
+  await prisma.usuario.update({
+    where: { id: userId },
+    data: {
+      tokenPerfil: token,
+      tokenPerfilExpira: expiresAt,
+    },
+  })
+
+  return { token, expiresAt }
+}
+
+async function issueAnamneseTokenForMembro(membroId: string) {
+  const token = createToken()
+  const expiresAt = createTokenExpiry()
+
+  await prisma.membro.update({
+    where: { id: membroId },
+    data: {
+      anamneseToken: token,
+      anamneseTokenExpira: expiresAt,
+    },
+  })
+
+  return { token, expiresAt }
+}
+
+function getVerificationOutcomePath(params: {
+  baseUrl: string
+  isAdmin: boolean
+  profileToken?: string | null
+  anamneseToken?: string | null
+}) {
+  if (params.isAdmin) {
+    return {
+      nextStep: "dashboard" as const,
+      redirectUrl: `${params.baseUrl}/dashboard`,
+    }
+  }
+
+  if (params.profileToken) {
+    return {
+      nextStep: "complete_profile" as const,
+      redirectUrl: `${params.baseUrl}/completar-perfil?token=${encodeURIComponent(params.profileToken)}`,
+    }
+  }
+
+  if (params.anamneseToken) {
+    return {
+      nextStep: "complete_anamnese" as const,
+      redirectUrl: `${params.baseUrl}/anamnese?token=${encodeURIComponent(params.anamneseToken)}`,
+    }
+  }
+
+  return {
+    nextStep: "login" as const,
+    redirectUrl: `${params.baseUrl}/login`,
+  }
+}
+
+export async function registerUser(input: SignupInput, origin?: string): Promise<GenericSuccessResult> {
+  const normalizedEmail = input.email.toLowerCase().trim()
+  const fullNome = input.nome?.trim()
+  const hasFullPayload = Boolean(fullNome && input.anamnese)
+
+  const [existingUser, hashedPassword] = await Promise.all([
+    prisma.usuario.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        nome: true,
+        emailVerificado: true,
+        onboardingCompleto: true,
+        membro: { select: { id: true } },
+      },
+    }),
+    hash(input.senha, 12),
+  ])
+
+  if (existingUser?.emailVerificado) {
+    return {
+      success: true,
+      message: "Se o email existir, enviaremos instruções.",
+    }
+  }
+
+  const verificationToken = createToken()
+  const tokenExpiry = createTokenExpiry()
+
+  if (hasFullPayload && fullNome && input.anamnese) {
+    await prisma.$transaction(async (tx) => {
+      let userId: string
+
+      if (existingUser) {
+        await tx.usuario.update({
+          where: { id: existingUser.id },
+          data: {
+            nome: fullNome,
+            senha: hashedPassword,
+            senhaDefinida: true,
+            tokenVerificacao: verificationToken,
+            tokenVerificacaoExpira: tokenExpiry,
+            etapaOnboarding: 1,
+            onboardingCompleto: false,
+          },
+        })
+        userId = existingUser.id
+      } else {
+        const user = await tx.usuario.create({
+          data: {
+            email: normalizedEmail,
+            nome: fullNome,
+            senha: hashedPassword,
+            senhaDefinida: true,
+            role: "MEMBRO",
+            tokenVerificacao: verificationToken,
+            tokenVerificacaoExpira: tokenExpiry,
+            etapaOnboarding: 1,
+            onboardingCompleto: false,
+          },
+        })
+        userId = user.id
+      }
+
+      const existingMembro = await tx.membro.findUnique({
+        where: { usuarioId: userId },
+      })
+
+      if (existingMembro) {
+        await tx.membro.delete({
+          where: { id: existingMembro.id },
+        })
+      }
+
+      const membro = await tx.membro.create({
+        data: {
+          usuarioId: userId,
+          cpf: input.cpf ?? null,
+          rg: input.rg ?? null,
+          telefone: input.telefone ?? null,
+          dataNascimento: input.dataNascimento ? new Date(input.dataNascimento) : null,
+          sexo: input.sexo ?? null,
+          status: "PENDENTE",
+        },
+      })
+
+      await tx.anamnese.create({
+        data: {
+          membroId: membro.id,
+          ...input.anamnese,
+        },
+      })
+    })
+  } else if (existingUser) {
+    await prisma.usuario.update({
+      where: { id: existingUser.id },
+      data: {
+        senha: hashedPassword,
+        senhaDefinida: true,
+        tokenVerificacao: verificationToken,
+        tokenVerificacaoExpira: tokenExpiry,
+        etapaOnboarding: 1,
+        onboardingCompleto: false,
+      },
+    })
+  } else {
+    await prisma.usuario.create({
+      data: {
+        email: normalizedEmail,
+        senha: hashedPassword,
+        senhaDefinida: true,
+        role: "MEMBRO",
+        tokenVerificacao: verificationToken,
+        tokenVerificacaoExpira: tokenExpiry,
+        etapaOnboarding: 1,
+        onboardingCompleto: false,
+      },
+    })
+  }
+
+  await sendVerificationEmail({
+    email: normalizedEmail,
+    nome: hasFullPayload ? fullNome : null,
+    verificationToken,
+    origin,
+  })
+
+  return {
+    success: true,
+    message: "Se o email existir, enviaremos instruções.",
+  }
+}
+
+export async function verifyEmailToken(token: string, origin?: string): Promise<VerifyEmailResult> {
+  const usuario = await prisma.usuario.findUnique({
+    where: { tokenVerificacao: token },
+    include: {
+      membro: {
+        select: {
+          id: true,
+          anamnese: { select: { id: true } },
+        },
+      },
+    },
+  })
+
+  if (!usuario) {
+    throw new OnboardingServiceError("Token inválido", "INVALID_TOKEN", 400)
+  }
+
+  if (usuario.tokenVerificacaoExpira && usuario.tokenVerificacaoExpira < new Date()) {
+    throw new OnboardingServiceError("Token expirado", "EXPIRED_TOKEN", 400)
+  }
+
+  const baseUrl = getBaseUrl(origin)
+  const shouldSendWelcome = !usuario.onboardingCompleto
+  let profileToken: string | null = null
+  let anamneseToken: string | null = null
+
+  if (usuario.role === "ADMIN") {
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerificado: new Date(),
+        tokenVerificacao: null,
+        tokenVerificacaoExpira: null,
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
+      },
+    })
+  } else if (!usuario.membro) {
+    const profile = await issueProfileTokenForUser(usuario.id)
+    profileToken = profile.token
+
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerificado: new Date(),
+        tokenVerificacao: null,
+        tokenVerificacaoExpira: null,
+        etapaOnboarding: 2,
+        onboardingCompleto: false,
+      },
+    })
+  } else if (!usuario.membro.anamnese) {
+    const anamnese = await issueAnamneseTokenForMembro(usuario.membro.id)
+    anamneseToken = anamnese.token
+
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerificado: new Date(),
+        tokenVerificacao: null,
+        tokenVerificacaoExpira: null,
+        etapaOnboarding: 3,
+        onboardingCompleto: false,
+      },
+    })
+  } else {
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerificado: new Date(),
+        tokenVerificacao: null,
+        tokenVerificacaoExpira: null,
+        tokenPerfil: null,
+        tokenPerfilExpira: null,
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
+      },
+    })
+  }
+
+  if (
+    shouldSendWelcome &&
+    (usuario.role === "ADMIN" || (usuario.membro && usuario.membro.anamnese))
+  ) {
+    queueWelcomeEmail(usuario.nome, usuario.email)
+  }
+
+  const { nextStep, redirectUrl } = getVerificationOutcomePath({
+    baseUrl,
+    isAdmin: usuario.role === "ADMIN",
+    profileToken,
+    anamneseToken,
+  })
+
+  return {
+    success: true,
+    message: "Email verificado com sucesso!",
+    isAdmin: usuario.role === "ADMIN",
+    nextStep,
+    redirectUrl,
+  }
+}
+
+export async function resendVerificationEmail(email: string, origin?: string): Promise<GenericSuccessResult> {
+  const normalizedEmail = email.toLowerCase().trim()
+
+  const usuario = await prisma.usuario.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      nome: true,
+      emailVerificado: true,
+      onboardingCompleto: true,
+      membro: { select: { id: true } },
+    },
+  })
+
+  if (!usuario || usuario.emailVerificado) {
+    return {
+      success: true,
+      message: "Se o email existir, um novo link será enviado.",
+    }
+  }
+
+  const verificationToken = createToken()
+  const tokenExpiry = createTokenExpiry()
+
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: {
+      tokenVerificacao: verificationToken,
+      tokenVerificacaoExpira: tokenExpiry,
+    },
+  })
+
+  if (isResendConfigured()) {
+    await enviarEmail({
+      para: normalizedEmail,
+      assunto: "Verifique seu email - Gabi Studio",
+      html: emailTemplates.verificacaoEmail(
+        usuario.nome ?? null,
+        `${getBaseUrl(origin)}/verificar-email/${verificationToken}`
+      ),
+    })
+  } else {
+    console.warn("Resend não configurado - envio de email ignorado.")
+  }
+
+  return {
+    success: true,
+    message: "Se o email existir, um novo link será enviado.",
+  }
+}
+
+export async function getAnamneseByToken(token: string) {
+  const membro = await prisma.membro.findFirst({
+    where: {
+      anamneseToken: token,
+      anamneseTokenExpira: { gt: new Date() },
+    },
+    include: {
+      usuario: { select: { nome: true, email: true, onboardingCompleto: true } },
+      anamnese: true,
+    },
+  })
+
+  if (!membro) {
+    throw new OnboardingServiceError(TOKEN_EXPIRY_ERROR, "INVALID_ANAMNESE_TOKEN", 404)
+  }
+
+  const normalized = normalizeAnamneseRecord(
+    extractCanonicalAnamneseData(membro.anamnese)
+  )
+
+  if ("error" in normalized) {
+    throw new OnboardingServiceError("Dados de anamnese inválidos", "INVALID_ANAMNESE", 500)
+  }
+
+  if (membro.anamnese && normalized.changed) {
+    await prisma.anamnese.update({
+      where: { membroId: membro.id },
+      data: normalized.data,
+    })
+  }
+
+  return {
+    sexo: membro.sexo ?? null,
+    anamnese: membro.anamnese ? normalized.data : null,
+  }
+}
+
+async function saveAnamneseForMembro(params: {
+  membroId: string
+  usuarioId: string
+  nome?: string | null
+  email?: string | null
+  onboardingCompleto: boolean
+  payload: Record<string, unknown>
+  clearToken?: boolean
+}) {
+  const sanitized = sanitizeAnamnesePayload(params.payload, {
+    ignoreUnknownFields: true,
+    fillMissingFields: true,
+  })
+
+  if ("error" in sanitized) {
+    throw new OnboardingServiceError("Dados inválidos enviados", "INVALID_ANAMNESE_PAYLOAD", 400)
+  }
+
+  if (sanitized.ignoredKeys.length > 0) {
+    console.warn("[anamnese_sanitize] Campos ignorados:", sanitized.ignoredKeys)
+  }
+
+  const shouldSendWelcome = !params.onboardingCompleto
+
+  await prisma.$transaction([
+    prisma.anamnese.upsert({
+      where: { membroId: params.membroId },
+      create: {
+        membroId: params.membroId,
+        ...sanitized.data,
+      },
+      update: sanitized.data,
+    }),
+    prisma.usuario.update({
+      where: { id: params.usuarioId },
+      data: {
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
+      },
+    }),
+    ...(params.clearToken
+      ? [
+          prisma.membro.update({
+            where: { id: params.membroId },
+            data: {
+              anamneseToken: null,
+              anamneseTokenExpira: null,
+            },
+          }),
+        ]
+      : []),
+  ])
+
+  if (shouldSendWelcome) {
+    queueWelcomeEmail(params.nome, params.email)
+  }
+
+  return {
+    success: true,
+    message: "Anamnese salva com sucesso!",
+  }
+}
+
+export async function saveAnamneseByToken(token: string, payload: Record<string, unknown>) {
+  const membro = await prisma.membro.findFirst({
+    where: {
+      anamneseToken: token,
+      anamneseTokenExpira: { gt: new Date() },
+    },
+    include: {
+      usuario: { select: { nome: true, email: true, onboardingCompleto: true } },
+    },
+  })
+
+  if (!membro) {
+    throw new OnboardingServiceError(TOKEN_EXPIRY_ERROR, "INVALID_ANAMNESE_TOKEN", 404)
+  }
+
+  return saveAnamneseForMembro({
+    membroId: membro.id,
+    usuarioId: membro.usuarioId,
+    nome: membro.usuario.nome,
+    email: membro.usuario.email,
+    onboardingCompleto: membro.usuario.onboardingCompleto,
+    payload,
+    clearToken: true,
+  })
+}
+
+export async function getMinhaAnamnese(userId: string) {
+  const membro = await prisma.membro.findUnique({
+    where: { usuarioId: userId },
+    include: { anamnese: true },
+  })
+
+  if (!membro) {
+    throw new OnboardingServiceError(
+      "Perfil não encontrado. Complete seu perfil primeiro.",
+      "MEMBRO_NOT_FOUND",
+      404
+    )
+  }
+
+  const normalized = normalizeAnamneseRecord(
+    extractCanonicalAnamneseData(membro.anamnese)
+  )
+
+  if ("error" in normalized) {
+    throw new OnboardingServiceError("Dados de anamnese inválidos", "INVALID_ANAMNESE", 500)
+  }
+
+  if (membro.anamnese && normalized.changed) {
+    await prisma.anamnese.update({
+      where: { membroId: membro.id },
+      data: normalized.data,
+    })
+  }
+
+  return {
+    sexo: membro.sexo,
+    anamnese: membro.anamnese ? normalized.data : null,
+  }
+}
+
+export async function saveMinhaAnamnese(userId: string, payload: Record<string, unknown>) {
+  const membro = await prisma.membro.findUnique({
+    where: { usuarioId: userId },
+    include: {
+      usuario: {
+        select: {
+          email: true,
+          nome: true,
+          onboardingCompleto: true,
+        },
+      },
+    },
+  })
+
+  if (!membro) {
+    throw new OnboardingServiceError(
+      "Perfil não encontrado. Complete seu perfil primeiro.",
+      "MEMBRO_NOT_FOUND",
+      404
+    )
+  }
+
+  return saveAnamneseForMembro({
+    membroId: membro.id,
+    usuarioId: userId,
+    nome: membro.usuario.nome,
+    email: membro.usuario.email,
+    onboardingCompleto: membro.usuario.onboardingCompleto,
+    payload,
+  })
+}
+
+export async function createAnamneseLinkForMembro(membroId: string, origin?: string) {
+  const membro = await prisma.membro.findUnique({
+    where: { id: membroId },
+    select: { id: true },
+  })
+
+  if (!membro) {
+    throw new OnboardingServiceError("Membro não encontrado", "MEMBRO_NOT_FOUND", 404)
+  }
+
+  const { token, expiresAt } = await issueAnamneseTokenForMembro(membroId)
+
+  return {
+    link: `${getBaseUrl(origin)}/anamnese#token=${token}`,
+    expiresAt,
+  }
+}
+
+export async function getHomeRedirectPath(userId: string) {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: userId },
+    select: {
+      onboardingCompleto: true,
+      membro: {
+        select: {
+          id: true,
+          anamnese: { select: { id: true } },
+        },
+      },
+    },
+  })
+
+  if (!usuario) {
+    throw new OnboardingServiceError("Usuário não encontrado", "USER_NOT_FOUND", 404)
+  }
+
+  if (!usuario.membro) {
+    return "/completar-perfil"
+  }
+
+  if (!usuario.membro.anamnese) {
+    return "/anamnese"
+  }
+
+  if (!usuario.onboardingCompleto) {
+    return "/anamnese"
+  }
+
+  return "/inicio"
+}

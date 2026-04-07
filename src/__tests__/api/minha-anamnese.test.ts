@@ -6,11 +6,14 @@ const { prismaMock, sessionRef, resendMock, withApiAuthMock } = vi.hoisted(() =>
   const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
   const sessionRef = createSessionRef({ user: { id: 'u-1', role: 'MEMBRO' } })
   return {
-    prismaMock: createPrismaMock({
+    prismaMock: Object.assign(
+      createPrismaMock({
       membro: ['findUnique'],
       anamnese: ['upsert', 'update'],
       usuario: ['update'],
-    }),
+      }),
+      { $transaction: vi.fn() }
+    ),
     sessionRef,
     resendMock: {
       enviarEmail: vi.fn(),
@@ -37,6 +40,7 @@ describe('Minha Anamnese API', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionRef.current = { user: { id: 'u-1', role: 'MEMBRO' } }
+    prismaMock.$transaction.mockImplementation((operations: Promise<unknown>[]) => Promise.all(operations))
   })
 
   it('GET returns 404 when member not found', async () => {

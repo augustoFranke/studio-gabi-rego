@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
-import { DiaSemana, Prisma } from '@prisma/client'
+import { validateRequest, withApiAuth } from '@/lib/api'
+import { DiaSemana } from '@prisma/client'
+import { z } from 'zod'
+import { createHorario, HorarioServiceError, listHorarios } from '@/services/horario.service'
+
+const horarioSchema = z.object({
+  diaSemana: z.nativeEnum(DiaSemana),
+  horaInicio: z.string().min(1, 'Informe a hora de início'),
+  horaFim: z.string().min(1, 'Informe a hora de fim'),
+  vagasTotal: z.number().int().positive('Informe a quantidade de vagas'),
+})
 
 // GET /api/horarios - Listar horarios disponiveis
 export async function GET(request: NextRequest) {
@@ -10,19 +18,9 @@ export async function GET(request: NextRequest) {
     const diaSemana = searchParams.get('diaSemana') as DiaSemana | null
     const ativo = searchParams.get('ativo')
 
-    const where: Record<string, unknown> = {}
-
-    if (diaSemana) {
-      where.diaSemana = diaSemana
-    }
-
-    if (ativo !== null) {
-      where.ativo = ativo === 'true'
-    }
-
-    const horarios = await prisma.horarioDisponivel.findMany({
-      where,
-      orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],
+    const horarios = await listHorarios({
+      diaSemana,
+      ativo: ativo === null ? null : ativo === 'true',
     })
 
     return NextResponse.json(horarios)
@@ -33,53 +31,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
-      const body = await request.json()
-      const { diaSemana, horaInicio, horaFim, vagasTotal } = body
-
-      if (!diaSemana || !horaInicio || !horaFim || !vagasTotal) {
-        return NextResponse.json(
-          { error: 'Campos obrigatorios: diaSemana, horaInicio, horaFim, vagasTotal' },
-          { status: 400 }
-        )
-      }
-
-      const existente = await prisma.horarioDisponivel.findFirst({
-        where: {
-          diaSemana,
-          horaInicio,
-          ativo: true,
-        },
+      const validation = await validateRequest(request, horarioSchema, {
+        errorMessage: () => 'Campos obrigatorios: diaSemana, horaInicio, horaFim, vagasTotal',
       })
 
-      if (existente) {
-        return NextResponse.json(
-          { error: 'Ja existe um horario neste dia e hora' },
-          { status: 400 }
-        )
+      if ('error' in validation) {
+        return validation.error
       }
 
-      let horario
-      try {
-        horario = await prisma.horarioDisponivel.create({
-          data: {
-            diaSemana,
-            horaInicio,
-            horaFim,
-            vagasTotal,
-          },
-        })
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          return NextResponse.json(
-            { error: 'Ja existe um horario neste dia e hora' },
-            { status: 400 }
-          )
-        }
-        throw error
-      }
-
+      const horario = await createHorario(validation.data)
       return NextResponse.json(horario, { status: 201 })
     } catch (error) {
+      if (error instanceof HorarioServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
+      }
+
       console.error('Erro ao criar horario:', error)
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }

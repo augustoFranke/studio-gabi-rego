@@ -3,7 +3,7 @@ import { normalizeEmailForStorage } from '@/lib/email'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { hash } from 'bcryptjs'
 import { MembroCreateInput } from '@/schemas/membro.schema'
-import { Prisma, StatusMembro } from '@prisma/client'
+import { DiaSemana, Prisma, StatusMembro } from '@prisma/client'
 
 export class MembroServiceError extends Error {
   constructor(
@@ -78,6 +78,155 @@ export async function getMembroById(id: string) {
       },
       plano: true,
     },
+  })
+}
+
+export type MembroUpdateServiceInput = {
+  nome?: string
+  email?: string | null
+  senha?: string
+  cpf?: string | null
+  rg?: string | null
+  telefone?: string | null
+  dataNascimento?: string | null
+  planoId?: string
+  precoCustomizado?: number | null
+  sexo?: 'MASCULINO' | 'FEMININO' | null
+  horariosFixos?: Array<{
+    diaSemana: DiaSemana
+    hora: string
+  }>
+}
+
+export async function updateMembroById(id: string, input: MembroUpdateServiceInput) {
+  const existingMember = await prisma.membro.findUnique({
+    where: { id },
+    include: { usuario: true },
+  })
+
+  if (!existingMember) {
+    throw new MembroServiceError('Membro não encontrado', 'MEMBRO_NOT_FOUND', 404)
+  }
+
+  const normalizedEmail = input.email === undefined
+    ? undefined
+    : normalizeEmailForStorage(input.email)
+
+  const cpfLimpo = typeof input.cpf === 'string' && input.cpf
+    ? input.cpf.replace(/\D/g, '')
+    : input.cpf === null
+      ? null
+      : undefined
+
+  const [emailExiste, cpfExiste, plano] = await Promise.all([
+    normalizedEmail && normalizedEmail !== existingMember.usuario.email
+      ? prisma.usuario.findUnique({ where: { email: normalizedEmail } })
+      : Promise.resolve(null),
+    cpfLimpo && cpfLimpo !== existingMember.cpf
+      ? prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+      : Promise.resolve(null),
+    input.horariosFixos?.length
+      ? prisma.plano.findUnique({
+          where: { id: input.planoId ?? existingMember.planoId ?? '' },
+          select: { aulasSemanais: true },
+        })
+      : Promise.resolve(null),
+  ])
+
+  if (normalizedEmail && normalizedEmail !== existingMember.usuario.email) {
+    if (!validarEmail(normalizedEmail)) {
+      throw new MembroServiceError('Email inválido', 'INVALID_EMAIL', 400)
+    }
+    if (emailExiste) {
+      throw new MembroServiceError('Email já cadastrado', 'EMAIL_ALREADY_EXISTS', 400)
+    }
+  }
+
+  if (cpfLimpo && cpfLimpo !== existingMember.cpf) {
+    if (!validarCPF(cpfLimpo)) {
+      throw new MembroServiceError('CPF inválido', 'INVALID_CPF', 400)
+    }
+    if (cpfExiste) {
+      throw new MembroServiceError('CPF já cadastrado', 'CPF_ALREADY_EXISTS', 400)
+    }
+  }
+
+  if (input.horariosFixos?.length && plano && plano.aulasSemanais !== 7) {
+    const uniqueSlots = new Set(
+      input.horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
+    )
+
+    if (uniqueSlots.size > plano.aulasSemanais) {
+      throw new MembroServiceError(
+        `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${uniqueSlots.size} horários fixos.`,
+        'PLAN_LIMIT_EXCEEDED',
+        400
+      )
+    }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const senhaValue = typeof input.senha === 'string' ? input.senha.trim() : ''
+
+    if (input.nome || normalizedEmail !== undefined || senhaValue) {
+      const usuarioUpdateData: Prisma.UsuarioUpdateInput = {}
+      if (input.nome) usuarioUpdateData.nome = input.nome
+      if (normalizedEmail !== undefined) usuarioUpdateData.email = normalizedEmail
+      if (senhaValue) {
+        usuarioUpdateData.senha = await hash(senhaValue, 12)
+        usuarioUpdateData.senhaDefinida = true
+      }
+
+      await tx.usuario.update({
+        where: { id: existingMember.usuarioId },
+        data: usuarioUpdateData,
+      })
+    }
+
+    const memberUpdateData: Prisma.MembroUpdateInput = {}
+    if (input.cpf === null || input.cpf === '') {
+      memberUpdateData.cpf = null
+    } else if (typeof input.cpf === 'string') {
+      memberUpdateData.cpf = input.cpf.replace(/\D/g, '')
+    }
+    if (input.rg !== undefined) {
+      memberUpdateData.rg = input.rg && input.rg.trim() !== '' ? input.rg : null
+    }
+    if (input.telefone !== undefined) {
+      memberUpdateData.telefone = input.telefone ? input.telefone.replace(/\D/g, '') : null
+    }
+    if (input.dataNascimento !== undefined) {
+      memberUpdateData.dataNascimento = input.dataNascimento ? new Date(input.dataNascimento) : null
+    }
+    if (input.planoId !== undefined) {
+      memberUpdateData.plano = input.planoId ? { connect: { id: input.planoId } } : { disconnect: true }
+    }
+    if (input.precoCustomizado !== undefined) memberUpdateData.precoCustomizado = input.precoCustomizado
+    if (input.sexo !== undefined) memberUpdateData.sexo = input.sexo
+    if (input.horariosFixos) {
+      memberUpdateData.horariosFixos = {
+        deleteMany: {},
+        create: input.horariosFixos.map((horario) => ({
+          diaSemana: horario.diaSemana,
+          hora: horario.hora,
+        })),
+      }
+    }
+
+    return tx.membro.update({
+      where: { id },
+      data: memberUpdateData,
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+        plano: true,
+      },
+    })
   })
 }
 

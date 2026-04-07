@@ -4,6 +4,7 @@ import { GET, POST } from '@/app/api/anamnese-token/route'
 
 const { prismaMock, resendMock } = vi.hoisted(() => ({
   prismaMock: {
+    $transaction: vi.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
     membro: {
       findFirst: vi.fn(),
       update: vi.fn(),
@@ -142,6 +143,10 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
       where: { id: 'u-1' },
       data: { etapaOnboarding: 4, onboardingCompleto: true },
+    })
+    expect(prismaMock.membro.update).toHaveBeenCalledWith({
+      where: { id: 'm-1' },
+      data: { anamneseToken: null, anamneseTokenExpira: null },
     })
     expect(resendMock.enviarEmail).toHaveBeenCalledTimes(1)
     expect(json.success).toBe(true)

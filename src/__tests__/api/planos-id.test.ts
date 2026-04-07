@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { DELETE, GET, PUT } from '@/app/api/planos/[id]/route'
 
-const { prismaMock, sessionRef, withApiAuthMock } = vi.hoisted(() => {
-  const { createPrismaMock, createSessionRef, mockWithApiAuth } = globalThis.__testUtils
+const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hoisted(() => {
+  const {
+    createPrismaMock,
+    createSessionRef,
+    createValidateRequestMock,
+    mockWithApiAuth,
+  } = globalThis.__testUtils
   const sessionRef = createSessionRef({ user: { role: 'ADMIN' } })
   return {
     prismaMock: createPrismaMock({
@@ -12,6 +17,7 @@ const { prismaMock, sessionRef, withApiAuthMock } = vi.hoisted(() => {
     }),
     sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
+    validateRequestMock: createValidateRequestMock(),
   }
 })
 
@@ -21,6 +27,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/api', () => ({
   withApiAuth: withApiAuthMock,
+  validateRequest: validateRequestMock,
 }))
 
 describe('Planos API - /api/planos/[id]', () => {
@@ -74,6 +81,7 @@ describe('Planos API - /api/planos/[id]', () => {
   })
 
   it('PUT updates plan fields', async () => {
+    prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
     prismaMock.plano.update.mockResolvedValueOnce({ id: 'p-1' })
 
     const req = new NextRequest('http://localhost:3000/api/planos/p-1', {
@@ -93,6 +101,7 @@ describe('Planos API - /api/planos/[id]', () => {
   })
 
   it('DELETE deactivates when active members exist', async () => {
+    prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
     prismaMock.membro.count.mockResolvedValueOnce(2)
     prismaMock.plano.update.mockResolvedValueOnce({ id: 'p-1', ativo: false })
 
@@ -107,6 +116,7 @@ describe('Planos API - /api/planos/[id]', () => {
   })
 
   it('DELETE removes plan when no active members exist', async () => {
+    prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
     prismaMock.membro.count.mockResolvedValueOnce(0)
     prismaMock.plano.delete.mockResolvedValueOnce({ id: 'p-1' })
 

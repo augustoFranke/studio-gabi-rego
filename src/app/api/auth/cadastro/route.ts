@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server"
-import { hash } from "bcryptjs"
-import { randomBytes } from "crypto"
-import { prisma } from "@/lib/prisma"
-import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
 import { rateLimitByIp } from "@/lib/rate-limit"
-import { sanitizeAnamnesePayload } from "@/lib/anamnese"
+import {
+  sanitizeAnamnesePayload,
+  type CanonicalAnamneseData,
+} from "@/lib/anamnese"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
+import {
+  OnboardingServiceError,
+  registerUser,
+} from "@/services/onboarding.service"
 
 export async function POST(request: Request) {
   try {
@@ -125,187 +128,45 @@ export async function POST(request: Request) {
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://studiogabirego.com")
-
-    // Parallelize user lookup and password hashing (hash takes ~100-300ms)
-    const [existingUser, hashedPassword] = await Promise.all([
-      prisma.usuario.findUnique({
-        where: { email: normalizedEmail },
-        select: {
-          id: true,
-          nome: true,
-          emailVerificado: true,
-          onboardingCompleto: true,
-          membro: { select: { id: true } },
-        },
-      }),
-      hash(senha, 12),
-    ])
-
-    if (existingUser?.emailVerificado) {
-      if (existingUser.membro || existingUser.onboardingCompleto) {
-        return NextResponse.json({
-          success: true,
-          message: "Se o email existir, enviaremos instruções.",
-        })
-      }
-
-      // Verified user without membro - unlikely with the new flow but handle gracefully
-      return NextResponse.json({
-        success: true,
-        message: "Se o email existir, enviaremos instruções.",
-      })
-    }
-
-    // Generate verification token (needed for both paths)
-    const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    if (hasFullPayload) {
-      // FULL REGISTRATION: Create/update user + membro + anamnese atomically
-      const sanitized = sanitizeAnamnesePayload(anamnese, {
-        ignoreUnknownFields: true,
-        fillMissingFields: true,
-      })
-      if ("error" in sanitized) {
-        return NextResponse.json(
-          { error: sanitized.error },
-          { status: 400 }
-        )
-      }
-
-      const cpfNumbers = cpf ? String(cpf).replace(/\D/g, "") : null
-      const telefoneNumbers = telefone ? String(telefone).replace(/\D/g, "") : null
-      const parsedDate = dataNascimento ? new Date(dataNascimento) : null
-
-      await prisma.$transaction(async (tx) => {
-        let userId: string
-
-        if (existingUser) {
-          // Update existing unverified user
-          await tx.usuario.update({
-            where: { id: existingUser.id },
-            data: {
-              nome: nome.trim(),
-              senha: hashedPassword,
-              senhaDefinida: true,
-              tokenVerificacao: verificationToken,
-              tokenVerificacaoExpira: tokenExpiry,
-              etapaOnboarding: 1,
-              onboardingCompleto: false,
-            },
+    const sanitized =
+      hasFullPayload && anamnese
+        ? sanitizeAnamnesePayload(anamnese, {
+            ignoreUnknownFields: true,
+            fillMissingFields: true,
           })
-          userId = existingUser.id
-        } else {
-          // Create new user
-          const newUser = await tx.usuario.create({
-            data: {
-              email: normalizedEmail,
-              nome: nome.trim(),
-              senha: hashedPassword,
-              senhaDefinida: true,
-              role: "MEMBRO",
-              tokenVerificacao: verificationToken,
-              tokenVerificacaoExpira: tokenExpiry,
-              etapaOnboarding: 1,
-              onboardingCompleto: false,
-            },
-          })
-          userId = newUser.id
-        }
+        : null
 
-        // Create membro (upsert-like: delete existing if any for zombie users)
-        const existingMembro = await tx.membro.findUnique({
-          where: { usuarioId: userId },
-        })
-        if (existingMembro) {
-          // Delete existing membro (cascade deletes anamnese too)
-          await tx.membro.delete({ where: { id: existingMembro.id } })
-        }
-
-        const membro = await tx.membro.create({
-          data: {
-            usuarioId: userId,
-            cpf: cpfNumbers || null,
-            rg: rg?.trim() || null,
-            telefone: telefoneNumbers || null,
-            dataNascimento: parsedDate,
-            sexo: sexo || null,
-            status: "PENDENTE",
-          },
-        })
-
-        await tx.anamnese.create({
-          data: {
-            membroId: membro.id,
-            ...sanitized.data,
-          },
-        })
-      })
-    } else {
-      // LEGACY/SIMPLE REGISTRATION: Only email + password
-      if (existingUser) {
-        // UNVERIFIED (ZOMBIE) USER: Update and resend
-        await prisma.usuario.update({
-          where: { id: existingUser.id },
-          data: {
-            senha: hashedPassword,
-            senhaDefinida: true,
-            tokenVerificacao: verificationToken,
-            tokenVerificacaoExpira: tokenExpiry,
-            etapaOnboarding: 1,
-            onboardingCompleto: false,
-          },
-        })
-      } else {
-        // NEW USER: Create account
-        await prisma.usuario.create({
-          data: {
-            email: normalizedEmail,
-            senha: hashedPassword,
-            senhaDefinida: true,
-            role: "MEMBRO",
-            tokenVerificacao: verificationToken,
-            tokenVerificacaoExpira: tokenExpiry,
-            etapaOnboarding: 1,
-            onboardingCompleto: false,
-          },
-        })
-      }
-    }
-
-    // Send verification email
-    const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
-
-    if (!isResendConfigured()) {
-      console.warn("Resend not configured - skipping email send")
+    if (sanitized && "error" in sanitized) {
       return NextResponse.json(
-        { error: "Serviço de email não configurado. Contate o suporte." },
-        { status: 500 }
+        { error: sanitized.error },
+        { status: 400 }
       )
     }
 
-    const emailResult = await enviarEmail({
-      para: normalizedEmail,
-      assunto: "Verifique seu email - Gabi Studio",
-      html: emailTemplates.verificacaoEmail(hasFullPayload ? nome.trim() : null, verificationLink),
-    })
+    const result = await registerUser(
+      {
+        email: normalizedEmail,
+        senha,
+        nome: hasFullPayload ? nome.trim() : undefined,
+        cpf: cpf ? String(cpf).replace(/\D/g, "") : null,
+        rg: rg?.trim() || null,
+        telefone: telefone ? String(telefone).replace(/\D/g, "") : null,
+        dataNascimento: dataNascimento || null,
+        sexo: sexo || null,
+        anamnese: sanitized?.data as CanonicalAnamneseData | undefined,
+      },
+      new URL(request.url).origin
+    )
 
-    if (!emailResult.success) {
-      console.error("Failed to send verification email:", emailResult.error)
-      return NextResponse.json(
-        { error: "Não foi possível enviar o email agora. Tente novamente." },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Se o email existir, enviaremos instruções.",
-    })
+    return NextResponse.json(result)
   } catch (error) {
+    if (error instanceof OnboardingServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
+
     console.error("Erro ao criar conta:", error)
     return NextResponse.json(
       { error: "Erro interno ao criar conta" },

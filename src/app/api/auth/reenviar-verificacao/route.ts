@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { randomBytes } from "crypto"
-import { prisma } from "@/lib/prisma"
-import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { validarEmail } from "@/lib/validators"
 import { rateLimitByIp } from "@/lib/rate-limit"
+import {
+  OnboardingServiceError,
+  resendVerificationEmail,
+} from "@/services/onboarding.service"
 
 export async function POST(request: Request) {
   try {
@@ -25,77 +26,19 @@ export async function POST(request: Request) {
       )
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
-
-    // Find user
-    const usuario = await prisma.usuario.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        nome: true,
-        emailVerificado: true,
-        onboardingCompleto: true,
-        membro: { select: { id: true } },
-      },
-    })
-
-    if (!usuario) {
-      // Don't reveal if email exists or not for security
-      return NextResponse.json({
-        success: true,
-        message: "Se o email existir, um novo link será enviado.",
-      })
-    }
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://studiogabirego.com")
-
-    if (usuario.emailVerificado) {
-      // Already verified - if they have a membro or completed onboarding, just return success silently
-      if (usuario.membro || usuario.onboardingCompleto) {
-        return NextResponse.json({
-          success: true,
-          message: "Se o email existir, um novo link será enviado.",
-        })
-      }
-
-      // Verified but no membro and not complete - mark as complete if possible, or redirect to register
-      return NextResponse.json({
-        success: true,
-        message: "Se o email existir, um novo link será enviado.",
-      })
-    }
-
-    // Generate new verification token
-    const verificationToken = randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        tokenVerificacao: verificationToken,
-        tokenVerificacaoExpira: tokenExpiry,
-      },
-    })
-
-    const verificationLink = `${baseUrl}/verificar-email/${verificationToken}`
-
-    if (isResendConfigured()) {
-      await enviarEmail({
-        para: normalizedEmail,
-        assunto: "Verifique seu email - Gabi Studio",
-        html: emailTemplates.verificacaoEmail(usuario.nome ?? null, verificationLink),
-      })
-    } else {
-      console.warn("Resend não configurado - envio de email ignorado.")
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Se o email existir, um novo link será enviado.",
-    })
+    const result = await resendVerificationEmail(
+      email,
+      new URL(request.url).origin
+    )
+    return NextResponse.json(result)
   } catch (error) {
+    if (error instanceof OnboardingServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
+
     console.error("Erro ao reenviar verificação:", error)
     return NextResponse.json(
       { error: "Erro interno ao reenviar verificação" },

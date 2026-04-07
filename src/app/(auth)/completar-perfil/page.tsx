@@ -69,17 +69,18 @@ function CompletarPerfilContent() {
   useEffect(() => {
     if (status === "loading") return
 
-    if (status === "authenticated") {
-      router.replace("/meu-perfil")
-      return
-    }
-
     const tokenFromUrl = searchParams.get("token")
     const tokenFromStorage = loadStoredToken()
-    const token = tokenFromUrl || tokenFromStorage
+    const token = tokenFromUrl || tokenFromStorage || null
 
     if (tokenFromUrl) {
       saveStoredToken(tokenFromUrl)
+    }
+
+    if (status === "authenticated") {
+      setProfileToken(null)
+      setReady(true)
+      return
     }
 
     if (!token) {
@@ -93,7 +94,6 @@ function CompletarPerfilContent() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!profileToken) return
 
     setSubmitting(true)
     setMessage(null)
@@ -106,7 +106,7 @@ function CompletarPerfilContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token: profileToken,
+          ...(profileToken ? { token: profileToken } : {}),
           nome: formState.nome,
           cpf: cpf || null,
           rg: formState.rg.trim() || null,

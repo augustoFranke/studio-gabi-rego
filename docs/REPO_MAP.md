@@ -42,7 +42,10 @@ This repository is a Next.js 16 monolith for a fitness studio (Studio Gabi Rego)
 - `src/lib/auth.ts`: NextAuth credentials provider, JWT/session callbacks, auth cache wrapper.
 - `src/lib/api.ts`: API guard helpers (`withApiAuth`, `ensureOwnerOrAdmin`, request validation).
 - `src/lib/prisma.ts`: singleton Prisma client lifecycle.
-- `src/services/agendamento.service.ts`: recurring schedule generation, fixed-slot validation.
+- `src/services/agendamento.service.ts`: recurring schedule generation, future-scope mutations, fixed-slot validation.
+- `src/services/membro.service.ts`: member listing and create orchestration.
+- `src/services/pagamento.service.ts`: payment reads and payment mutation orchestration.
+- `src/services/perfil.service.ts`: onboarding/profile completion, token issuance, and token-based completion flow.
 - `src/services/treino.service.ts`: training CRUD orchestration and exercise mapping.
 - `src/lib/scheduler.ts`: notification orchestration (email/WhatsApp) and overdue payment updates.
 - `src/lib/payments/feb2026-import.ts`: audited DOCX payment import, matching, idempotency, rollback.
@@ -83,7 +86,7 @@ Most changed files (historical `git log --name-only` frequency):
 - `src/app/api/auth/cadastro/route.ts` (13)
 - `src/app/(auth)/anamnese/page.tsx` (13)
 
-Operationally central modules with repeated changes include auth/session (`src/lib/auth.ts`), scheduling APIs/services, finance pages/APIs, and payment import tooling.
+Operationally central modules with repeated changes include auth/session (`src/lib/auth.ts`), onboarding/profile services, scheduling APIs/services, finance pages/APIs, and payment import tooling.
 
 ## Evidence
 ### Files
