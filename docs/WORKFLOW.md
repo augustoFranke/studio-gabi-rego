@@ -3,6 +3,7 @@
 ## Branch Policy
 - `main` is the only long-lived branch.
 - Use short-lived branches only.
+- Retire `fixes` as a permanent integration branch; any remaining history should be merged into `main` and the branch deleted.
 - Preferred prefixes:
   - `feat/<slug>`
   - `fix/<slug>`
@@ -18,6 +19,7 @@
 - Use squash merge by default.
 - Use a conventional title prefix such as `feat:`, `fix:`, `refactor:`, `ops:`, `chore:`, `docs:`, or `test:`.
 - Include problem, change summary, risk, validation, and migration or env impact in the PR description.
+- Prefer one subsystem per PR, especially for backend service extraction.
 
 ## Required Validation
 - Run `npm run lint`.
@@ -32,3 +34,11 @@
 ## Repo Discipline
 - Avoid mixing product behavior changes with repo workflow or documentation changes in the same branch unless one depends on the other.
 - Update docs when a route, contract, or runtime assumption changes.
+
+## GitHub Admin Tasks
+- Set `main` as the default branch.
+- Require pull requests and at least one approving review for `main`.
+- Require passing CI checks before merge.
+- Dismiss stale approvals on new commits.
+- Disable direct pushes to `main`.
+- Keep `.github/CODEOWNERS` and `.github/PULL_REQUEST_TEMPLATE.md` in sync with repo policy.

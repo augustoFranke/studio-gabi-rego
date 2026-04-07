@@ -19,7 +19,8 @@ export default function VerificarTokenPage({
   const resolvedParams = use(params)
   const [status, setStatus] = useState<VerificationStatus>("loading")
   const [message, setMessage] = useState("")
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [redirectUrl, setRedirectUrl] = useState("/login")
+  const [nextStep, setNextStep] = useState<"dashboard" | "login" | "complete_profile" | "complete_anamnese">("login")
   const router = useRouter()
 
   useEffect(() => {
@@ -35,10 +36,9 @@ export default function VerificarTokenPage({
 
         if (response.ok) {
           setStatus("success")
-          setMessage("Email verificado com sucesso!")
-          if (data.isAdmin) {
-            setIsAdmin(true)
-          }
+          setMessage(data.message || "Email verificado com sucesso!")
+          setRedirectUrl(data.redirectUrl || (data.isAdmin ? "/dashboard" : "/login"))
+          setNextStep(data.nextStep || (data.isAdmin ? "dashboard" : "login"))
         } else if (data.error === "Token expirado") {
           setStatus("expired")
           setMessage("O link de verificação expirou.")
@@ -56,11 +56,7 @@ export default function VerificarTokenPage({
   }, [resolvedParams.token])
 
   function handleContinue() {
-    if (isAdmin) {
-      router.push("/dashboard")
-    } else {
-      router.push("/login")
-    }
+    router.push(redirectUrl)
   }
 
   return (
@@ -122,9 +118,10 @@ export default function VerificarTokenPage({
 
           {status === "success" && (
             <CardDescription className="text-muted-foreground mt-2">
-              {isAdmin
-                ? "Você foi adicionado como administrador."
-                : "Seu cadastro está completo! Faça login para acessar."}
+              {nextStep === "dashboard" && "Você foi adicionado como administrador."}
+              {nextStep === "login" && "Seu cadastro está completo! Faça login para acessar."}
+              {nextStep === "complete_profile" && "Agora complete seu perfil para continuar."}
+              {nextStep === "complete_anamnese" && "Agora finalize sua anamnese para concluir o acesso."}
             </CardDescription>
           )}
 
@@ -142,7 +139,10 @@ export default function VerificarTokenPage({
               className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-shadow border-0"
             >
               <span className="flex items-center gap-2">
-                {isAdmin ? "Acessar painel admin" : "Fazer login"}
+                {nextStep === "dashboard" && "Acessar painel admin"}
+                {nextStep === "login" && "Fazer login"}
+                {nextStep === "complete_profile" && "Completar perfil"}
+                {nextStep === "complete_anamnese" && "Abrir anamnese"}
                 <ArrowRight className="h-4 w-4" />
               </span>
             </Button>

@@ -13,6 +13,7 @@ Model scheduling with three primitives:
 - `horarios_fixos` (member recurring weekly commitments)
 
 Keep recurrence materialization on controlled write or job paths rather than on ordinary reads.
+Push recurring/future-scope mutation rules into `src/services/agendamento.service.ts` so route handlers stay thin.
 
 ## Alternatives Considered (Inferable)
 - Store only recurring rules and generate views at render time.

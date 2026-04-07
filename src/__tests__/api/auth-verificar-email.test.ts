@@ -7,6 +7,9 @@ const { prismaMock, resendMock } = vi.hoisted(() => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    membro: {
+      update: vi.fn(),
+    },
   },
   resendMock: {
     enviarEmail: vi.fn(async () => ({ success: true, id: 'email-1' })),
@@ -53,6 +56,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
   it('returns 400 when token is expired', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
+      role: 'MEMBRO',
       email: 'aluno@example.com',
       nome: 'Aluno',
       tokenVerificacaoExpira: new Date(Date.now() - 60_000),
@@ -66,10 +70,12 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
   it('marks email as verified, sets onboarding complete, and sends welcome email', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
+      role: 'MEMBRO',
       email: 'aluno@example.com',
       nome: 'Aluno',
+      onboardingCompleto: false,
       tokenVerificacaoExpira: new Date(Date.now() + 60_000),
-      membro: { id: 'm-1' },
+      membro: { id: 'm-1', anamnese: { id: 'a-1' } },
     })
 
     const res = await post({ token: 'ok' })
@@ -87,10 +93,10 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
       }),
     })
     expect(json.success).toBe(true)
-    expect(json.profileToken).toBeUndefined()
+    expect(json.nextStep).toBe('login')
+    expect(json.redirectUrl).toContain('/login')
     expect(json.isAdmin).toBe(false)
 
-    // Welcome email should be sent
     expect(resendMock.enviarEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         para: 'aluno@example.com',
@@ -102,8 +108,10 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
   it('does not return profileToken in response', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
+      role: 'MEMBRO',
       email: 'aluno@example.com',
       nome: 'Aluno',
+      onboardingCompleto: false,
       tokenVerificacaoExpira: new Date(Date.now() + 60_000),
       membro: null,
     })
@@ -112,5 +120,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
     const json = await res.json()
 
     expect(json.profileToken).toBeUndefined()
+    expect(json.nextStep).toBe('complete_profile')
+    expect(json.redirectUrl).toContain('/completar-perfil?token=')
   })
 })

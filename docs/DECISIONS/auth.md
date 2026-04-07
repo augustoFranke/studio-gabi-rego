@@ -8,6 +8,7 @@ The app must support member and admin access from the same codebase, protect rou
 
 ## Decision
 Use NextAuth credentials login with JWT sessions, then enforce role boundaries in the route proxy (`route access`) and API wrappers (`action access`).
+Onboarding and profile completion now use dedicated service modules and token namespaces so verification, profile completion, and anamnese completion are orchestrated consistently.
 
 ## Alternatives Considered (Inferable)
 - DB-backed sessions for immediate revocation.
@@ -28,7 +29,12 @@ Cons:
 - `src/lib/auth.ts`
 - `src/proxy.ts`
 - `src/lib/api.ts`
+- `src/services/perfil.service.ts`
+- `src/services/membro.service.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
+- `src/app/api/auth/cadastro/route.ts`
+- `src/app/api/auth/verificar-email/route.ts`
+- `src/app/api/membros/[id]/perfil-link/route.ts`
 - `src/app/api/**` routes using `withApiAuth`
 
 ## Evidence

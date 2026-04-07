@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { withApiAuth } from '@/lib/api'
+import { validateRequest, withApiAuth } from '@/lib/api'
+import { z } from 'zod'
+import {
+  deletePlanoById,
+  getPlanoById,
+  PlanoServiceError,
+  updatePlanoById,
+} from '@/services/plano.service'
+
+const planoUpdateSchema = z.object({
+  nome: z.string().min(1).optional(),
+  descricao: z.string().nullable().optional(),
+  valor: z.number().positive().optional(),
+  duracaoDias: z.number().int().positive().optional(),
+  aulasSemanais: z.number().int().positive().optional(),
+  ativo: z.boolean().optional(),
+}).refine((data) => Object.values(data).some((value) => value !== undefined), {
+  message: 'Nenhum dado para atualizar',
+})
 
 // GET /api/planos/[id] - Obter um plano específico
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async (session) => {
     const { id } = await params
-
-    const includeCounts = session.user.role === 'ADMIN'
-    
-    const plano = await prisma.plano.findUnique({
-      where: { id },
-      include: includeCounts ? {
-        _count: {
-          select: { membros: true, pagamentos: true }
-        }
-      } : undefined,
-    })
+    const plano = await getPlanoById(id, session.user.role === 'ADMIN')
 
     if (!plano) {
       return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
@@ -37,23 +44,20 @@ export async function PUT(
   return withApiAuth(async () => {
     try {
       const { id } = await params
-      const body = await request.json()
-      const { nome, descricao, valor, duracaoDias, aulasSemanais, ativo } = body
+      const validation = await validateRequest(request, planoUpdateSchema)
 
-      const plano = await prisma.plano.update({
-        where: { id },
-        data: {
-          ...(nome !== undefined && { nome }),
-          ...(descricao !== undefined && { descricao }),
-          ...(valor !== undefined && { valor }),
-          ...(duracaoDias !== undefined && { duracaoDias }),
-          ...(aulasSemanais !== undefined && { aulasSemanais }),
-          ...(ativo !== undefined && { ativo }),
-        },
-      })
+      if ('error' in validation) {
+        return validation.error
+      }
+
+      const plano = await updatePlanoById(id, validation.data)
 
       return NextResponse.json(plano)
     } catch (error) {
+      if (error instanceof PlanoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
+      }
+
       console.error('Erro ao atualizar plano:', error)
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
@@ -68,24 +72,21 @@ export async function DELETE(
   return withApiAuth(async () => {
     try {
       const { id } = await params
-      const membrosAtivos = await prisma.membro.count({
-        where: { planoId: id, status: 'ATIVO' }
-      })
+      const result = await deletePlanoById(id)
 
-      if (membrosAtivos > 0) {
-        const plano = await prisma.plano.update({
-          where: { id },
-          data: { ativo: false },
-        })
+      if (result.action === 'deactivated' && result.plano) {
         return NextResponse.json({
-          ...plano,
-          message: `Plano desativado. ${membrosAtivos} membro(s) ativo(s) ainda usam este plano.`
+          ...result.plano,
+          message: `Plano desativado. ${result.membrosAtivos} membro(s) ativo(s) ainda usam este plano.`
         })
       }
 
-      await prisma.plano.delete({ where: { id } })
       return NextResponse.json({ message: 'Plano removido com sucesso' })
     } catch (error) {
+      if (error instanceof PlanoServiceError) {
+        return NextResponse.json({ error: error.message }, { status: error.status })
+      }
+
       console.error('Erro ao remover plano:', error)
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }

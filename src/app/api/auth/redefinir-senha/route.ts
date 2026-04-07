@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
-import { hash } from "bcryptjs"
-import { prisma } from "@/lib/prisma"
 import { rateLimitByIp } from "@/lib/rate-limit"
+import {
+  AccountRecoveryServiceError,
+  resetPasswordWithToken,
+} from "@/services/account-recovery.service"
 
 export async function POST(request: Request) {
   try {
@@ -23,70 +25,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate password requirements
-    if (senha.length < 8) {
-      return NextResponse.json(
-        { error: "A senha deve ter no mínimo 8 caracteres" },
-        { status: 400 }
-      )
-    }
-
-    if (!/[A-Z]/.test(senha)) {
-      return NextResponse.json(
-        { error: "A senha deve conter pelo menos uma letra maiúscula" },
-        { status: 400 }
-      )
-    }
-
-    if (!/[0-9]/.test(senha)) {
-      return NextResponse.json(
-        { error: "A senha deve conter pelo menos um número" },
-        { status: 400 }
-      )
-    }
-
-    // Find user by token
-    const usuario = await prisma.usuario.findUnique({
-      where: { tokenReset: token },
-      select: {
-        id: true,
-        tokenResetExpira: true,
-      },
-    })
-
-    if (!usuario) {
-      return NextResponse.json(
-        { error: "Token inválido ou expirado" },
-        { status: 400 }
-      )
-    }
-
-    // Check if token has expired
-    if (!usuario.tokenResetExpira || usuario.tokenResetExpira < new Date()) {
-      return NextResponse.json(
-        { error: "Este link expirou. Solicite um novo link de redefinição." },
-        { status: 400 }
-      )
-    }
-
-    // Hash new password and update user
-    const senhaHash = await hash(senha, 12)
-
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        senha: senhaHash,
-        senhaDefinida: true,
-        tokenReset: null,
-        tokenResetExpira: null,
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: "Senha redefinida com sucesso!",
-    })
+    const result = await resetPasswordWithToken(token, senha)
+    return NextResponse.json(result)
   } catch (error) {
+    if (error instanceof AccountRecoveryServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
+
     console.error("Erro ao redefinir senha:", error)
     return NextResponse.json(
       { error: "Erro interno ao redefinir senha" },

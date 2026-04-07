@@ -9,6 +9,19 @@ The system is a single Next.js App Router application that serves:
 
 It uses Prisma for all persistence, NextAuth credentials-based login with JWT sessions, and route-proxy/API wrappers for authorization boundaries.
 
+## Backend Boundary Direction
+Mutation-heavy domains should flow through service modules rather than route handlers or pages:
+- Auth and onboarding: signup, verification, profile completion, and anamnese completion.
+- Member and payment management: CRUD, ownership checks, and status transitions.
+- Scheduling: recurring materialization, future-scope mutations, and slot-capacity rules.
+- Notifications: dedupe, retry metadata, and channel sends.
+
+Route handlers should stay thin:
+- authenticate and authorize
+- validate and normalize input
+- call a service or use-case module
+- map service results to HTTP responses
+
 ## Component Interaction Model
 - Browser requests page routes.
 - `src/proxy.ts` performs route-level session/role checks before render.
@@ -28,13 +41,19 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 2. The route proxy reads JWT cookie via `next-auth/jwt` and redirects on mismatch.
 3. API request enters `route.ts`; `withApiAuth` validates session and optional role.
 4. Request body is schema-validated (Zod) where applicable.
-5. Handler executes Prisma queries directly or via `src/services/*`.
+5. Handler delegates business logic to `src/services/*` and keeps direct Prisma access for read-only or exceptional utility flows only.
 6. JSON response returns domain-specific payload/errors.
 
 ### Scheduling Lifecycle
 - Admin creates slot booking via `/api/agendamentos`.
 - Weekly recurrence optionally creates `horarios_fixos`.
-- Read paths call `syncAgendamentosRecorrentes` to materialize future bookings for active members within requested ranges.
+- Read paths are side-effect free.
+- Recurrence materialization is handled by service-owned write paths or controlled job flows.
+
+### Onboarding And Profile Lifecycle
+- Verification and profile completion use dedicated token namespaces (`tokenVerificacao`, `tokenPerfil`, `anamneseToken`).
+- `src/app/(auth)/completar-perfil/page.tsx` is the handoff UI for profile-token completion.
+- Onboarding completion should be decided by service logic, not by route/page side effects.
 
 ### Notification Lifecycle
 - Cron endpoints require Bearer `CRON_SECRET`.
@@ -119,7 +138,7 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 ### Files
 - Auth and guardrails: `src/lib/auth.ts`, `src/lib/api.ts`, `src/proxy.ts`, `src/app/api/auth/[...nextauth]/route.ts`
 - API domains: `src/app/api/**/route.ts`
-- Services: `src/services/agendamento.service.ts`, `src/services/treino.service.ts`
+- Services: `src/services/agendamento.service.ts`, `src/services/membro.service.ts`, `src/services/pagamento.service.ts`, `src/services/perfil.service.ts`, `src/services/treino.service.ts`
 - Scheduler/jobs: `src/lib/scheduler.ts`, `src/lib/jobs/cobranca-whatsapp.ts`
 - Import pipeline: `src/lib/payments/feb2026-import.ts`, `utility/import-payments-feb-2026-docx.ts`, `RUNBOOK.md`
 - Persistence: `prisma/schema.prisma`, `prisma/migrations/**`
@@ -133,6 +152,7 @@ It uses Prisma for all persistence, NextAuth credentials-based login with JWT se
 - `9702602` - notifications and cron framework introduction.
 - `70fb9fe` - payment import audit architecture addition.
 - `3274441` - payment import behavior fixes and local dev UX script.
+- `main branch service pass` - extracted backend boundaries for scheduling, members, payments, and onboarding/profile.
 
 ## Uncertainty
 - External scheduler wiring (for invoking cron endpoints in production) is not declared in this repository.
