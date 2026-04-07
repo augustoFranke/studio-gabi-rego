@@ -142,7 +142,7 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
       legacyWhere: {
         membroId,
         tipo: TipoNotificacao.COBRANCA,
-        canalWhatsapp: true,
+        canalEmail: false,
         OR: [
           { agendadaPara: targetDate },
           {
@@ -167,7 +167,6 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
         tipo: TipoNotificacao.COBRANCA,
         titulo,
         mensagem,
-        canalWhatsapp: true,
         canalEmail: false,
         agendadaPara: targetDate,
       },

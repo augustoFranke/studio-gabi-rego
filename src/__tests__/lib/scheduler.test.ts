@@ -156,7 +156,6 @@ describe('processarAniversarios', () => {
           membroId: 'm-3',
           tipo: TipoNotificacao.ANIVERSARIO,
           canalEmail: false,
-          canalWhatsapp: true,
         }),
       })
     )
