@@ -18,11 +18,27 @@ describe('provider observability', () => {
   const originalEnv = { ...process.env }
   const originalArgv = [...process.argv]
   const originalFetch = global.fetch
+  const providerEnvKeys = [
+    'RESEND_API_KEY',
+    'EVOLUTION_API_URL',
+    'EVOLUTION_API_KEY',
+    'EVOLUTION_INSTANCE',
+    'NEXTAUTH_SECRET',
+    'AUTH_SECRET',
+    'CRON_SECRET',
+    'DATABASE_URL',
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN',
+  ] as const
 
   beforeEach(() => {
     vi.resetModules()
     vi.restoreAllMocks()
     process.env = { ...originalEnv, NODE_ENV: 'development' }
+    for (const key of providerEnvKeys) {
+      delete process.env[key]
+    }
+    process.env.NODE_ENV = 'development'
     delete process.env.VITEST
     process.argv = ['node', 'provider-observability']
   })
