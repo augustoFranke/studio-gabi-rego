@@ -1,5 +1,11 @@
-import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
+import { createTimedToken } from "@/lib/auth-flow"
+import {
+  normalizeCpf,
+  normalizeOptionalString,
+  normalizeTelefone,
+  parseOptionalDate,
+} from "@/lib/member-profile"
 
 type PerfilBaseInput = {
   nome: string
@@ -52,42 +58,12 @@ type PerfilView = {
   sexo: "MASCULINO" | "FEMININO" | null
 }
 
-function normalizeCpf(value?: string | null) {
-  return value ? value.replace(/\D/g, "") : null
-}
-
-function normalizeTelefone(value?: string | null) {
-  return value ? value.replace(/\D/g, "") : null
-}
-
-function normalizeString(value?: string | null) {
-  if (value === undefined) return undefined
-  if (value === null) return null
-  const trimmed = value.trim()
-  return trimmed === "" ? null : trimmed
-}
-
-function parseDate(value?: string | null) {
-  if (value === undefined || value === null || value.trim() === "") {
-    return null
-  }
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return null
-  }
-  return parsed
-}
-
 function createAnamneseToken(issueAnamneseToken: boolean) {
   if (!issueAnamneseToken) {
     return { token: null, expiresAt: null }
   }
 
-  const token = randomBytes(32).toString("hex")
-  return {
-    token,
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-  }
+  return createTimedToken()
 }
 
 export async function getPerfilByUsuarioId(userId: string): Promise<PerfilView | null> {
@@ -137,9 +113,9 @@ export async function savePerfilForUser({
 }: PerfilSaveParams): Promise<PerfilSaveResult> {
   const normalizedCpf = normalizeCpf(cpf)
   const normalizedTelefone = normalizeTelefone(telefone)
-  const normalizedRg = normalizeString(rg)
+  const normalizedRg = normalizeOptionalString(rg)
   const normalizedSexo = sexo ?? null
-  const normalizedDataNascimento = parseDate(dataNascimento)
+  const normalizedDataNascimento = parseOptionalDate(dataNascimento)
 
   const [existingCpf, existingMembro] = await Promise.all([
     normalizedCpf
@@ -245,7 +221,7 @@ export async function updatePerfilForUser({
       data: {
         ...(telefone !== undefined ? { telefone: normalizeTelefone(telefone) } : {}),
         ...(dataNascimento !== undefined
-          ? { dataNascimento: parseDate(dataNascimento) }
+          ? { dataNascimento: parseOptionalDate(dataNascimento) }
           : {}),
         ...(sexo !== undefined ? { sexo: sexo ?? null } : {}),
       },
@@ -295,8 +271,7 @@ export async function completePerfilFromToken({
 }
 
 export async function createPerfilTokenForMembro(membroId: string) {
-  const token = randomBytes(32).toString("hex")
-  const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000)
+  const { token, expiresAt: tokenExpiry } = createTimedToken()
 
   const membro = await prisma.membro.findUnique({
     where: { id: membroId },

@@ -3,6 +3,8 @@ import type { Session } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { cache } from "react"
+import { logWarn, logInfo } from "@/lib/observability/logger"
+import { AUTH_SIGN_IN_FAILED, AUTH_SIGN_IN_OK } from "@/lib/observability/events"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -37,22 +39,28 @@ const nextAuth = NextAuth({
         })
 
         if (!usuario) {
+          logWarn(AUTH_SIGN_IN_FAILED, { reason: 'user_not_found' })
           throw new Error(authError("USER_NOT_FOUND"))
         }
 
         if (!usuario.emailVerificado) {
+          logWarn(AUTH_SIGN_IN_FAILED, { reason: 'email_not_verified' })
           throw new Error(authError("EMAIL_NOT_VERIFIED"))
         }
 
         if (!usuario.senhaDefinida) {
+          logWarn(AUTH_SIGN_IN_FAILED, { reason: 'password_setup_required' })
           throw new Error(authError("PASSWORD_SETUP_REQUIRED"))
         }
 
         const senhaCorreta = await compare(password, usuario.senha)
 
         if (!senhaCorreta) {
+          logWarn(AUTH_SIGN_IN_FAILED, { reason: 'wrong_password' })
           throw new Error(authError("WRONG_PASSWORD"))
         }
+
+        logInfo(AUTH_SIGN_IN_OK, { userId: usuario.id, role: usuario.role })
 
         return {
           id: usuario.id,
@@ -76,7 +84,7 @@ const nextAuth = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        session.user.role = token.role as string
+        session.user.role = token.role
         session.user.membroId = token.membroId as string | undefined
       }
       return session

@@ -1,5 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { NextRequest } from 'next/server'
+import { logWarn } from '@/lib/observability/logger'
+import { CRON_AUTH_FAILED } from '@/lib/observability/events'
 
 export type CronAuthFailureReason =
   | 'missing_secret'
@@ -13,11 +15,7 @@ export type CronAuthResult =
   | { ok: false; reason: CronAuthFailureReason }
 
 function logCronAuthFailure(path: string, reason: CronAuthFailureReason) {
-  console.warn('cron_auth_failed', {
-    event: 'cron_auth_failed',
-    path,
-    reason,
-  })
+  logWarn(CRON_AUTH_FAILED, { path, reason })
 }
 
 function extractBearerToken(authorizationHeader: string | null):

@@ -351,8 +351,7 @@ export default function FinanceiroPage() {
     }
   }, [])
 
-  // Fetch initial data (planos, membros, and first page of pagamentos)
-  const fetchData = useCallback(async () => {
+  const fetchBootstrapData = useCallback(async () => {
     try {
       const [planosRes, membrosRes] = await Promise.all([
         fetch("/api/planos?includeInactive=true"),
@@ -367,22 +366,21 @@ export default function FinanceiroPage() {
         const membrosData = await membrosRes.json()
         setMembros(membrosData)
       }
-
-      await Promise.all([
-        fetchPagamentos(1, undefined, undefined, sortPagamento),
-        fetchStats(),
-      ])
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       toast.error("Erro ao carregar dados")
     } finally {
       setLoading(false)
     }
-  }, [fetchPagamentos, fetchStats, sortPagamento])
+  }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchBootstrapData()
+  }, [fetchBootstrapData])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   // Debounce search to avoid API call on every keystroke
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -473,7 +471,8 @@ export default function FinanceiroPage() {
       if (res.ok) {
         toast.success(editingPlano ? "Plano atualizado!" : "Plano criado!")
         setPlanoDialogOpen(false)
-        fetchData()
+        void fetchBootstrapData()
+        void fetchStats()
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao salvar plano")
@@ -496,7 +495,8 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success(data.message || "Plano removido!")
-        fetchData()
+        void fetchBootstrapData()
+        void fetchStats()
       } else {
         toast.error(data.error || "Erro ao remover plano")
       }
@@ -515,7 +515,8 @@ export default function FinanceiroPage() {
 
       if (res.ok) {
         toast.success(plano.ativo ? "Plano desativado!" : "Plano ativado!")
-        fetchData()
+        void fetchBootstrapData()
+        void fetchStats()
       } else {
         const data = await res.json()
         toast.error(data.error || "Erro ao atualizar plano")
