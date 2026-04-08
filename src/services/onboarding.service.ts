@@ -1,5 +1,4 @@
 import { hash } from "bcryptjs"
-import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import {
   extractCanonicalAnamneseData,
@@ -8,8 +7,14 @@ import {
   type CanonicalAnamneseData,
 } from "@/lib/anamnese"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
+import { createTimedToken, getAppBaseUrl } from "@/lib/auth-flow"
+import {
+  normalizeCpf,
+  normalizeOptionalString,
+  normalizeTelefone,
+  parseOptionalDate,
+} from "@/lib/member-profile"
 
-const TOKEN_EXPIRY_MS = 60 * 60 * 1000
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
 export class OnboardingServiceError extends Error {
@@ -54,23 +59,6 @@ export type GenericSuccessResult = {
   message: string
 }
 
-function createToken() {
-  return randomBytes(32).toString("hex")
-}
-
-function createTokenExpiry() {
-  return new Date(Date.now() + TOKEN_EXPIRY_MS)
-}
-
-function getBaseUrl(origin?: string) {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : origin) ||
-    "https://studiogabirego.com"
-  )
-}
-
 function queueWelcomeEmail(nome: string | null | undefined, email: string | null | undefined) {
   if (!email || !isResendConfigured()) {
     return
@@ -99,7 +87,7 @@ async function sendVerificationEmail(params: {
     )
   }
 
-  const verificationLink = `${getBaseUrl(params.origin)}/verificar-email/${params.verificationToken}`
+  const verificationLink = `${getAppBaseUrl(params.origin)}/verificar-email/${params.verificationToken}`
   const result = await enviarEmail({
     para: params.email,
     assunto: "Verifique seu email - Gabi Studio",
@@ -116,8 +104,7 @@ async function sendVerificationEmail(params: {
 }
 
 async function issueProfileTokenForUser(userId: string) {
-  const token = createToken()
-  const expiresAt = createTokenExpiry()
+  const { token, expiresAt } = createTimedToken()
 
   await prisma.usuario.update({
     where: { id: userId },
@@ -131,8 +118,7 @@ async function issueProfileTokenForUser(userId: string) {
 }
 
 async function issueAnamneseTokenForMembro(membroId: string) {
-  const token = createToken()
-  const expiresAt = createTokenExpiry()
+  const { token, expiresAt } = createTimedToken()
 
   await prisma.membro.update({
     where: { id: membroId },
@@ -204,8 +190,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
     }
   }
 
-  const verificationToken = createToken()
-  const tokenExpiry = createTokenExpiry()
+  const { token: verificationToken, expiresAt: tokenExpiry } = createTimedToken()
 
   if (hasFullPayload && fullNome && input.anamnese) {
     await prisma.$transaction(async (tx) => {
@@ -255,10 +240,10 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
       const membro = await tx.membro.create({
         data: {
           usuarioId: userId,
-          cpf: input.cpf ?? null,
-          rg: input.rg ?? null,
-          telefone: input.telefone ?? null,
-          dataNascimento: input.dataNascimento ? new Date(input.dataNascimento) : null,
+          cpf: normalizeCpf(input.cpf),
+          rg: normalizeOptionalString(input.rg) ?? null,
+          telefone: normalizeTelefone(input.telefone),
+          dataNascimento: parseOptionalDate(input.dataNascimento),
           sexo: input.sexo ?? null,
           status: "PENDENTE",
         },
@@ -332,7 +317,7 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
     throw new OnboardingServiceError("Token expirado", "EXPIRED_TOKEN", 400)
   }
 
-  const baseUrl = getBaseUrl(origin)
+  const baseUrl = getAppBaseUrl(origin)
   const shouldSendWelcome = !usuario.onboardingCompleto
   let profileToken: string | null = null
   let anamneseToken: string | null = null
@@ -435,8 +420,7 @@ export async function resendVerificationEmail(email: string, origin?: string): P
     }
   }
 
-  const verificationToken = createToken()
-  const tokenExpiry = createTokenExpiry()
+  const { token: verificationToken, expiresAt: tokenExpiry } = createTimedToken()
 
   await prisma.usuario.update({
     where: { id: usuario.id },
@@ -452,7 +436,7 @@ export async function resendVerificationEmail(email: string, origin?: string): P
       assunto: "Verifique seu email - Gabi Studio",
       html: emailTemplates.verificacaoEmail(
         usuario.nome ?? null,
-        `${getBaseUrl(origin)}/verificar-email/${verificationToken}`
+        `${getAppBaseUrl(origin)}/verificar-email/${verificationToken}`
       ),
     })
   } else {
@@ -671,7 +655,7 @@ export async function createAnamneseLinkForMembro(membroId: string, origin?: str
   const { token, expiresAt } = await issueAnamneseTokenForMembro(membroId)
 
   return {
-    link: `${getBaseUrl(origin)}/anamnese#token=${token}`,
+    link: `${getAppBaseUrl(origin)}/anamnese#token=${token}`,
     expiresAt,
   }
 }

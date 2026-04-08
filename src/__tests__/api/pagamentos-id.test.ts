@@ -60,7 +60,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
 
   describe('GET', () => {
     it('should return payment for admin', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
       getPagamentoByIdMock.mockResolvedValueOnce({
         id: 'pag-123',
         membroId: 'm-1',
@@ -74,7 +74,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should deny access to non-owners', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'MEMBRO', membroId: 'm-2' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-2', role: 'MEMBRO', membroId: 'm-2' } })
       getPagamentoByIdMock.mockResolvedValueOnce({
         id: 'pag-123',
         membroId: 'm-1',
@@ -88,7 +88,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
 
   describe('PUT (Update Status)', () => {
     it('should update payment status to PAGO', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
       updatePagamentoByIdMock.mockResolvedValueOnce({
         id: 'pag-123',
         status: 'PAGO',
@@ -117,7 +117,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should sync the next pending payment to the paid billing day', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
 
       const req = new NextRequest('http://localhost:3000/api/pagamentos/pag-123', {
         method: 'PUT',
@@ -165,7 +165,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should deny access to non-admins', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'MEMBRO' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-1', role: 'MEMBRO' } })
       const req = new NextRequest('http://localhost:3000/api', { method: 'PUT' })
       const res = await PUT(req, { params })
       expect(res.status).toBe(403)
@@ -174,7 +174,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
 
   describe('DELETE (Cancel/Remove)', () => {
     it('should cancel payment if status is PAGO', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
       deletePagamentoByIdMock.mockResolvedValueOnce({
         id: 'pag-123',
         status: 'CANCELADO',
@@ -190,7 +190,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should delete payment if status is PENDENTE', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
       deletePagamentoByIdMock.mockResolvedValueOnce({
         id: 'pag-123',
       })
@@ -205,7 +205,7 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
     })
 
     it('should return 404 when payment is missing', async () => {
-      authMock.mockResolvedValueOnce({ user: { role: 'ADMIN' } })
+      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
       deletePagamentoByIdMock.mockRejectedValueOnce(
         new PagamentoServiceErrorMock('Pagamento não encontrado', 'PAGAMENTO_NOT_FOUND', 404)
       )

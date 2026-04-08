@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withApiAuth } from "@/lib/api"
+import { getAppBaseUrl } from "@/lib/auth-flow"
 import { createPerfilTokenForMembro } from "@/services/perfil.service"
 
 interface Params {
@@ -21,7 +22,7 @@ export async function POST(
         return NextResponse.json({ error: "Membro não encontrado" }, { status: 404 })
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+      const baseUrl = getAppBaseUrl(request.nextUrl.origin)
       const link = `${baseUrl}/completar-perfil?token=${result.token}`
 
       return NextResponse.json({ link, expiresAt: result.tokenExpiry })
