@@ -5,9 +5,35 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Runtime Config', () => {
   const originalEnv = { ...process.env }
+  const runtimeConfigEnvKeys = [
+    'DATABASE_URL',
+    'NEXTAUTH_SECRET',
+    'AUTH_SECRET',
+    'CRON_SECRET',
+    'APP_TIMEZONE',
+    'NEXTAUTH_URL',
+    'NEXT_PUBLIC_APP_URL',
+    'RESEND_API_KEY',
+    'EVOLUTION_API_URL',
+    'EVOLUTION_API_KEY',
+    'EVOLUTION_INSTANCE',
+    'WHATSAPP_COUNTRY_CODE',
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN',
+    'DEPLOYMENT_TARGET',
+    'VERCEL',
+    'VERCEL_URL',
+    'CORS_ALLOWED_ORIGIN',
+    'RUN_MIGRATIONS',
+    'DIRECT_URL',
+  ] as const
 
   beforeEach(() => {
     vi.resetModules()
+    process.env = { ...originalEnv }
+    for (const key of runtimeConfigEnvKeys) {
+      delete process.env[key]
+    }
   })
 
   afterEach(() => {
