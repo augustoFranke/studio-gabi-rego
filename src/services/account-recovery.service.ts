@@ -1,8 +1,8 @@
 import { hash } from "bcryptjs"
-import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
+import { createTimedToken, getAppBaseUrl } from "@/lib/auth-flow"
 
 export class AccountRecoveryServiceError extends Error {
   constructor(
@@ -13,23 +13,6 @@ export class AccountRecoveryServiceError extends Error {
     super(message)
     this.name = "AccountRecoveryServiceError"
   }
-}
-
-function createToken() {
-  return randomBytes(32).toString("hex")
-}
-
-function createTokenExpiry() {
-  return new Date(Date.now() + 60 * 60 * 1000)
-}
-
-function getBaseUrl(origin?: string) {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : origin) ||
-    "https://studiogabirego.com"
-  )
 }
 
 function validatePasswordOrThrow(password: string) {
@@ -64,8 +47,7 @@ export async function issuePasswordResetLink(usuarioId: string, origin?: string)
     )
   }
 
-  const resetToken = createToken()
-  const tokenExpiry = createTokenExpiry()
+  const { token: resetToken, expiresAt: tokenExpiry } = createTimedToken()
 
   await prisma.usuario.update({
     where: { id: usuario.id },
@@ -81,7 +63,7 @@ export async function issuePasswordResetLink(usuarioId: string, origin?: string)
       assunto: "Redefinir Senha - Studio Gabi Rego",
       html: emailTemplates.redefinirSenha(
         usuario.nome || "Aluno(a)",
-        `${getBaseUrl(origin)}/redefinir-senha/${resetToken}`
+        `${getAppBaseUrl(origin)}/redefinir-senha/${resetToken}`
       ),
     })
 

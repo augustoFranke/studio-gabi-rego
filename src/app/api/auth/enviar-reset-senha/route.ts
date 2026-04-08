@@ -7,20 +7,13 @@ import {
 } from "@/services/account-recovery.service"
 
 export async function POST(request: Request) {
-  return withApiAuth(async (session) => {
+  return withApiAuth(async () => {
     try {
       const rateLimit = await rateLimitByIp(request, "auth:admin-reset")
       if (!rateLimit.success) {
         return NextResponse.json(
           { error: "Muitas tentativas. Tente novamente em instantes." },
           { status: 429 }
-        )
-      }
-
-      if (session.user.role !== 'ADMIN') {
-        return NextResponse.json(
-          { error: "Sem permissão para esta ação" },
-          { status: 403 }
         )
       }
 
@@ -50,5 +43,5 @@ export async function POST(request: Request) {
 
       throw error
     }
-  })
+  }, { requiredRole: "ADMIN" })
 }
