@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -75,6 +75,42 @@ interface Plano {
 
 const DIAS_SEMANA = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"] as const
 
+function getDefaultValues(initialData?: {
+  id: string
+  usuarioId?: string
+  usuario?: {
+    nome?: string
+    email?: string
+  }
+  cpf?: string
+  rg?: string
+  telefone?: string
+  dataNascimento?: string
+  planoId?: string
+  precoCustomizado?: string | number | null
+  sexo?: 'MASCULINO' | 'FEMININO' | null
+  horariosFixos?: {
+    diaSemana: typeof DIAS_SEMANA[number]
+    hora: string
+  }[]
+}): FormValues {
+  return {
+    nome: initialData?.usuario?.nome || "",
+    email: initialData?.usuario?.email || "",
+    senha: "",
+    cpf: initialData?.cpf ? formatarCPF(initialData.cpf) : "",
+    rg: initialData?.rg || "",
+    telefone: initialData?.telefone ? formatarTelefone(initialData.telefone) : "",
+    dataNascimento: initialData?.dataNascimento
+      ? new Date(initialData.dataNascimento).toISOString().split('T')[0]
+      : "",
+    planoId: initialData?.planoId || "",
+    precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
+    sexo: initialData?.sexo || undefined,
+    horariosFixos: initialData?.horariosFixos ?? [],
+  }
+}
+
 export function MemberForm({
   initialData,
   mode = 'create'
@@ -139,19 +175,7 @@ export function MemberForm({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      nome: initialData?.usuario?.nome || "",
-      email: initialData?.usuario?.email || "",
-      senha: "", // Senha não é preenchida na edição
-      cpf: initialData?.cpf ? formatarCPF(initialData.cpf) : "",
-      rg: initialData?.rg || "",
-      telefone: initialData?.telefone ? formatarTelefone(initialData.telefone) : "",
-      dataNascimento: initialData?.dataNascimento ? new Date(initialData.dataNascimento).toISOString().split('T')[0] : "",
-      planoId: initialData?.planoId || "",
-      precoCustomizado: initialData?.precoCustomizado ? String(initialData.precoCustomizado) : "",
-      sexo: initialData?.sexo || undefined,
-      horariosFixos: initialData?.horariosFixos ?? [],
-    },
+    defaultValues: getDefaultValues(initialData),
   })
 
   const horariosFixosFieldArray = useFieldArray({
@@ -159,8 +183,9 @@ export function MemberForm({
     name: "horariosFixos",
   })
 
-  // Note: Password validation in edit mode is handled in onSubmit by removing empty password
-  // This comment replaces the previous useEffect that did nothing meaningful
+  useEffect(() => {
+    form.reset(getDefaultValues(initialData))
+  }, [form, initialData])
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -182,8 +207,6 @@ export function MemberForm({
       if (body.cpf === "") {
         (body as Record<string, unknown>).cpf = null // Enviar null se vazio para permitir CPF opcional
       }
-
-      console.log('Sending body:', body) // Debug
 
       const response = await fetch(url, {
         method,
