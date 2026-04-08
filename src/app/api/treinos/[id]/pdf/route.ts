@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
+import { runtimeError } from '@/lib/runtime-log'
 
 interface RouteParams {
   params: Promise<{
@@ -74,7 +75,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         },
       })
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error)
+      runtimeError('Erro ao gerar PDF:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return NextResponse.json({ error: `Erro ao gerar PDF: ${errorMessage}` }, { status: 500 })
     }
