@@ -3,7 +3,16 @@
  * Documentação: https://resend.com/docs
  */
 
+import { logInfo, logWarn, logError, safeErrorData } from '@/lib/observability/logger'
+import {
+  PROVIDER_SEND_ATTEMPTED,
+  PROVIDER_SEND_OK,
+  PROVIDER_SEND_FAILED,
+  PROVIDER_NOT_CONFIGURED,
+} from '@/lib/observability/events'
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY
+const PROVIDER = 'resend'
 
 const escapeHtml = (value: string) =>
   value
@@ -66,9 +75,11 @@ export async function enviarEmail({
   texto,
 }: EnviarEmailParams): Promise<EnviarEmailResponse> {
   if (!isResendConfigured()) {
-    console.warn('Resend não configurado')
+    logWarn(PROVIDER_NOT_CONFIGURED, { provider: PROVIDER })
     return { success: false, error: 'Resend não configurado' }
   }
+
+  logInfo(PROVIDER_SEND_ATTEMPTED, { provider: PROVIDER, subject: assunto })
 
   try {
     const plainText = texto?.trim() ? texto : buildTextFallback(html)
@@ -91,14 +102,23 @@ export async function enviarEmail({
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('Erro ao enviar email:', error)
+      logError(PROVIDER_SEND_FAILED, {
+        provider: PROVIDER,
+        statusCode: response.status,
+        subject: assunto,
+      })
       return { success: false, error }
     }
 
     const data = await response.json()
+    logInfo(PROVIDER_SEND_OK, { provider: PROVIDER, emailId: data.id, subject: assunto })
     return { success: true, id: data.id }
   } catch (error) {
-    console.error('Erro ao enviar email:', error)
+    logError(PROVIDER_SEND_FAILED, {
+      provider: PROVIDER,
+      subject: assunto,
+      ...safeErrorData(error),
+    })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido',
