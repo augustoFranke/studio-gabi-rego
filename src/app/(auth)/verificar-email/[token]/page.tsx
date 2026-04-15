@@ -11,6 +11,13 @@ import Image from "next/image"
 
 type VerificationStatus = "loading" | "success" | "error" | "expired"
 
+type VerifyEmailResponse = {
+  error?: string
+  message?: string
+  redirectUrl: string
+  nextStep: "dashboard" | "login" | "complete_profile" | "complete_anamnese"
+}
+
 export default function VerificarTokenPage({
   params,
 }: {
@@ -32,13 +39,13 @@ export default function VerificarTokenPage({
           body: JSON.stringify({ token: resolvedParams.token }),
         })
 
-        const data = await response.json()
+        const data = (await response.json()) as VerifyEmailResponse
 
         if (response.ok) {
           setStatus("success")
           setMessage(data.message || "Email verificado com sucesso!")
-          setRedirectUrl(data.redirectUrl || (data.isAdmin ? "/dashboard" : "/login"))
-          setNextStep(data.nextStep || (data.isAdmin ? "dashboard" : "login"))
+          setRedirectUrl(data.redirectUrl)
+          setNextStep(data.nextStep)
         } else if (data.error === "Token expirado") {
           setStatus("expired")
           setMessage("O link de verificação expirou.")

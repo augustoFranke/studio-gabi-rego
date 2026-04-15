@@ -77,7 +77,7 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
+      const errorText = await response.text()
       logError(PROVIDER_SEND_FAILED, {
         provider: PROVIDER,
         statusCode: response.status,
@@ -86,17 +86,9 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
       throw new Error(message)
     }
 
-    let result = null
-    try {
-      result = await response.json()
-    } catch {
-      // response body is not JSON — that's okay
-    }
-
     logInfo(PROVIDER_SEND_OK, { provider: PROVIDER })
-    return result
+    return
   } catch (error) {
-    // Only log + re-throw if we haven't already logged (i.e. not from the !response.ok path above)
     if (!(error instanceof Error && error.message.startsWith('Evolution API error'))) {
       logError(PROVIDER_SEND_FAILED, {
         provider: PROVIDER,

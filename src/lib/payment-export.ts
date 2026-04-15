@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
@@ -7,30 +8,27 @@ export type PaymentArchiveSummary = {
   csvPath: string | null
 }
 
-function formatCsvValue(value: unknown): string {
+const archivedPaymentInclude = {
+  membro: { include: { usuario: { select: { nome: true } } } },
+  plano: { select: { nome: true } },
+} satisfies Prisma.PagamentoInclude
+
+type ArchivedPayment = Prisma.PagamentoGetPayload<{
+  include: typeof archivedPaymentInclude
+}>
+
+type CsvValue = string | number | boolean | Date | Prisma.Decimal | null | undefined
+
+function formatCsvValue(value: CsvValue): string {
   if (value === null || value === undefined) return ''
-  const str = String(value)
+  const str = value instanceof Date ? value.toISOString() : String(value)
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str
 }
 
-function paymentsToCsv(payments: Array<{
-  id: string
-  membroId: string | null
-  planoId: string
-  payerNome: string | null
-  valor: unknown
-  dataVencimento: Date
-  dataPagamento: Date | null
-  status: string
-  formaPagamento: string | null
-  observacao: string | null
-  criadoEm: Date
-  membro?: { usuario: { nome: string | null } } | null
-  plano?: { nome: string } | null
-}>): string {
+function paymentsToCsv(payments: ArchivedPayment[]): string {
   const headers = ['id', 'membro_nome', 'payer_nome', 'plano', 'valor', 'data_vencimento', 'data_pagamento', 'status', 'forma_pagamento', 'observacao', 'criado_em']
   const rows = payments.map(p => [
     formatCsvValue(p.id),
@@ -62,10 +60,7 @@ export async function archiveOldPayments(cutoffDays = 30): Promise<PaymentArchiv
       status: { in: ['PAGO', 'CANCELADO'] },
       dataVencimento: { lt: cutoff },
     },
-    include: {
-      membro: { include: { usuario: { select: { nome: true } } } },
-      plano: { select: { nome: true } },
-    },
+    include: archivedPaymentInclude,
     orderBy: { dataVencimento: 'asc' },
   })
 

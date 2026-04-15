@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import type { ZodError, ZodSchema } from 'zod'
 import { type AppSession, isAppSession, type UserRole } from '@/lib/auth-session'
@@ -12,15 +12,23 @@ interface ApiOptions {
 
 type RequireAuthOptions = ApiOptions & { requireAuth?: true }
 type OptionalAuthOptions = { requireAuth: false; requiredRole?: never }
-type AuthOptions = RequireAuthOptions | OptionalAuthOptions
 
-export async function withApiAuth<T extends AuthOptions = RequireAuthOptions>(
-  handler: (
-    session: T extends OptionalAuthOptions ? AppSession | null : AppSession
-  ) => Promise<NextResponse>,
-  options?: T
-) {
-  const resolvedOptions: ApiOptions = options ?? { requireAuth: true }
+export function withApiAuth(
+  handler: (session: AppSession) => Promise<NextResponse>,
+  options?: RequireAuthOptions
+): Promise<NextResponse>
+
+export function withApiAuth(
+  handler: (session: AppSession | null) => Promise<NextResponse>,
+  options: OptionalAuthOptions
+): Promise<NextResponse>
+
+export async function withApiAuth(
+  handler: unknown,
+  options?: unknown
+): Promise<NextResponse> {
+  const resolvedOptions: ApiOptions = (options as ApiOptions | undefined) ?? { requireAuth: true }
+  const authHandler = handler as (session: AppSession | null) => Promise<NextResponse>
   try {
     const session = await auth()
 
@@ -29,24 +37,22 @@ export async function withApiAuth<T extends AuthOptions = RequireAuthOptions>(
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
       }
 
-      return await (handler as (session: AppSession | null) => Promise<NextResponse>)(null)
+      return await authHandler(null)
     }
 
     if (!isAppSession(session)) {
       logError(AUTH_SESSION_ERROR, {
         reason: 'invalid_session_shape',
-        hasUser: Boolean((session as { user?: unknown }).user),
+        hasUser: typeof session === 'object' && session !== null && 'user' in session,
       })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
 
-    const sessionData = session
-
-    if (resolvedOptions.requiredRole && sessionData.user.role !== resolvedOptions.requiredRole) {
+    if (resolvedOptions.requiredRole && session.user.role !== resolvedOptions.requiredRole) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
-    return await (handler as (session: AppSession) => Promise<NextResponse>)(sessionData)
+    return await authHandler(session)
   } catch (error) {
     console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
@@ -66,7 +72,7 @@ type OwnerCheckOptions = {
 }
 
 export function ensureOwnerOrAdmin(
-  session: { user: { role: UserRole; membroId?: string | null } },
+  session: Pick<AppSession, 'user'>,
   ownerId?: string | null,
   options?: OwnerCheckOptions
 ) {
@@ -81,7 +87,7 @@ export function ensureOwnerOrAdmin(
 }
 
 export async function validateRequest<T>(
-  request: NextRequest,
+  request: Request,
   schema: ZodSchema<T>,
   options?: ValidationOptions<T>
 ): Promise<ValidationResult<T>> {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ensureOwnerOrAdmin, withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
-import { runtimeError } from '@/lib/runtime-log'
+import { logError, safeErrorData } from '@/lib/observability/logger'
 
 interface RouteParams {
   params: Promise<{
@@ -10,7 +10,6 @@ interface RouteParams {
   }>
 }
 
-// GET /api/treinos/[id]/pdf - Gerar PDF da ficha de treino
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async (session) => {
     const { id } = await params
@@ -75,7 +74,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         },
       })
     } catch (error) {
-      runtimeError('Erro ao gerar PDF:', error)
+      logError('training_pdf_generation_failed', {
+        message: 'Erro ao gerar PDF:',
+        ...safeErrorData(error),
+      })
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return NextResponse.json({ error: `Erro ao gerar PDF: ${errorMessage}` }, { status: 500 })
     }
