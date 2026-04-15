@@ -1,6 +1,5 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    // 1. Validate runtime configuration before serving traffic
     const { validateRuntimeConfig } = await import(
       "@/lib/runtime-config"
     )
@@ -16,7 +15,6 @@ export async function register() {
     const result = validateRuntimeConfig()
 
     if (!result.ok) {
-      // Log the failure before throwing so it's visible in deployment logs
       logError(RUNTIME_CONFIG_INVALID, { errors: result.errors })
 
       throw new Error(
@@ -30,7 +28,6 @@ export async function register() {
       logInfo(RUNTIME_CONFIG_VALID, {})
     }
 
-    // 2. Register shutdown handlers
     const { registerShutdownHandlers } = await import("@/lib/shutdown")
     registerShutdownHandlers()
   }

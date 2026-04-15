@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
 import { Prisma } from '@prisma/client'
-import { runtimeError } from '@/lib/runtime-log'
+import { logError, safeErrorData } from '@/lib/observability/logger'
 
-// GET /api/notificacoes - Listar notificações
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     if (session.user.role === 'MEMBRO' && !session.user.membroId) {
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/notificacoes - Criar notificação manual (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
@@ -82,7 +80,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(notificacao, { status: 201 })
     } catch (error) {
-      runtimeError('Erro ao criar notificação:', error)
+      logError('notification_create_failed', {
+        message: 'Erro ao criar notificação:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   }, { requiredRole: 'ADMIN' })

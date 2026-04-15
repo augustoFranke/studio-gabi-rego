@@ -5,6 +5,11 @@ import {
   AccountRecoveryServiceError,
   issuePasswordResetLink,
 } from "@/services/account-recovery.service"
+import { z } from "zod"
+
+const resetRequestSchema = z.object({
+  usuarioId: z.string().min(1),
+})
 
 export async function POST(request: Request) {
   return withApiAuth(async () => {
@@ -17,20 +22,15 @@ export async function POST(request: Request) {
         )
       }
 
-      const body = await request.json()
-      const { usuarioId } = body
-
-      if (!usuarioId) {
+      const validation = resetRequestSchema.safeParse(await request.json())
+      if (!validation.success) {
         return NextResponse.json(
           { error: "ID do usuário é obrigatório" },
           { status: 400 }
         )
       }
 
-      const result = await issuePasswordResetLink(
-        usuarioId,
-        new URL(request.url).origin
-      )
+      const result = await issuePasswordResetLink(validation.data.usuarioId, new URL(request.url).origin)
 
       return NextResponse.json(result)
     } catch (error) {

@@ -11,9 +11,7 @@ const isProduction = process.env.NODE_ENV === "production"
 const authError = (code: string) => (isProduction ? "INVALID_CREDENTIALS" : code)
 
 const nextAuth = NextAuth({
-  // Trust host in dev or when behind Vercel's proxy
   trustHost: process.env.NODE_ENV !== "production" || process.env.VERCEL === "1",
-  // Explicitly use NEXTAUTH_SECRET for backward compatibility
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   providers: [
     Credentials({
@@ -23,14 +21,16 @@ const nextAuth = NextAuth({
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (
+          typeof credentials?.email !== "string" ||
+          typeof credentials?.password !== "string"
+        ) {
           return null
         }
 
-        const email = (credentials.email as string).toLowerCase().trim()
-        const password = credentials.password as string
+        const email = credentials.email.toLowerCase().trim()
+        const password = credentials.password
 
-        // Dynamic import to avoid Prisma initialization at module load time
         const { prisma } = await import("@/lib/prisma")
 
         const usuario = await prisma.usuario.findUnique({
@@ -83,9 +83,9 @@ const nextAuth = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
+        session.user.id = token.id
         session.user.role = token.role
-        session.user.membroId = token.membroId as string | undefined
+        session.user.membroId = token.membroId
       }
       return session
     },
@@ -101,6 +101,4 @@ const nextAuth = NextAuth({
 
 export const { handlers, signIn, signOut } = nextAuth
 
-// Wrap auth with React.cache for request deduplication
-// This ensures multiple auth() calls in the same request share the same result
 export const auth = cache(async (): Promise<Session | null> => nextAuth.auth())

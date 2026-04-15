@@ -1,6 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
-import { runtimeError, runtimeWarn } from "@/lib/runtime-log"
+import { logError, logWarn } from "@/lib/observability/logger"
 
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -37,17 +37,18 @@ export async function rateLimitByIp(request: Request, keyPrefix: string) {
 
   if (!rateLimiter) {
     if (process.env.NODE_ENV === "production") {
-      runtimeError(
-        "CRITICAL: Rate limiter unavailable in production. Denying request. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
-        null
-      )
+      logError("rate_limit_unavailable", {
+        message:
+          "CRITICAL: Rate limiter unavailable in production. Denying request. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+      })
       return { success: false, error: "Rate limit unavailable" }
     }
 
     if (process.env.NODE_ENV === "development") {
-      runtimeWarn(
-        "WARNING: Rate limiter unavailable in development. Allowing request (fail-open). Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
-      )
+      logWarn("rate_limit_unavailable", {
+        message:
+          "WARNING: Rate limiter unavailable in development. Allowing request (fail-open). Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+      })
     }
 
     return { success: true }
