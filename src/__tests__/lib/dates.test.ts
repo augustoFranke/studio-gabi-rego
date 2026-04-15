@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { addDaysYmd, formatBrFromYmd, formatTreinoDate, getYmdInTimeZone, isValidTreinoDate } from '@/lib/dates'
+import {
+  addDaysYmd,
+  formatBrFromYmd,
+  formatTreinoDate,
+  getTimeHmInTimeZone,
+  getYmdInTimeZone,
+  isValidTreinoDate,
+} from '@/lib/dates'
 
 describe('dates helpers', () => {
   it('adds days to ymd', () => {
@@ -13,6 +20,12 @@ describe('dates helpers', () => {
   it('gets ymd in timezone', () => {
     const date = new Date('2026-02-04T02:30:00Z')
     expect(getYmdInTimeZone(date, 'America/Sao_Paulo')).toBe('2026-02-03')
+  })
+
+  it('accepts cached ISO string dates in timezone helpers', () => {
+    const date = '2026-02-04T02:30:00.000Z'
+    expect(getYmdInTimeZone(date, 'America/Sao_Paulo')).toBe('2026-02-03')
+    expect(getTimeHmInTimeZone(date, 'America/Sao_Paulo')).toBe('23:30')
   })
 
   describe('formatTreinoDate', () => {
