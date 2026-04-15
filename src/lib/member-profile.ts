@@ -26,3 +26,44 @@ export function parseOptionalDate(value?: string | null): Date | null {
 
   return parsed
 }
+
+type MemberProfileInput = {
+  cpf?: string | null
+  rg?: string | null
+  telefone?: string | null
+  dataNascimento?: string | null
+  sexo?: 'MASCULINO' | 'FEMININO' | '' | null
+}
+
+export type NormalizedMemberProfileInput = {
+  cpf: string | null
+  rg: string | null | undefined
+  telefone: string | null
+  telefoneIsInvalid: boolean
+  dataNascimento: Date | null
+  dataNascimentoIsInvalid: boolean
+  sexo: 'MASCULINO' | 'FEMININO' | null
+}
+
+function hasSubmittedText(value?: string | null): boolean {
+  return value !== undefined && value !== null && value.trim() !== ''
+}
+
+export function normalizeMemberProfileInput(
+  input: MemberProfileInput
+): NormalizedMemberProfileInput {
+  const cpf = normalizeCpf(input.cpf)
+  const rg = normalizeOptionalString(input.rg)
+  const telefone = normalizeTelefone(input.telefone)
+  const dataNascimento = parseOptionalDate(input.dataNascimento)
+
+  return {
+    cpf,
+    rg,
+    telefone,
+    telefoneIsInvalid: telefone !== null && telefone.length < 10,
+    dataNascimento,
+    dataNascimentoIsInvalid: hasSubmittedText(input.dataNascimento) && dataNascimento === null,
+    sexo: input.sexo === '' ? null : (input.sexo ?? null),
+  }
+}

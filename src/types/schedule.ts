@@ -1,4 +1,6 @@
-import { DiaSemana } from '@prisma/client'
+import type { DiaSemana } from '@prisma/client'
+
+export type { DiaSemana }
 
 export type ScheduleView = 'daily' | 'weekly' | 'monthly'
 

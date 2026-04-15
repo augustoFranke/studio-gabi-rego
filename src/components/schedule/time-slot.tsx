@@ -150,12 +150,10 @@ const TimeSlotBase = function TimeSlot({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
     >
-      {/* Hour label */}
       <div className="w-16 shrink-0 py-3 px-2 text-sm text-muted-foreground font-medium border-r bg-muted/30">
         {hourLabel}
       </div>
 
-      {/* Slot content */}
       <div
         className={cn(
           'flex-1 min-h-[60px] p-2',
@@ -203,7 +201,6 @@ const TimeSlotBase = function TimeSlot({
         )}
       </div>
 
-      {/* Capacity indicator - clickable to show attendees list */}
       <TimeSlotPopover
         hour={hour}
         agendamentos={agendamentos}

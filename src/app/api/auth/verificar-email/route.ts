@@ -3,20 +3,23 @@ import {
   OnboardingServiceError,
   verifyEmailToken,
 } from "@/services/onboarding.service"
+import { z } from "zod"
+
+const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+})
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { token } = body
-
-    if (!token) {
+    const validation = verifyEmailSchema.safeParse(await request.json())
+    if (!validation.success) {
       return NextResponse.json(
         { error: "Token não fornecido" },
         { status: 400 }
       )
     }
 
-    const result = await verifyEmailToken(token, new URL(request.url).origin)
+    const result = await verifyEmailToken(validation.data.token, new URL(request.url).origin)
     return NextResponse.json(result)
   } catch (error) {
     if (error instanceof OnboardingServiceError) {

@@ -11,7 +11,6 @@ const planoSchema = z.object({
   aulasSemanais: z.number().int().positive('Informe as aulas semanais'),
 })
 
-// GET /api/planos - Listar todos os planos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     const searchParams = request.nextUrl.searchParams
@@ -26,7 +25,6 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/planos - Criar novo plano (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {

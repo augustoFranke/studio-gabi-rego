@@ -4,7 +4,6 @@ import { membroCreateSchema } from '@/schemas/membro.schema'
 import { createAdminMembro, listMembros, MembroServiceError } from '@/services/membro.service'
 import { StatusMembro } from '@prisma/client'
 
-// GET /api/membros - Listar todos os membros
 export async function GET(request: NextRequest) {
   return withApiAuth(async () => {
     const searchParams = request.nextUrl.searchParams
@@ -20,7 +19,6 @@ export async function GET(request: NextRequest) {
   }, { requiredRole: 'ADMIN' })
 }
 
-// POST /api/membros - Criar novo membro
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     const validation = await validateRequest(request, membroCreateSchema, {
