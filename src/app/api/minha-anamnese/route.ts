@@ -6,7 +6,6 @@ import {
   saveMinhaAnamnese,
 } from "@/services/onboarding.service"
 
-// GET - Fetch member's anamnesis
 export async function GET() {
   return withApiAuth(async (session) => {
     try {
@@ -28,7 +27,6 @@ export async function GET() {
   })
 }
 
-// POST - Save member's anamnesis
 export async function POST(request: Request) {
   return withApiAuth(async (session) => {
     try {
@@ -42,16 +40,7 @@ export async function POST(request: Request) {
         )
       }
 
-      if (!body || typeof body !== "object" || Array.isArray(body)) {
-        return NextResponse.json(
-          { error: "Dados inválidos enviados" },
-          { status: 400 }
-        )
-      }
-
-      return NextResponse.json(
-        await saveMinhaAnamnese(session.user.id, body as Record<string, unknown>)
-      )
+      return NextResponse.json(await saveMinhaAnamnese(session.user.id, body))
     } catch (error) {
       if (error instanceof OnboardingServiceError) {
         return NextResponse.json(

@@ -38,21 +38,24 @@ export const ANAMNESE_FIELD_KEYS = [
   'parq7',
 ] as const
 
-type AnamneseField = (typeof ANAMNESE_FIELD_KEYS)[number]
+export type AnamneseField = (typeof ANAMNESE_FIELD_KEYS)[number]
 
 export type CanonicalAnamneseData = Record<AnamneseField, string | null>
+export type AnamneseFormData = Partial<Record<AnamneseField, string>>
 
 export const ANAMNESE_FIELDS = new Set<string>(ANAMNESE_FIELD_KEYS)
-
-type AnamneseRecord = Record<string, unknown>
 
 type SanitizeOptions = {
   ignoreUnknownFields?: boolean
   fillMissingFields?: boolean
 }
 
-function isRecord(value: unknown): value is AnamneseRecord {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isAnamneseField(key: string): key is AnamneseField {
+  return ANAMNESE_FIELDS.has(key)
 }
 
 function createCanonicalAnamneseData() {
@@ -75,28 +78,35 @@ function normalizeValue(value: unknown): { value: string | null } | { error: tru
   return { error: true }
 }
 
-export function sanitizeAnamnesePayload(payload: AnamneseRecord, options?: SanitizeOptions) {
+export type SanitizedAnamnesePayload =
+  | { data: Partial<CanonicalAnamneseData>; ignoredKeys: string[] }
+  | { error: typeof INVALID_ANAMNESE_ERROR }
+
+export function sanitizeAnamnesePayload(
+  payload: unknown,
+  options?: SanitizeOptions
+): SanitizedAnamnesePayload {
   if (!isRecord(payload)) {
-    return { error: INVALID_ANAMNESE_ERROR } as const
+    return { error: INVALID_ANAMNESE_ERROR }
   }
 
   const ignoreUnknownFields = options?.ignoreUnknownFields ?? false
   const fillMissingFields = options?.fillMissingFields ?? false
-  const data: Record<string, string | null> = fillMissingFields ? createCanonicalAnamneseData() : {}
+  const data: Partial<CanonicalAnamneseData> = fillMissingFields ? createCanonicalAnamneseData() : {}
   const ignoredKeys: string[] = []
 
   for (const [key, value] of Object.entries(payload)) {
-    if (!ANAMNESE_FIELDS.has(key)) {
+    if (!isAnamneseField(key)) {
       if (ignoreUnknownFields) {
         ignoredKeys.push(key)
         continue
       }
-      return { error: INVALID_ANAMNESE_ERROR } as const
+      return { error: INVALID_ANAMNESE_ERROR }
     }
 
     const normalized = normalizeValue(value)
     if ('error' in normalized) {
-      return { error: INVALID_ANAMNESE_ERROR } as const
+      return { error: INVALID_ANAMNESE_ERROR }
     }
 
     data[key] = normalized.value
@@ -110,16 +120,20 @@ export function sanitizeAnamnesePayload(payload: AnamneseRecord, options?: Sanit
     }
   }
 
-  return { data, ignoredKeys } as const
+  return { data, ignoredKeys }
 }
 
-export function normalizeAnamneseRecord(record: unknown) {
+export type NormalizedAnamneseRecord =
+  | { data: CanonicalAnamneseData; changed: boolean; ignoredKeys: string[] }
+  | { error: typeof INVALID_ANAMNESE_ERROR }
+
+export function normalizeAnamneseRecord(record: unknown): NormalizedAnamneseRecord {
   if (record === null || record === undefined) {
-    return { data: createCanonicalAnamneseData(), changed: false, ignoredKeys: [] } as const
+    return { data: createCanonicalAnamneseData(), changed: false, ignoredKeys: [] }
   }
 
   if (!isRecord(record)) {
-    return { error: INVALID_ANAMNESE_ERROR } as const
+    return { error: INVALID_ANAMNESE_ERROR }
   }
 
   const data = createCanonicalAnamneseData()
@@ -138,7 +152,7 @@ export function normalizeAnamneseRecord(record: unknown) {
     const normalized = normalizeValue(rawValue)
 
     if ('error' in normalized) {
-      return { error: INVALID_ANAMNESE_ERROR } as const
+      return { error: INVALID_ANAMNESE_ERROR }
     }
 
     data[field] = normalized.value
@@ -148,17 +162,18 @@ export function normalizeAnamneseRecord(record: unknown) {
     }
   }
 
-  return { data, changed, ignoredKeys } as const
+  return { data, changed, ignoredKeys }
 }
 
-export function extractCanonicalAnamneseData(source: unknown) {
+export function extractCanonicalAnamneseData(source: unknown): CanonicalAnamneseData | null {
   if (!isRecord(source)) {
     return null
   }
 
-  const data: Record<string, unknown> = {}
+  const data = createCanonicalAnamneseData()
   for (const field of ANAMNESE_FIELD_KEYS) {
-    data[field] = source[field] ?? null
+    const value = source[field]
+    data[field] = typeof value === 'string' ? value : null
   }
 
   return data

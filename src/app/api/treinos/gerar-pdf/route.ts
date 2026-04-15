@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
 import type { TrainingPDFData } from '@/domain/treino'
-import { runtimeError } from '@/lib/runtime-log'
+import { logError, safeErrorData } from '@/lib/observability/logger'
 
-/**
- * POST /api/treinos/gerar-pdf
- * Generate a training plan PDF using PDFKit
- */
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
@@ -55,7 +51,10 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (error) {
-      runtimeError('Error generating PDF:', error)
+      logError('training_pdf_generation_failed', {
+        message: 'Error generating PDF:',
+        ...safeErrorData(error),
+      })
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return NextResponse.json(
         { error: `Erro ao gerar PDF: ${errorMessage}` },

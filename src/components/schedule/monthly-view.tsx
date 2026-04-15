@@ -8,10 +8,9 @@ import {
   isToday,
   DiaSemanaAbrev,
 } from '@/lib/schedule'
-import type { Agendamento } from '@/types/schedule'
+import type { Agendamento, DiaSemana } from '@/types/schedule'
 import { cn } from '@/lib/utils'
 import { getMonth } from 'date-fns'
-import { DiaSemana } from '@prisma/client'
 import { DayDetailModal } from './day-detail-modal'
 import { useScheduleData } from './use-schedule-data'
 
@@ -53,7 +52,6 @@ export const MonthlyView = memo(function MonthlyView({
     'SABADO',
   ]
 
-  // Get agendamentos for selected day
   const selectedDayAgendamentos = selectedDay
     ? agendamentosByDate.get(formatDateISO(selectedDay)) || []
     : []
@@ -62,7 +60,6 @@ export const MonthlyView = memo(function MonthlyView({
     <>
       <Card>
         <CardContent className="p-0">
-          {/* Weekday headers */}
           <div className="grid grid-cols-6 border-b">
             {weekDays.map((day) => (
               <div
@@ -74,7 +71,6 @@ export const MonthlyView = memo(function MonthlyView({
             ))}
           </div>
 
-          {/* Calendar grid */}
           <div className="grid grid-cols-6">
             {calendarDays.map((day, index) => {
               const dateKey = formatDateISO(day)
@@ -95,7 +91,6 @@ export const MonthlyView = memo(function MonthlyView({
                   style={{ contentVisibility: 'auto', containIntrinsicSize: '100px' }}
                 >
                   <div className="flex flex-col h-full">
-                    {/* Day number */}
                     <div
                       className={cn(
                         'text-sm font-medium mb-1',
@@ -106,7 +101,6 @@ export const MonthlyView = memo(function MonthlyView({
                       {day.getDate()}
                     </div>
 
-                    {/* Agendamento count */}
                     {count > 0 && (
                       <div className="mt-auto">
                         <div
@@ -134,7 +128,6 @@ export const MonthlyView = memo(function MonthlyView({
         </CardContent>
       </Card>
 
-      {/* Day detail modal */}
       {selectedDay && (
         <DayDetailModal
           open={detailModalOpen}

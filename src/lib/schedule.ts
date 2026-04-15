@@ -1,4 +1,3 @@
-import { DiaSemana } from '@prisma/client'
 import {
   startOfWeek,
   endOfWeek,
@@ -15,6 +14,7 @@ import {
   subMonths,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import type { DiaSemana } from '@/types/schedule'
 
 export const SCHEDULE_START_HOUR = 5
 export const SCHEDULE_END_HOUR = 20
@@ -55,7 +55,6 @@ export const DiaSemanaAbrev: Record<DiaSemana, string> = {
   SABADO: 'Sáb',
 }
 
-// Get DiaSemana from JavaScript day number (0 = Sunday)
 export function getDiaSemanaFromDay(dayNumber: number): DiaSemana {
   const map: Record<number, DiaSemana> = {
     0: 'DOMINGO',
@@ -124,11 +123,10 @@ export function getTimeSlots(): TimeSlot[] {
 }
 
 export function getWeekDays(date: Date): Date[] {
-  const start = startOfWeek(date, { weekStartsOn: 1 }) // Monday
-  // Return Monday-Saturday only (6 days), excluding Sunday
+  const start = startOfWeek(date, { weekStartsOn: 1 })
   return eachDayOfInterval({
     start,
-    end: addDays(start, 5), // Saturday (Monday + 5 days)
+    end: addDays(start, 5),
   })
 }
 
@@ -151,10 +149,8 @@ export function getCalendarDays(date: Date): Date[] {
   })
 }
 
-// Get calendar days excluding Sundays (Monday-Saturday only)
 export function getCalendarDaysMonSat(date: Date): Date[] {
   const allDays = getCalendarDays(date)
-  // Filter out Sundays (day 0)
   return allDays.filter((day) => getDay(day) !== 0)
 }
 
@@ -166,38 +162,33 @@ export function formatDateISO(date: Date): string {
   return format(date, 'yyyy-MM-dd')
 }
 
-// Parse a date from API response as local date (handles UTC conversion issue)
-// When Prisma returns a Date field, it comes as UTC midnight which shifts day in negative UTC offsets
 export function parseDateFromAPI(dateValue: Date | string): Date {
-  if (!dateValue) return new Date(NaN) // Return Invalid Date if null/undefined
-  
-  try {
-    const dateStr = typeof dateValue === 'string' ? dateValue : dateValue.toISOString()
-    // Extract just the date part (yyyy-MM-dd) and create local date at noon
-    const datePart = dateStr.split('T')[0]
-    const [year, month, day] = datePart.split('-').map(Number)
-    
-    // Validate parsed values
-    if (!year || !month || !day) return new Date(NaN) 
-    
-    return new Date(year, month - 1, day, 12, 0, 0)
-  } catch (e) {
-    console.error('Error parsing date:', dateValue, e)
+  if (!dateValue) return new Date(NaN)
+
+  const dateStr =
+    typeof dateValue === 'string'
+      ? dateValue
+      : Number.isNaN(dateValue.getTime())
+        ? ''
+        : dateValue.toISOString()
+
+  if (!dateStr) {
     return new Date(NaN)
   }
+
+  const datePart = dateStr.split('T')[0]
+  const [year, month, day] = datePart.split('-').map(Number)
+
+  if (!year || !month || !day) return new Date(NaN)
+
+  return new Date(year, month - 1, day, 12, 0, 0)
 }
 
-/**
- * Parse a date string (YYYY-MM-DD) to a Date object without timezone shift.
- * This ensures the date represents the correct day regardless of server timezone.
- */
 export function parseLocalDate(dateString: string): Date {
-  // If it's just a date (yyyy-MM-dd), parse as local midnight
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     const [year, month, day] = dateString.split('-').map(Number)
-    return new Date(year, month - 1, day, 12, 0, 0) // noon to avoid timezone edge cases
+    return new Date(year, month - 1, day, 12, 0, 0)
   }
-  // Otherwise parse as-is (ISO string with time)
   return new Date(dateString)
 }
 

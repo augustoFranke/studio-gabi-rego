@@ -4,10 +4,6 @@ import { runWithExecutionContext } from "@/lib/observability/request-context"
 import { logInfo, logError, safeErrorData } from "@/lib/observability/logger"
 import { HEALTH_CHECK_OK, HEALTH_CHECK_FAILED } from "@/lib/observability/events"
 
-/**
- * Public health check endpoint for local Docker smoke tests and infrastructure probes.
- * GET /api/health
- */
 export async function GET() {
   return runWithExecutionContext(
     { source: 'request', route: '/api/health' },

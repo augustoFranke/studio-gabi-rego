@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createAdminMembro, getMembroById, listMembros } from '@/services/membro.service'
+import { createAdminMembro, getMembroById, listMembros, MembroServiceError } from '@/services/membro.service'
 import { prisma } from '@/lib/prisma'
 
 vi.mock('@/lib/prisma', () => ({
@@ -129,5 +129,34 @@ describe('membro.service', () => {
       })
     )
     expect(member).toEqual({ id: 'm-1' })
+  })
+
+  it('createAdminMembro rejects fixed schedules above the plan limit', async () => {
+    vi.mocked(prisma.usuario.findUnique).mockReset()
+    vi.mocked(prisma.membro.findUnique).mockReset()
+    vi.mocked(prisma.plano.findUnique).mockReset()
+    vi.mocked(prisma.usuario.create).mockReset()
+    vi.mocked(prisma.membro.create).mockReset()
+
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.plano.findUnique).mockResolvedValueOnce({ aulasSemanais: 2 } as never)
+    vi.mocked(prisma.usuario.create).mockResolvedValueOnce({ id: 'u-1' } as never)
+    vi.mocked(prisma.membro.create).mockResolvedValueOnce({ id: 'm-1' } as never)
+
+    await expect(
+      createAdminMembro({
+        nome: 'Ana',
+        email: 'ana@example.com',
+        senha: 'Senha123',
+        cpf: '123.456.789-00',
+        planoId: 'plano-1',
+        horariosFixos: [
+          { diaSemana: 'SEGUNDA', hora: '08:00' },
+          { diaSemana: 'TERCA', hora: '09:00' },
+          { diaSemana: 'QUARTA', hora: '10:00' },
+        ],
+      })
+    ).rejects.toBeInstanceOf(MembroServiceError)
   })
 })

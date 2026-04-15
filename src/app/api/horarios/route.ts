@@ -11,7 +11,6 @@ const horarioSchema = z.object({
   vagasTotal: z.number().int().positive('Informe a quantidade de vagas'),
 })
 
-// GET /api/horarios - Listar horarios disponiveis
 export async function GET(request: NextRequest) {
   return withApiAuth(async () => {
     const searchParams = request.nextUrl.searchParams
@@ -27,7 +26,6 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/horarios - Criar novo horario disponivel
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {

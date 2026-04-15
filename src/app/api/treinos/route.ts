@@ -8,7 +8,6 @@ import {
   listFichasTreino,
 } from '@/services/treino.service'
 
-// GET /api/treinos - Listar fichas de treino
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     if (session.user.role === 'MEMBRO' && !session.user.membroId) {
@@ -21,7 +20,6 @@ export async function GET(request: NextRequest) {
 
     const where: Prisma.FichaTreinoWhereInput = {}
 
-    // Se for membro, só pode ver seu próprio treino
     if (session.user.role === 'MEMBRO' && session.user.membroId) {
       where.membroId = session.user.membroId
     } else if (membroId) {
@@ -38,7 +36,6 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/treinos - Criar nova ficha de treino (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     const validation = await validateRequest(request, fichaCreateSchema)
@@ -53,7 +50,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'membroId é obrigatório' }, { status: 400 })
     }
 
-    // Desativar fichas anteriores do membro (only if membroId provided)
     await deactivateActiveFichas(membroId)
 
     const ficha = await createFichaTreino({

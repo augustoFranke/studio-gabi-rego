@@ -31,41 +31,12 @@ import {
 } from '@/lib/treino/editor';
 import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
-
-type Exercise = {
-    id: string;
-    name: string;
-    sets: string;
-    reps: string;
-};
-
-type Session = {
-    id: string;
-    name: string;
-    description: string;
-    exercises: Exercise[];
-};
-
-type Treino = {
-    id: string;
-    nome: string;
-    data: string | null;
-    objetivo: string | null;
-    observacoes: string | null;
-    membro: {
-        id: string;
-        usuario: {
-            nome: string;
-        };
-    };
-    exercicios: Array<{
-        id: string;
-        sessao: string;
-        nome: string;
-        series: string;
-        repeticoes: string;
-    }>;
-};
+import type {
+    TreinoEditorExercise,
+    TreinoEditorSession,
+    TreinoFicha,
+} from '@/domain/treino';
+import { readResponseErrorMessage } from '@/lib/http';
 
 interface PageProps {
     params: Promise<{
@@ -77,10 +48,10 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const { id } = use(params);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [treino, setTreino] = useState<Treino | null>(null);
+    const [treino, setTreino] = useState<TreinoFicha | null>(null);
     const [date, setDate] = useState('');
     const [observacoes, setObservacoes] = useState('');
-    const [sessions, setSessions] = useState<Session[]>([]);
+    const [sessions, setSessions] = useState<TreinoEditorSession[]>([]);
     const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -93,14 +64,14 @@ export default function EditarTreinoPage({ params }: PageProps) {
             try {
                 const response = await fetch(`/api/treinos/${id}`);
                 if (response.ok) {
-                    const data = await response.json();
+                    const data: TreinoFicha = await response.json();
                     setTreino(data);
                     setDate(data.data || '');
                     setObservacoes(data.observacoes || '');
 
                     // Convert exercises to sessions format
-                    const sessionsMap = new Map<string, Exercise[]>();
-                    data.exercicios.forEach((ex: Treino['exercicios'][0]) => {
+                    const sessionsMap = new Map<string, TreinoEditorExercise[]>();
+                    data.exercicios.forEach((ex: TreinoFicha['exercicios'][0]) => {
                         const exercises = sessionsMap.get(ex.sessao) || [];
                         exercises.push({
                             id: ex.id,
@@ -122,7 +93,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         return { letter: fullName.charAt(0) || 'A', description: '' };
                     };
 
-                    const loadedSessions: Session[] = Array.from(sessionsMap.entries())
+                    const loadedSessions: TreinoEditorSession[] = Array.from(sessionsMap.entries())
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([fullName, exercises]) => {
                             const { letter, description } = parseSessionName(fullName);
@@ -190,7 +161,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
     };
 
     // Get full session name combining letter and description
-    const getFullSessionName = (session: Session) => {
+    const getFullSessionName = (session: TreinoEditorSession) => {
         return session.description.trim()
             ? `${session.name} - ${session.description.trim()}`
             : session.name;
@@ -315,8 +286,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao salvar treino');
+                throw new Error(await readResponseErrorMessage(response, 'Erro ao salvar treino'));
             }
 
             toast.success('Treino atualizado com sucesso!');
@@ -335,8 +305,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             const response = await fetch(`/api/treinos/${id}/pdf`);
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao gerar PDF');
+                throw new Error(await readResponseErrorMessage(response, 'Erro ao gerar PDF'));
             }
 
             const blob = await response.blob();
@@ -362,8 +331,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao excluir treino');
+                throw new Error(await readResponseErrorMessage(response, 'Erro ao excluir treino'));
             }
 
             toast.success('Treino excluído com sucesso!');
@@ -404,7 +372,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     </Link>
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Editar Treino</h1>
-                        <p className="text-muted-foreground">Modifique o plano de treino de {treino.membro.usuario.nome}</p>
+                        <p className="text-muted-foreground">Modifique o plano de treino de {treino.membro?.usuario.nome ?? 'Aluno'}</p>
                     </div>
                 </div>
 
@@ -460,7 +428,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                 Aluno
                             </Label>
                             <Input
-                                value={treino.membro.usuario.nome}
+                                value={treino.membro?.usuario.nome ?? ''}
                                 disabled
                                 className="bg-muted"
                             />
@@ -641,7 +609,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                             Excluir Treino
                         </DialogTitle>
                         <DialogDescription>
-                            Tem certeza que deseja excluir este treino de <strong>{treino.membro.usuario.nome}</strong>? Esta ação não pode ser desfeita.
+                            Tem certeza que deseja excluir este treino de <strong>{treino.membro?.usuario.nome ?? 'este aluno'}</strong>? Esta ação não pode ser desfeita.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

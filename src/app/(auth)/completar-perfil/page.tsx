@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
+import { readResponseErrorMessage } from "@/lib/http"
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
 
@@ -116,12 +117,11 @@ function CompletarPerfilContent() {
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
-
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao salvar perfil")
+        throw new Error(await readResponseErrorMessage(response, "Erro ao salvar perfil"))
       }
 
+      const data = await response.json()
       setMessage("Perfil salvo com sucesso. Você será redirecionado.")
       clearStoredToken()
       if (data.anamneseToken) {

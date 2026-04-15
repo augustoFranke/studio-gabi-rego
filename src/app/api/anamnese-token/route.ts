@@ -96,12 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
     }
 
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return NextResponse.json({ error: "Dados inválidos enviados" }, { status: 400 })
-    }
-    const response = NextResponse.json(
-      await saveAnamneseByToken(token, body as Record<string, unknown>)
-    )
+    const response = NextResponse.json(await saveAnamneseByToken(token, body))
 
     clearTokenCookie(response)
 

@@ -15,7 +15,7 @@
  * Test runtime
  * ------------
  * When `NODE_ENV=test` or Vitest is detected the logger is silent by default.
- * This matches the existing runtime-log suppression behavior.
+ * This matches the test-runtime suppression behavior.
  *
  * @module observability/logger
  */
@@ -65,6 +65,22 @@ function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((p) => lower.includes(p))
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function redactValue(value: unknown): unknown {
+  if (isPlainObject(value)) {
+    return redact(value)
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactValue(item))
+  }
+
+  return value
+}
+
 /**
  * Deep-clone `data` while replacing sensitive values with `[REDACTED]`.
  * Handles plain objects and arrays; other types pass through as-is.
@@ -74,21 +90,15 @@ function redact(data: Record<string, unknown>): Record<string, unknown> {
   for (const [key, value] of Object.entries(data)) {
     if (isSensitiveKey(key)) {
       out[key] = '[REDACTED]'
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redact(value as Record<string, unknown>)
-    } else if (Array.isArray(value)) {
-      out[key] = value.map((item) =>
-        item && typeof item === 'object' ? redact(item as Record<string, unknown>) : item,
-      )
     } else {
-      out[key] = value
+      out[key] = redactValue(value)
     }
   }
   return out
 }
 
 // ---------------------------------------------------------------------------
-// Test-runtime detection (matches runtime-log.ts behavior)
+// Test-runtime detection
 // ---------------------------------------------------------------------------
 
 function isTestRuntime(): boolean {

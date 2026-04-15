@@ -12,46 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, X, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import Image from "next/image"
+import type { AnamneseFormData } from '@/lib/anamnese'
 
 const SESSION_STORAGE_KEY = "cadastro_wizard_state"
-
-interface AnamneseData {
-  altura?: string
-  pesoAtual?: string
-  objetivo?: string
-  praticaAtividade?: string
-  praticaAtividadeQual?: string
-  tempoSedentario?: string
-  condicaoMedica?: string
-  condicaoMedicaQual?: string
-  lesao?: string
-  lesaoQual?: string
-  restricaoMovimento?: string
-  restricaoMovimentoQual?: string
-  desconfortoMovimento?: string
-  desconfortoMovimentoQual?: string
-  problemasOrtopedicos?: string
-  problemasOrtopedicosQual?: string
-  medicamentoControlado?: string
-  medicamentoControladoQual?: string
-  obesoSobrepeso?: string
-  colesterolElevado?: string
-  taquicardia?: string
-  doencasCardiacas?: string
-  diabetes?: string
-  dificuldadeExercicio?: string
-  cicloMenstrual?: string
-  experienciaMusculacao?: string
-  ondeConheceu?: string
-  expectativas?: string
-  parq1?: string
-  parq2?: string
-  parq3?: string
-  parq4?: string
-  parq5?: string
-  parq6?: string
-  parq7?: string
-}
 
 interface WizardState {
   step: number
@@ -64,7 +27,7 @@ interface WizardState {
   telefone: string
   dataNascimento: string
   sexo: string
-  anamnese: AnamneseData
+  anamnese: AnamneseFormData
 }
 
 const defaultState: WizardState = {
@@ -139,7 +102,7 @@ export default function CadastroPage() {
     setState(prev => ({ ...prev, ...updates }))
   }, [])
 
-  const updateAnamnese = useCallback((field: keyof AnamneseData, value: string) => {
+  const updateAnamnese = useCallback((field: keyof AnamneseFormData, value: string) => {
     setState(prev => ({
       ...prev,
       anamnese: { ...prev.anamnese, [field]: value },
@@ -530,7 +493,7 @@ export default function CadastroPage() {
                     ].map(({ field, question }, index) => (
                       <div key={field} className="space-y-2">
                         <Label className="text-sm">{index + 1}. {question}</Label>
-                        <Select value={state.anamnese[field as keyof AnamneseData] || ""} onValueChange={(value) => updateAnamnese(field as keyof AnamneseData, value)}>
+                        <Select value={state.anamnese[field as keyof AnamneseFormData] || ""} onValueChange={(value) => updateAnamnese(field as keyof AnamneseFormData, value)}>
                           <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
                           <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
                         </Select>

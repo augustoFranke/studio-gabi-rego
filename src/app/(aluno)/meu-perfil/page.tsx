@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetcher } from '@/lib/fetcher'
+import { readResponseErrorMessage } from '@/lib/http'
 
 type PerfilData = {
   id: string
@@ -77,10 +78,8 @@ export default function MeuPerfilPage() {
         }),
       })
 
-      const payload = await response.json().catch(() => null)
-
       if (!response.ok) {
-        throw new Error(payload?.error || 'Erro ao salvar perfil')
+        throw new Error(await readResponseErrorMessage(response, 'Erro ao salvar perfil'))
       }
 
       await mutate()

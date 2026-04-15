@@ -4,7 +4,7 @@ export const USER_ROLES = ['ADMIN', 'MEMBRO'] as const
 
 export type UserRole = (typeof USER_ROLES)[number]
 
-export type AppSessionUser = Session['user'] & {
+export type AppSessionUser = NonNullable<Session['user']> & {
   id: string
   role: UserRole
   membroId?: string
@@ -18,23 +18,25 @@ export function isUserRole(value: unknown): value is UserRole {
   return value === 'ADMIN' || value === 'MEMBRO'
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
 export function isAppSession(value: unknown): value is AppSession {
-  if (!value || typeof value !== 'object') {
+  if (!isRecord(value)) {
     return false
   }
 
-  const user = (value as { user?: unknown }).user
-  if (!user || typeof user !== 'object') {
+  const user = value.user
+  if (!isRecord(user)) {
     return false
   }
 
-  const typedUser = user as { id?: unknown; role?: unknown; membroId?: unknown }
-
-  if (typeof typedUser.id !== 'string' || !isUserRole(typedUser.role)) {
+  if (typeof user.id !== 'string' || !isUserRole(user.role)) {
     return false
   }
 
-  if (typedUser.membroId !== undefined && typeof typedUser.membroId !== 'string') {
+  if (user.membroId !== undefined && typeof user.membroId !== 'string') {
     return false
   }
 

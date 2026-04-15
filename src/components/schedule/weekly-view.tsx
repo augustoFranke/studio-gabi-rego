@@ -61,7 +61,6 @@ const WeeklyViewBase = function WeeklyView({
     onMemberClick?.(agendamento)
   }, [onMemberClick])
 
-  // Get agendamentos for selected day
   const selectedDayAgendamentos = selectedDay
     ? agendamentosByDate.get(formatDateISO(selectedDay)) || []
     : []
@@ -71,7 +70,6 @@ const WeeklyViewBase = function WeeklyView({
       <Card>
         <CardContent className="p-0 overflow-x-auto max-h-[650px] overflow-y-auto">
           <div className="min-w-[800px]">
-            {/* Header with days */}
             <div className="grid grid-cols-[64px_repeat(6,1fr)] border-b sticky top-0 bg-background z-10">
               <div className="p-2 border-r bg-muted/30" />
               {weekDays.map((day) => {
@@ -114,7 +112,6 @@ const WeeklyViewBase = function WeeklyView({
               })}
             </div>
 
-            {/* Time slots grid */}
             <div>
               {HOURS.map((hour) => (
                 <div
@@ -122,12 +119,10 @@ const WeeklyViewBase = function WeeklyView({
                   className="grid grid-cols-[64px_repeat(6,1fr)] border-b last:border-b-0"
                   style={{ contentVisibility: 'auto', containIntrinsicSize: '44px 800px' }}
                 >
-                  {/* Hour label */}
                   <div className="p-2 text-sm text-muted-foreground font-medium border-r bg-muted/30 flex items-start">
                     {hour.toString().padStart(2, '0')}:00
                   </div>
 
-                  {/* Day cells */}
                   {weekDays.map((day) => {
                     const dateKey = formatDateISO(day)
                     const hourAgendamentos = agendamentosByDateAndHour.get(`${dateKey}-${hour}`) || []
@@ -157,7 +152,6 @@ const WeeklyViewBase = function WeeklyView({
         </CardContent>
       </Card>
 
-      {/* Day detail modal */}
       {selectedDay && (
         <DayDetailModal
           open={detailModalOpen}

@@ -33,7 +33,6 @@ export function DayDetailModal({
     agendamentos,
     onMemberClick,
 }: DayDetailModalProps) {
-    // Group agendamentos by hour
     const agendamentosByHour = new Map<number, Agendamento[]>()
     for (const agendamento of agendamentos) {
         const hour = parseInt(agendamento.horario.horaInicio.split(':')[0], 10)
@@ -43,7 +42,6 @@ export function DayDetailModal({
         agendamentosByHour.get(hour)!.push(agendamento)
     }
 
-    // Get hours that have agendamentos
     const hoursWithAgendamentos = HOURS.filter((hour) =>
         agendamentosByHour.has(hour)
     )
@@ -101,7 +99,6 @@ export function DayDetailModal({
                                         key={hour}
                                         className="rounded-lg border bg-card overflow-hidden"
                                     >
-                                        {/* Hour header */}
                                         <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b">
                                             <div className="flex items-center gap-2">
                                                 <Clock className="h-4 w-4 text-muted-foreground" />
@@ -112,7 +109,6 @@ export function DayDetailModal({
                                             </Badge>
                                         </div>
 
-                                        {/* Attendees list */}
                                         <div className="divide-y">
                                             {hourAgendamentos.map((agendamento) => {
                                                 const status = getPresenceStatus(agendamento.presente)

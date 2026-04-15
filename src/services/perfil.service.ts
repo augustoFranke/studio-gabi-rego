@@ -1,11 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { createTimedToken } from "@/lib/auth-flow"
-import {
-  normalizeCpf,
-  normalizeOptionalString,
-  normalizeTelefone,
-  parseOptionalDate,
-} from "@/lib/member-profile"
+import { normalizeMemberProfileInput } from "@/lib/member-profile"
 
 type PerfilBaseInput = {
   nome: string
@@ -111,11 +106,13 @@ export async function savePerfilForUser({
   hasDataNascimento = true,
   hasSexo = true,
 }: PerfilSaveParams): Promise<PerfilSaveResult> {
-  const normalizedCpf = normalizeCpf(cpf)
-  const normalizedTelefone = normalizeTelefone(telefone)
-  const normalizedRg = normalizeOptionalString(rg)
-  const normalizedSexo = sexo ?? null
-  const normalizedDataNascimento = parseOptionalDate(dataNascimento)
+  const {
+    cpf: normalizedCpf,
+    rg: normalizedRg,
+    telefone: normalizedTelefone,
+    dataNascimento: normalizedDataNascimento,
+    sexo: normalizedSexo,
+  } = normalizeMemberProfileInput({ cpf, rg, telefone, dataNascimento, sexo })
 
   const [existingCpf, existingMembro] = await Promise.all([
     normalizedCpf
@@ -211,6 +208,11 @@ export async function updatePerfilForUser({
     }
   }
 
+  const normalizedUpdateProfile = normalizeMemberProfileInput({
+    telefone,
+    dataNascimento,
+  })
+
   await prisma.$transaction([
     prisma.usuario.update({
       where: { id: userId },
@@ -219,9 +221,9 @@ export async function updatePerfilForUser({
     prisma.membro.update({
       where: { id: existingMembro.id },
       data: {
-        ...(telefone !== undefined ? { telefone: normalizeTelefone(telefone) } : {}),
+        ...(telefone !== undefined ? { telefone: normalizedUpdateProfile.telefone } : {}),
         ...(dataNascimento !== undefined
-          ? { dataNascimento: parseOptionalDate(dataNascimento) }
+          ? { dataNascimento: normalizedUpdateProfile.dataNascimento }
           : {}),
         ...(sexo !== undefined ? { sexo: sexo ?? null } : {}),
       },
