@@ -11,46 +11,8 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-
-interface AnamneseData {
-  altura?: string
-  pesoAtual?: string
-  objetivo?: string
-  praticaAtividade?: string
-  praticaAtividadeQual?: string
-  tempoSedentario?: string
-  condicaoMedica?: string
-  condicaoMedicaQual?: string
-  lesao?: string
-  lesaoQual?: string
-  restricaoMovimento?: string
-  restricaoMovimentoQual?: string
-  desconfortoMovimento?: string
-  desconfortoMovimentoQual?: string
-  problemasOrtopedicos?: string
-  problemasOrtopedicosQual?: string
-  medicamentoControlado?: string
-  medicamentoControladoQual?: string
-  obesoSobrepeso?: string
-  colesterolElevado?: string
-  taquicardia?: string
-  doencasCardiacas?: string
-  diabetes?: string
-  dificuldadeExercicio?: string
-  experienciaMusculacao?: string
-  ondeConheceu?: string
-  expectativas?: string
-  // Women-specific
-  cicloMenstrual?: string
-  // PAR-Q
-  parq1?: string
-  parq2?: string
-  parq3?: string
-  parq4?: string
-  parq5?: string
-  parq6?: string
-  parq7?: string
-}
+import { readResponseErrorMessage } from "@/lib/http"
+import type { AnamneseFormData } from '@/lib/anamnese'
 
 interface MemberInfo {
   id: string
@@ -66,7 +28,7 @@ export default function AnamnesePage() {
   const [saving, setSaving] = useState(false)
   const [copying, setCopying] = useState(false)
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
-  const [formData, setFormData] = useState<AnamneseData>({})
+  const [formData, setFormData] = useState<AnamneseFormData>({})
 
   const loadMemberData = useCallback(async () => {
     try {
@@ -116,13 +78,12 @@ export default function AnamnesePage() {
     try {
       setCopying(true)
       const response = await fetch(`/api/membros/${memberId}/anamnese-link`, { method: "POST" })
-      const data = await response.json().catch(() => ({}))
-
       if (!response.ok) {
-        toast.error(data.error || "Erro ao gerar link")
+        toast.error(await readResponseErrorMessage(response, "Erro ao gerar link"))
         return
       }
 
+      const data = await response.json()
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(data.link)
       } else {
@@ -138,7 +99,7 @@ export default function AnamnesePage() {
     }
   }
 
-  const updateField = (field: keyof AnamneseData, value: string) => {
+  const updateField = (field: keyof AnamneseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 

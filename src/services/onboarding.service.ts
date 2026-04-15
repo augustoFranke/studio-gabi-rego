@@ -8,12 +8,7 @@ import {
 } from "@/lib/anamnese"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { createTimedToken, getAppBaseUrl } from "@/lib/auth-flow"
-import {
-  normalizeCpf,
-  normalizeOptionalString,
-  normalizeTelefone,
-  parseOptionalDate,
-} from "@/lib/member-profile"
+import { normalizeMemberProfileInput } from "@/lib/member-profile"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
@@ -37,7 +32,7 @@ export type SignupInput = {
   telefone?: string | null
   dataNascimento?: string | null
   sexo?: "MASCULINO" | "FEMININO" | null
-  anamnese?: CanonicalAnamneseData
+  anamnese?: Partial<CanonicalAnamneseData>
 }
 
 export type VerificationStep =
@@ -168,6 +163,13 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
   const normalizedEmail = input.email.toLowerCase().trim()
   const fullNome = input.nome?.trim()
   const hasFullPayload = Boolean(fullNome && input.anamnese)
+  const normalizedMemberProfile = normalizeMemberProfileInput({
+    cpf: input.cpf,
+    rg: input.rg,
+    telefone: input.telefone,
+    dataNascimento: input.dataNascimento,
+    sexo: input.sexo,
+  })
 
   const [existingUser, hashedPassword] = await Promise.all([
     prisma.usuario.findUnique({
@@ -240,11 +242,11 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
       const membro = await tx.membro.create({
         data: {
           usuarioId: userId,
-          cpf: normalizeCpf(input.cpf),
-          rg: normalizeOptionalString(input.rg) ?? null,
-          telefone: normalizeTelefone(input.telefone),
-          dataNascimento: parseOptionalDate(input.dataNascimento),
-          sexo: input.sexo ?? null,
+          cpf: normalizedMemberProfile.cpf,
+          rg: normalizedMemberProfile.rg ?? null,
+          telefone: normalizedMemberProfile.telefone,
+          dataNascimento: normalizedMemberProfile.dataNascimento,
+          sexo: normalizedMemberProfile.sexo,
           status: "PENDENTE",
         },
       })
@@ -492,7 +494,7 @@ async function saveAnamneseForMembro(params: {
   nome?: string | null
   email?: string | null
   onboardingCompleto: boolean
-  payload: Record<string, unknown>
+  payload: unknown
   clearToken?: boolean
 }) {
   const sanitized = sanitizeAnamnesePayload(params.payload, {
@@ -549,7 +551,7 @@ async function saveAnamneseForMembro(params: {
   }
 }
 
-export async function saveAnamneseByToken(token: string, payload: Record<string, unknown>) {
+export async function saveAnamneseByToken(token: string, payload: unknown) {
   const membro = await prisma.membro.findFirst({
     where: {
       anamneseToken: token,
@@ -610,7 +612,7 @@ export async function getMinhaAnamnese(userId: string) {
   }
 }
 
-export async function saveMinhaAnamnese(userId: string, payload: Record<string, unknown>) {
+export async function saveMinhaAnamnese(userId: string, payload: unknown) {
   const membro = await prisma.membro.findUnique({
     where: { usuarioId: userId },
     include: {

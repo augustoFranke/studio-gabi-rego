@@ -13,7 +13,6 @@ interface Params {
   }>
 }
 
-// GET /api/membros/[id]/anamnese - Obter anamnese do membro
 export async function GET(
   request: NextRequest,
   { params }: Params
@@ -37,7 +36,6 @@ export async function GET(
       return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
     }
 
-    // Use explicit DB-backed sexo; null when unset.
     const sexo = membro.sexo
       ? (membro.sexo === 'FEMININO' ? 'Feminino' : 'Masculino')
       : null
@@ -67,7 +65,6 @@ export async function GET(
   }, { requiredRole: 'ADMIN' })
 }
 
-// POST /api/membros/[id]/anamnese - Salvar anamnese do membro
 export async function POST(
   request: NextRequest,
   { params }: Params
@@ -82,11 +79,7 @@ export async function POST(
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
 
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
-    }
-
-    const sanitized = sanitizeAnamnesePayload(body as Record<string, unknown>, {
+    const sanitized = sanitizeAnamnesePayload(body, {
       ignoreUnknownFields: true,
       fillMissingFields: true,
     })
@@ -105,7 +98,6 @@ export async function POST(
       return NextResponse.json({ error: 'Membro não encontrado' }, { status: 404 })
     }
 
-    // Upsert anamnese
     const anamnese = await prisma.anamnese.upsert({
       where: { membroId: id },
       create: {

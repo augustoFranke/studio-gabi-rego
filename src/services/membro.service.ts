@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { normalizeEmailForStorage } from '@/lib/email'
+import {
+  normalizeCpf,
+  normalizeOptionalString,
+  normalizeTelefone,
+  parseOptionalDate,
+} from '@/lib/member-profile'
 import { validarCPF, validarEmail } from '@/lib/validators'
 import { hash } from 'bcryptjs'
 import { MembroCreateInput } from '@/schemas/membro.schema'
@@ -14,6 +20,40 @@ export class MembroServiceError extends Error {
     super(message)
     this.name = 'MembroServiceError'
   }
+}
+
+type HorarioFixoInput = {
+  diaSemana: DiaSemana
+  hora: string
+}
+
+function getHorarioSlotCount(horariosFixos: HorarioFixoInput[]) {
+  return new Set(horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)).size
+}
+
+function assertHorarioLimit(
+  horariosFixos: HorarioFixoInput[],
+  aulasSemanais?: number | null
+) {
+  if (!horariosFixos.length || aulasSemanais === undefined || aulasSemanais === null || aulasSemanais === 7) {
+    return
+  }
+
+  const totalSlots = getHorarioSlotCount(horariosFixos)
+  if (totalSlots > aulasSemanais) {
+    throw new MembroServiceError(
+      `Limite do plano: ${aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
+      'PLAN_LIMIT_EXCEEDED',
+      400
+    )
+  }
+}
+
+function buildHorarioFixoCreateData(horariosFixos: HorarioFixoInput[]) {
+  return horariosFixos.map((horario) => ({
+    diaSemana: horario.diaSemana,
+    hora: horario.hora,
+  }))
 }
 
 export async function listMembros(params: {
@@ -108,22 +148,16 @@ export async function updateMembroById(id: string, input: MembroUpdateServiceInp
     throw new MembroServiceError('Membro não encontrado', 'MEMBRO_NOT_FOUND', 404)
   }
 
-  const normalizedEmail = input.email === undefined
-    ? undefined
-    : normalizeEmailForStorage(input.email)
-
-  const cpfLimpo = typeof input.cpf === 'string' && input.cpf
-    ? input.cpf.replace(/\D/g, '')
-    : input.cpf === null
-      ? null
-      : undefined
+  const normalizedEmail =
+    input.email === undefined ? undefined : normalizeEmailForStorage(input.email)
+  const normalizedCpf = input.cpf === undefined ? undefined : normalizeCpf(input.cpf)
 
   const [emailExiste, cpfExiste, plano] = await Promise.all([
     normalizedEmail && normalizedEmail !== existingMember.usuario.email
       ? prisma.usuario.findUnique({ where: { email: normalizedEmail } })
       : Promise.resolve(null),
-    cpfLimpo && cpfLimpo !== existingMember.cpf
-      ? prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+    normalizedCpf && normalizedCpf !== existingMember.cpf
+      ? prisma.membro.findUnique({ where: { cpf: normalizedCpf } })
       : Promise.resolve(null),
     input.horariosFixos?.length
       ? prisma.plano.findUnique({
@@ -142,8 +176,8 @@ export async function updateMembroById(id: string, input: MembroUpdateServiceInp
     }
   }
 
-  if (cpfLimpo && cpfLimpo !== existingMember.cpf) {
-    if (!validarCPF(cpfLimpo)) {
+  if (normalizedCpf && normalizedCpf !== existingMember.cpf) {
+    if (!validarCPF(normalizedCpf)) {
       throw new MembroServiceError('CPF inválido', 'INVALID_CPF', 400)
     }
     if (cpfExiste) {
@@ -151,19 +185,7 @@ export async function updateMembroById(id: string, input: MembroUpdateServiceInp
     }
   }
 
-  if (input.horariosFixos?.length && plano && plano.aulasSemanais !== 7) {
-    const uniqueSlots = new Set(
-      input.horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
-    )
-
-    if (uniqueSlots.size > plano.aulasSemanais) {
-      throw new MembroServiceError(
-        `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${uniqueSlots.size} horários fixos.`,
-        'PLAN_LIMIT_EXCEEDED',
-        400
-      )
-    }
-  }
+  assertHorarioLimit(input.horariosFixos ?? [], plano?.aulasSemanais)
 
   return prisma.$transaction(async (tx) => {
     const senhaValue = typeof input.senha === 'string' ? input.senha.trim() : ''
@@ -184,19 +206,17 @@ export async function updateMembroById(id: string, input: MembroUpdateServiceInp
     }
 
     const memberUpdateData: Prisma.MembroUpdateInput = {}
-    if (input.cpf === null || input.cpf === '') {
-      memberUpdateData.cpf = null
-    } else if (typeof input.cpf === 'string') {
-      memberUpdateData.cpf = input.cpf.replace(/\D/g, '')
+    if (input.cpf !== undefined) {
+      memberUpdateData.cpf = normalizeCpf(input.cpf)
     }
     if (input.rg !== undefined) {
-      memberUpdateData.rg = input.rg && input.rg.trim() !== '' ? input.rg : null
+      memberUpdateData.rg = normalizeOptionalString(input.rg) ?? null
     }
     if (input.telefone !== undefined) {
-      memberUpdateData.telefone = input.telefone ? input.telefone.replace(/\D/g, '') : null
+      memberUpdateData.telefone = normalizeTelefone(input.telefone)
     }
     if (input.dataNascimento !== undefined) {
-      memberUpdateData.dataNascimento = input.dataNascimento ? new Date(input.dataNascimento) : null
+      memberUpdateData.dataNascimento = parseOptionalDate(input.dataNascimento)
     }
     if (input.planoId !== undefined) {
       memberUpdateData.plano = input.planoId ? { connect: { id: input.planoId } } : { disconnect: true }
@@ -206,10 +226,7 @@ export async function updateMembroById(id: string, input: MembroUpdateServiceInp
     if (input.horariosFixos) {
       memberUpdateData.horariosFixos = {
         deleteMany: {},
-        create: input.horariosFixos.map((horario) => ({
-          diaSemana: horario.diaSemana,
-          hora: horario.hora,
-        })),
+        create: buildHorarioFixoCreateData(input.horariosFixos),
       }
     }
 
@@ -248,23 +265,25 @@ export async function createAdminMembro(input: MembroCreateInput) {
   const senhaValue = typeof senha === 'string' ? senha.trim() : ''
   const senhaDefinida = Boolean(senhaValue)
   const normalizedEmail = normalizeEmailForStorage(email)
+  const normalizedCpf = normalizeCpf(cpf)
+  const normalizedTelefone = normalizeTelefone(telefone)
+  const normalizedRg = normalizeOptionalString(rg) ?? null
+  const normalizedDataNascimento = parseOptionalDate(dataNascimento)
 
   if (normalizedEmail && !validarEmail(normalizedEmail)) {
     throw new MembroServiceError('O email informado é inválido.', 'INVALID_EMAIL', 400)
   }
 
-  if (cpf && !validarCPF(cpf)) {
+  if (normalizedCpf && !validarCPF(normalizedCpf)) {
     throw new MembroServiceError('O CPF informado é inválido.', 'INVALID_CPF', 400)
   }
-
-  const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null
 
   const [emailExiste, cpfExiste, plano] = await Promise.all([
     normalizedEmail
       ? prisma.usuario.findUnique({ where: { email: normalizedEmail } })
       : null,
-    cpfLimpo
-      ? prisma.membro.findUnique({ where: { cpf: cpfLimpo } })
+    normalizedCpf
+      ? prisma.membro.findUnique({ where: { cpf: normalizedCpf } })
       : null,
     horariosFixos?.length && planoId
       ? prisma.plano.findUnique({ where: { id: planoId }, select: { aulasSemanais: true } })
@@ -279,7 +298,7 @@ export async function createAdminMembro(input: MembroCreateInput) {
     )
   }
 
-  if (cpfLimpo && cpfExiste) {
+  if (normalizedCpf && cpfExiste) {
     throw new MembroServiceError(
       'Este CPF já está cadastrado para outro membro.',
       'CPF_ALREADY_EXISTS',
@@ -287,20 +306,7 @@ export async function createAdminMembro(input: MembroCreateInput) {
     )
   }
 
-  if (horariosFixos?.length && planoId && plano && plano.aulasSemanais !== 7) {
-    const uniqueSlots = new Set(
-      horariosFixos.map((horario) => `${horario.diaSemana}-${horario.hora}`)
-    )
-    const totalSlots = uniqueSlots.size
-
-    if (totalSlots > plano.aulasSemanais) {
-      throw new MembroServiceError(
-        `Limite do plano: ${plano.aulasSemanais} aulas por semana. Foram informados ${totalSlots} horários fixos.`,
-        'PLAN_LIMIT_EXCEEDED',
-        400
-      )
-    }
-  }
+  assertHorarioLimit(horariosFixos ?? [], plano?.aulasSemanais)
 
   const senhaHash = senhaDefinida ? await hash(senhaValue, 12) : await hash(Math.random().toString(36), 12)
 
@@ -320,20 +326,17 @@ export async function createAdminMembro(input: MembroCreateInput) {
     return tx.membro.create({
       data: {
         usuarioId: usuario.id,
-        cpf: cpfLimpo,
-        rg,
-        telefone: telefone ? telefone.replace(/\D/g, '') : null,
-        dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+        cpf: normalizedCpf,
+        rg: normalizedRg,
+        telefone: normalizedTelefone,
+        dataNascimento: normalizedDataNascimento,
         planoId,
         precoCustomizado,
         sexo,
         status: 'ATIVO',
         horariosFixos: horariosFixos?.length
           ? {
-              create: horariosFixos.map((horario) => ({
-                diaSemana: horario.diaSemana,
-                hora: horario.hora,
-              })),
+              create: buildHorarioFixoCreateData(horariosFixos),
             }
           : undefined,
       },

@@ -1,15 +1,28 @@
 import { NextResponse } from "next/server"
 import { validarEmail } from "@/lib/validators"
 import { rateLimitByIp } from "@/lib/rate-limit"
-import {
-  sanitizeAnamnesePayload,
-  type CanonicalAnamneseData,
-} from "@/lib/anamnese"
+import { normalizeMemberProfileInput } from "@/lib/member-profile"
+import { sanitizeAnamnesePayload } from "@/lib/anamnese"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
 import {
   OnboardingServiceError,
   registerUser,
 } from "@/services/onboarding.service"
+import { z } from "zod"
+
+const signupSchema = z.object({
+  email: z.string().refine((value) => validarEmail(value), {
+    message: "Email inválido",
+  }),
+  senha: z.string().min(1),
+  nome: z.string().optional(),
+  cpf: z.string().optional().nullable().or(z.literal("")),
+  rg: z.string().optional().nullable().or(z.literal("")),
+  telefone: z.string().optional().nullable().or(z.literal("")),
+  dataNascimento: z.string().optional().nullable().or(z.literal("")),
+  sexo: z.string().optional().nullable().or(z.literal("")),
+  anamnese: z.record(z.string(), z.string().nullable().optional()).optional(),
+})
 
 export async function POST(request: Request) {
   try {
@@ -21,10 +34,31 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
-    const { email, senha, nome, cpf, rg, telefone, dataNascimento, sexo, anamnese } = body
+    const validation = signupSchema.safeParse(await request.json())
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0]?.message || "Dados inválidos" },
+        { status: 400 }
+      )
+    }
 
-    // Validate email format
+    const { email, senha, nome, cpf, rg, telefone, dataNascimento, sexo, anamnese } =
+      validation.data
+    const normalizedSexo =
+      sexo === "MASCULINO" ||
+      sexo === "FEMININO" ||
+      sexo === "" ||
+      sexo === null
+        ? sexo
+        : null
+    const normalizedProfile = normalizeMemberProfileInput({
+      cpf,
+      rg,
+      telefone,
+      dataNascimento,
+      sexo: normalizedSexo,
+    })
+
     if (!email || !validarEmail(email)) {
       return NextResponse.json(
         { error: "Email inválido" },
@@ -32,7 +66,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate password
     if (!senha || senha.length < 8) {
       return NextResponse.json(
         { error: PASSWORD_POLICY_MESSAGE },
@@ -56,44 +89,44 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase().trim()
     const hasFullPayload = Boolean(nome && anamnese)
+    const sanitized = hasFullPayload
+      ? sanitizeAnamnesePayload(anamnese, {
+          ignoreUnknownFields: true,
+          fillMissingFields: true,
+        })
+      : null
 
-    // Validate profile fields when full payload is provided
     if (hasFullPayload) {
-      if (typeof nome !== "string" || nome.trim().length < 3) {
+      if (!nome || nome.trim().length < 3) {
         return NextResponse.json(
           { error: "Nome deve ter pelo menos 3 caracteres" },
           { status: 400 }
         )
       }
 
-      if (cpf) {
-        const cpfNumbers = String(cpf).replace(/\D/g, "")
-        if (cpfNumbers.length !== 11) {
-          return NextResponse.json(
-            { error: "CPF inválido" },
-            { status: 400 }
-          )
-        }
+      if (cpf && normalizedProfile.cpf && normalizedProfile.cpf.length !== 11) {
+        return NextResponse.json(
+          { error: "CPF inválido" },
+          { status: 400 }
+        )
       }
 
-      if (telefone) {
-        const telefoneNumbers = String(telefone).replace(/\D/g, "")
-        if (telefoneNumbers.length < 10) {
-          return NextResponse.json(
-            { error: "Telefone inválido" },
-            { status: 400 }
-          )
-        }
+      if (normalizedProfile.telefoneIsInvalid) {
+        return NextResponse.json(
+          { error: "Telefone inválido" },
+          { status: 400 }
+        )
       }
 
-      if (dataNascimento) {
-        const birthDate = new Date(dataNascimento)
-        if (Number.isNaN(birthDate.getTime())) {
-          return NextResponse.json(
-            { error: "Data de nascimento inválida" },
-            { status: 400 }
-          )
-        }
+      if (normalizedProfile.dataNascimentoIsInvalid) {
+        return NextResponse.json(
+          { error: "Data de nascimento inválida" },
+          { status: 400 }
+        )
+      }
+
+      if (normalizedProfile.dataNascimento) {
+        const birthDate = normalizedProfile.dataNascimento
         const today = new Date()
         let age = today.getFullYear() - birthDate.getFullYear()
         const monthDiff = today.getMonth() - birthDate.getMonth()
@@ -115,45 +148,27 @@ export async function POST(request: Request) {
         )
       }
 
-      // Validate anamnesis data
-      const anamneseResult = sanitizeAnamnesePayload(anamnese, {
-        ignoreUnknownFields: true,
-        fillMissingFields: true,
-      })
-      if ("error" in anamneseResult) {
+      if (sanitized && "error" in sanitized) {
         return NextResponse.json(
-          { error: anamneseResult.error },
+          { error: sanitized.error },
           { status: 400 }
         )
       }
     }
 
-    const sanitized =
-      hasFullPayload && anamnese
-        ? sanitizeAnamnesePayload(anamnese, {
-            ignoreUnknownFields: true,
-            fillMissingFields: true,
-          })
-        : null
-
-    if (sanitized && "error" in sanitized) {
-      return NextResponse.json(
-        { error: sanitized.error },
-        { status: 400 }
-      )
-    }
+    const sanitizedAnamnese = sanitized && "error" in sanitized ? undefined : sanitized?.data
 
     const result = await registerUser(
       {
         email: normalizedEmail,
         senha,
-        nome: hasFullPayload ? nome.trim() : undefined,
-        cpf: cpf ? String(cpf).replace(/\D/g, "") : null,
-        rg: rg?.trim() || null,
-        telefone: telefone ? String(telefone).replace(/\D/g, "") : null,
-        dataNascimento: dataNascimento || null,
-        sexo: sexo || null,
-        anamnese: sanitized?.data as CanonicalAnamneseData | undefined,
+        nome: nome ? nome.trim() : undefined,
+        cpf: normalizedProfile.cpf,
+        rg: normalizedProfile.rg ?? null,
+        telefone: normalizedProfile.telefone,
+        dataNascimento: normalizedProfile.dataNascimento?.toISOString() ?? null,
+        sexo: normalizedProfile.sexo,
+        anamnese: sanitizedAnamnese,
       },
       new URL(request.url).origin
     )

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { withApiAuth, validateRequest } from "@/lib/api"
+import { normalizeMemberProfileInput } from "@/lib/member-profile"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
 import {
@@ -50,20 +51,17 @@ export async function PUT(request: NextRequest) {
     }
 
     const { nome, telefone, dataNascimento, sexo } = validation.data
-    const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
-    const normalizedDataNascimento =
-      dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
-    const normalizedSexo: "MASCULINO" | "FEMININO" | null =
-      sexo === "" ? null : (sexo ?? null)
+    const normalizedProfile = normalizeMemberProfileInput({
+      telefone,
+      dataNascimento,
+      sexo,
+    })
 
-    if (normalizedTelefone && normalizedTelefone.length < 10) {
+    if (normalizedProfile.telefoneIsInvalid) {
       return NextResponse.json({ error: "Telefone inválido" }, { status: 400 })
     }
 
-    if (
-      normalizedDataNascimento &&
-      Number.isNaN(normalizedDataNascimento.getTime())
-    ) {
+    if (normalizedProfile.dataNascimentoIsInvalid) {
       return NextResponse.json(
         { error: "Data de nascimento inválida" },
         { status: 400 }
@@ -75,7 +73,7 @@ export async function PUT(request: NextRequest) {
       nome,
       telefone,
       dataNascimento,
-      sexo: normalizedSexo,
+      sexo: normalizedProfile.sexo,
     })
 
     if (!result.ok) {
@@ -105,23 +103,23 @@ export async function POST(request: Request) {
     const hasDataNascimento = dataNascimento !== undefined
     const hasSexo = sexo !== undefined
 
-    const normalizedCpf = cpf ? cpf.replace(/\D/g, "") : null
-    const normalizedTelefone = telefone ? telefone.replace(/\D/g, "") : null
-    const normalizedDataNascimento =
-      dataNascimento && dataNascimento.trim() !== "" ? new Date(dataNascimento) : null
+    const normalizedProfile = normalizeMemberProfileInput({
+      cpf,
+      rg,
+      telefone,
+      dataNascimento,
+      sexo,
+    })
 
-    if (normalizedCpf && !validarCPF(normalizedCpf)) {
+    if (normalizedProfile.cpf && !validarCPF(normalizedProfile.cpf)) {
       return NextResponse.json({ error: "CPF inválido" }, { status: 400 })
     }
 
-    if (normalizedTelefone && normalizedTelefone.length < 10) {
+    if (normalizedProfile.telefoneIsInvalid) {
       return NextResponse.json({ error: "Telefone inválido" }, { status: 400 })
     }
 
-    if (
-      normalizedDataNascimento &&
-      Number.isNaN(normalizedDataNascimento.getTime())
-    ) {
+    if (normalizedProfile.dataNascimentoIsInvalid) {
       return NextResponse.json(
         { error: "Data de nascimento inválida" },
         { status: 400 }
@@ -134,11 +132,11 @@ export async function POST(request: Request) {
       result = await completePerfilFromToken({
         token,
         nome,
-        cpf: normalizedCpf,
-        rg: rg && rg.trim() !== "" ? rg : null,
-        telefone: normalizedTelefone,
-        dataNascimento: normalizedDataNascimento?.toISOString() ?? null,
-        sexo: sexo === "" ? null : sexo,
+        cpf: normalizedProfile.cpf,
+        rg: normalizedProfile.rg ?? null,
+        telefone: normalizedProfile.telefone,
+        dataNascimento: normalizedProfile.dataNascimento?.toISOString() ?? null,
+        sexo: normalizedProfile.sexo,
         hasCpf,
         hasRg,
         hasTelefone,
@@ -157,11 +155,11 @@ export async function POST(request: Request) {
       result = await savePerfilForUser({
         userId: session.user.id,
         nome,
-        cpf: normalizedCpf,
-        rg: rg && rg.trim() !== "" ? rg : null,
-        telefone: normalizedTelefone,
-        dataNascimento: normalizedDataNascimento?.toISOString() ?? null,
-        sexo: sexo === "" ? null : sexo,
+        cpf: normalizedProfile.cpf,
+        rg: normalizedProfile.rg ?? null,
+        telefone: normalizedProfile.telefone,
+        dataNascimento: normalizedProfile.dataNascimento?.toISOString() ?? null,
+        sexo: normalizedProfile.sexo,
         hasCpf,
         hasRg,
         hasTelefone,
