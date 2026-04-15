@@ -9,28 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Download, Dumbbell } from 'lucide-react'
 import { fetcher } from '@/lib/fetcher'
-
-type Exercicio = {
-  id: string
-  sessao: string
-  nome: string
-  grupoMuscular?: string | null
-  series: string
-  repeticoes: string
-  descanso?: string | null
-}
-
-type FichaTreino = {
-  id: string
-  nome: string
-  data?: string | null
-  objetivo?: string | null
-  criadoEm: string
-  exercicios: Exercicio[]
-}
+import type { TreinoExercise, TreinoFicha } from '@/domain/treino'
 
 export default function MeuTreinoPage() {
-  const { data: fichas = [], isLoading } = useSWR<FichaTreino[]>(
+  const { data: fichas = [], isLoading } = useSWR<TreinoFicha[]>(
     '/api/treinos?ativos=true',
     fetcher,
     {
@@ -45,10 +27,10 @@ export default function MeuTreinoPage() {
 
   const sessoes = useMemo(() => {
     if (!fichaAtual) {
-      return [] as Array<{ id: string; exercicios: Exercicio[] }>
+      return [] as Array<{ id: string; exercicios: TreinoExercise[] }>
     }
 
-    const grouped = new Map<string, Exercicio[]>()
+    const grouped = new Map<string, TreinoExercise[]>()
     for (const exercicio of fichaAtual.exercicios) {
       const sessao = exercicio.sessao || 'A'
       if (!grouped.has(sessao)) {

@@ -7,8 +7,24 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Calendar, Dumbbell, Edit, Printer, User } from 'lucide-react'
 import Link from 'next/link'
 import { TreinoTemplateButton } from '@/components/admin/treino-template-button'
+import type { TreinoExercise } from '@/domain/treino'
 
 export const dynamic = 'force-dynamic'
+
+type TreinoDetalhe = {
+  id: string
+  nome: string
+  data: string | null
+  criadoEm: Date
+  objetivo: string | null
+  observacoes: string | null
+  membro: {
+    usuario: {
+      nome: string | null
+    }
+  }
+  exercicios: TreinoExercise[]
+}
 
 interface PageProps {
   params: Promise<{
@@ -16,7 +32,7 @@ interface PageProps {
   }>
 }
 
-async function getTreino(id: string) {
+async function getTreino(id: string): Promise<TreinoDetalhe | null> {
   const treino = await prisma.fichaTreino.findUnique({
     where: { id },
     select: {
