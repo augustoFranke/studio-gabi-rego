@@ -14,7 +14,6 @@ const pagamentoSchema = z.object({
   observacao: z.string().nullable().optional(),
 })
 
-// GET /api/pagamentos - Listar pagamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     const searchParams = request.nextUrl.searchParams
@@ -49,7 +48,6 @@ export async function GET(request: NextRequest) {
 }
 
 
-// POST /api/pagamentos - Criar novo pagamento (admin only)
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     const validation = await validateRequest(request, pagamentoSchema)

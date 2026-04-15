@@ -9,7 +9,6 @@ const getOrCreateSchema = z.object({
   horaInicio: z.string().min(1, 'Informe a hora de início'),
 })
 
-// POST /api/horarios/get-or-create - Get existing or create new horario
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {

@@ -14,7 +14,6 @@ const agendamentoSchema = z.object({
   scope: z.enum(['single', 'weekly']).optional(),
 })
 
-// GET /api/agendamentos - Listar agendamentos
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     const searchParams = request.nextUrl.searchParams
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/agendamentos - Criar novo agendamento
 export async function POST(request: NextRequest) {
   return withApiAuth(async (session) => {
     const validation = await validateRequest(request, agendamentoSchema)

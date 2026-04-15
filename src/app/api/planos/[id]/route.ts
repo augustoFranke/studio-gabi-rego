@@ -19,7 +19,6 @@ const planoUpdateSchema = z.object({
   message: 'Nenhum dado para atualizar',
 })
 
-// GET /api/planos/[id] - Obter um plano específico
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,7 +35,6 @@ export async function GET(
   })
 }
 
-// PUT /api/planos/[id] - Atualizar plano (admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -64,7 +62,6 @@ export async function PUT(
   }, { requiredRole: 'ADMIN' })
 }
 
-// DELETE /api/planos/[id] - Desativar plano (admin only)
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -36,39 +36,12 @@ import {
 } from '@/lib/treino/editor';
 import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
 import { sortByTextPtBr } from '@/lib/select-options';
-
-type Exercise = {
-    id: string;
-    name: string;
-    sets: string;
-    reps: string;
-};
-
-type Session = {
-    id: string;
-    name: string;
-    description: string;
-    exercises: Exercise[];
-};
-
-type TemplateExercise = {
-    id: string;
-    sessao: string;
-    nome: string;
-    series: string;
-    repeticoes: string;
-    grupoMuscular?: string | null;
-    descanso?: string | null;
-    observacoes?: string | null;
-};
-
-type Template = {
-    id: string;
-    nome: string;
-    objetivo?: string | null;
-    observacoes?: string | null;
-    exercicios: TemplateExercise[];
-};
+import type {
+    TreinoEditorExercise,
+    TreinoEditorSession,
+    TreinoTemplate,
+} from '@/domain/treino';
+import { readResponseErrorMessage } from '@/lib/http';
 
 type Member = {
     id: string;
@@ -83,14 +56,14 @@ export default function TrainingPlanGeneratorPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [membersLoading, setMembersLoading] = useState(true);
     const [memberSelectOpen, setMemberSelectOpen] = useState(false);
-    const [templates, setTemplates] = useState<Template[]>([]);
+    const [templates, setTemplates] = useState<TreinoTemplate[]>([]);
     const [templatesLoading, setTemplatesLoading] = useState(true);
     const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
     const [date, setDate] = useState('');
     const [observacoes, setObservacoes] = useState('');
-    const [sessions, setSessions] = useState<Session[]>([]);
+    const [sessions, setSessions] = useState<TreinoEditorSession[]>([]);
     const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
     const [mounted, setMounted] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -102,8 +75,8 @@ export default function TrainingPlanGeneratorPage() {
             try {
                 const response = await fetch('/api/membros?status=ATIVO&fields=compact');
                 if (response.ok) {
-                    const data = await response.json();
-                    const loadedMembers: Member[] = data.membros || data;
+                    const data = await response.json() as Member[] | { membros?: Member[] };
+                    const loadedMembers = Array.isArray(data) ? data : data.membros || [];
                     setMembers(sortByTextPtBr(loadedMembers, (member) => member.usuario.nome));
                 }
             } catch (error) {
@@ -120,8 +93,8 @@ export default function TrainingPlanGeneratorPage() {
             try {
                 const response = await fetch('/api/treinos/templates');
                 if (response.ok) {
-                    const data = await response.json();
-                    const loadedTemplates: Template[] = data || [];
+                    const data: TreinoTemplate[] = await response.json();
+                    const loadedTemplates = data || [];
                     setTemplates(sortByTextPtBr(loadedTemplates, (template) => template.nome));
                 }
             } catch (error) {
@@ -179,8 +152,8 @@ export default function TrainingPlanGeneratorPage() {
         );
     };
 
-    const applyTemplate = (template: Template) => {
-        const sessionsMap = new Map<string, Exercise[]>();
+    const applyTemplate = (template: TreinoTemplate) => {
+        const sessionsMap = new Map<string, TreinoEditorExercise[]>();
         template.exercicios.forEach((ex) => {
             const exercises = sessionsMap.get(ex.sessao) || [];
             exercises.push({
@@ -200,7 +173,7 @@ export default function TrainingPlanGeneratorPage() {
             return { letter: fullName.charAt(0) || 'A', description: '' };
         };
 
-        const loadedSessions: Session[] = Array.from(sessionsMap.entries())
+        const loadedSessions: TreinoEditorSession[] = Array.from(sessionsMap.entries())
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([fullName, exercises]) => {
                 const { letter, description } = parseSessionName(fullName);
@@ -301,7 +274,7 @@ export default function TrainingPlanGeneratorPage() {
     };
 
     // Get full session name combining letter and description
-    const getFullSessionName = (session: Session) => {
+    const getFullSessionName = (session: TreinoEditorSession) => {
         return session.description.trim()
             ? `${session.name} - ${session.description.trim()}`
             : session.name;
@@ -346,8 +319,7 @@ export default function TrainingPlanGeneratorPage() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao gerar PDF');
+                throw new Error(await readResponseErrorMessage(response, 'Erro ao gerar PDF'));
             }
 
             // Download the PDF
@@ -415,8 +387,7 @@ export default function TrainingPlanGeneratorPage() {
             });
 
             if (!saveResponse.ok) {
-                const errorData = await saveResponse.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Erro ao salvar treino');
+                throw new Error(await readResponseErrorMessage(saveResponse, 'Erro ao salvar treino'));
             }
 
             toast.success('Treino salvo!');

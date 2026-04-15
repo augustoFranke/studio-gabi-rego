@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { readResponseErrorMessage } from "@/lib/http"
 
 type TreinoTemplateButtonProps = {
   treinoId: string
@@ -54,8 +55,7 @@ export function TreinoTemplateButton({
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || "Erro ao salvar template")
+        throw new Error(await readResponseErrorMessage(response, "Erro ao salvar template"))
       }
 
       toast.success("Template salvo com sucesso!")
