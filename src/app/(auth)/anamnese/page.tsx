@@ -12,46 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { readResponseErrorMessage } from "@/lib/http"
+import type { AnamneseFormData } from '@/lib/anamnese'
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
-
-interface AnamneseData {
-  altura?: string
-  pesoAtual?: string
-  objetivo?: string
-  praticaAtividade?: string
-  praticaAtividadeQual?: string
-  tempoSedentario?: string
-  condicaoMedica?: string
-  condicaoMedicaQual?: string
-  lesao?: string
-  lesaoQual?: string
-  restricaoMovimento?: string
-  restricaoMovimentoQual?: string
-  desconfortoMovimento?: string
-  desconfortoMovimentoQual?: string
-  problemasOrtopedicos?: string
-  problemasOrtopedicosQual?: string
-  medicamentoControlado?: string
-  medicamentoControladoQual?: string
-  obesoSobrepeso?: string
-  colesterolElevado?: string
-  taquicardia?: string
-  doencasCardiacas?: string
-  diabetes?: string
-  dificuldadeExercicio?: string
-  cicloMenstrual?: string
-  experienciaMusculacao?: string
-  ondeConheceu?: string
-  expectativas?: string
-  parq1?: string
-  parq2?: string
-  parq3?: string
-  parq4?: string
-  parq5?: string
-  parq6?: string
-  parq7?: string
-}
 
 function AnamneseContent() {
   const { status } = useSession()
@@ -61,7 +25,7 @@ function AnamneseContent() {
   const [tokenChecked, setTokenChecked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
-  const [formData, setFormData] = useState<AnamneseData>({})
+  const [formData, setFormData] = useState<AnamneseFormData>({})
   const [sexo, setSexo] = useState<string | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState({
@@ -143,10 +107,13 @@ function AnamneseContent() {
             setLoadingData(false)
           }
         } else {
-          const data = await response.json().catch(() => ({}))
           if (token) {
+            const errorMessage = await readResponseErrorMessage(
+              response,
+              "Link inválido ou expirado."
+            )
             if (isMounted) {
-              setTokenError(data.error || "Link inválido ou expirado.")
+              setTokenError(errorMessage)
               setLoadingData(false)
             }
             setToken(null)
@@ -191,7 +158,7 @@ function AnamneseContent() {
     }
   }, [status, router, token, tokenChecked])
 
-  const updateField = (field: keyof AnamneseData, value: string) => {
+  const updateField = (field: keyof AnamneseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -206,21 +173,19 @@ function AnamneseContent() {
     setIsLoading(true)
 
     try {
-    const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Anamnese-Token": token } : {}),
-      },
-      credentials: "include",
-      body: JSON.stringify(formData),
-    })
-
-      const data = await response.json()
+      const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "X-Anamnese-Token": token } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify(formData),
+      })
 
       if (!response.ok) {
-        toast.error(data.error || "Erro ao salvar anamnese")
+        toast.error(await readResponseErrorMessage(response, "Erro ao salvar anamnese"))
         setIsLoading(false)
         return
       }
@@ -634,8 +599,8 @@ function AnamneseContent() {
                   <div key={field} className="space-y-2">
                     <Label className="text-sm">{index + 1}. {question}</Label>
                     <Select
-                      value={formData[field as keyof AnamneseData] || ""}
-                      onValueChange={(value) => updateField(field as keyof AnamneseData, value)}
+                      value={formData[field as keyof AnamneseFormData] || ""}
+                      onValueChange={(value) => updateField(field as keyof AnamneseFormData, value)}
                     >
                       <SelectTrigger className="h-12 border-orange-500/20">
                         <SelectValue placeholder="Selecione" />

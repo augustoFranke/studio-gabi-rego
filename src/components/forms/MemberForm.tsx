@@ -67,6 +67,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
+type MemberFormPayload = Omit<FormValues, 'cpf'> & { cpf: string | null }
+
 interface Plano {
   id: string
   nome: string
@@ -194,7 +196,10 @@ export function MemberForm({
       const method = mode === 'create' ? "POST" : "PATCH"
 
       // Limpar campos opcionais vazios
-      const body = { ...values }
+      const body: MemberFormPayload = {
+        ...values,
+        cpf: values.cpf ?? '',
+      }
       if (mode === 'edit' && !body.senha) {
         delete body.senha
       }
@@ -205,7 +210,7 @@ export function MemberForm({
         delete body.sexo
       }
       if (body.cpf === "") {
-        (body as Record<string, unknown>).cpf = null // Enviar null se vazio para permitir CPF opcional
+        body.cpf = null // Enviar null se vazio para permitir CPF opcional
       }
 
       const response = await fetch(url, {
