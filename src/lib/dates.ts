@@ -4,14 +4,29 @@ export function getAppTimezone(): string {
   return process.env.APP_TIMEZONE || DEFAULT_APP_TIMEZONE
 }
 
-export function getYmdInTimeZone(date: Date, timeZone: string): string {
+function normalizeDateInput(date: Date | string | number): Date {
+  const normalized =
+    date instanceof Date
+      ? date
+      : typeof date === 'string' || typeof date === 'number'
+        ? new Date(date)
+        : new Date(NaN)
+
+  if (Number.isNaN(normalized.getTime())) {
+    throw new RangeError('Invalid time value')
+  }
+
+  return normalized
+}
+
+export function getYmdInTimeZone(date: Date | string | number, timeZone: string): string {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   })
-  const parts = formatter.formatToParts(date)
+  const parts = formatter.formatToParts(normalizeDateInput(date))
   const year = parts.find((part) => part.type === 'year')?.value
   const month = parts.find((part) => part.type === 'month')?.value
   const day = parts.find((part) => part.type === 'day')?.value
@@ -23,7 +38,7 @@ export function getYmdInTimeZone(date: Date, timeZone: string): string {
   return `${year}-${month}-${day}`
 }
 
-export function getTimeHmInTimeZone(date: Date, timeZone: string): string {
+export function getTimeHmInTimeZone(date: Date | string | number, timeZone: string): string {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone,
     hour: '2-digit',
@@ -31,7 +46,7 @@ export function getTimeHmInTimeZone(date: Date, timeZone: string): string {
     hour12: false,
   })
 
-  return formatter.format(date)
+  return formatter.format(normalizeDateInput(date))
 }
 
 export function getDateFromYmd(ymd: string): Date {
