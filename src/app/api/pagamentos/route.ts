@@ -1,28 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
-import { StatusPagamento } from '@prisma/client'
-import { z } from 'zod'
 import { listPagamentos, createPagamento, PagamentoServiceError } from '@/services/pagamento.service'
-
-const requiredString = (message: string) => z.string().min(1, message)
-
-const pagamentoSchema = z.object({
-  membroId: requiredString('Selecione um aluno'),
-  planoId: requiredString('Selecione um plano'),
-  valor: z.number().positive('Valor deve ser maior que zero'),
-  dataVencimento: requiredString('Informe a data de vencimento'),
-  formaPagamento: requiredString('Selecione a forma de pagamento'),
-  observacao: z.string().nullable().optional(),
-})
-
-const pagamentosQuerySchema = z.object({
-  membroId: z.string().min(1).nullable(),
-  status: z.union([z.nativeEnum(StatusPagamento), z.literal('all')]).nullable(),
-  search: z.string().trim().max(120).nullable(),
-  sort: z.enum(['recent_desc', 'vencimento_asc', 'vencimento_desc']).catch('recent_desc'),
-  page: z.coerce.number().int().min(1).catch(1),
-  limit: z.coerce.number().int().min(1).max(100).catch(10),
-})
+import { pagamentoCreateSchema, pagamentosQuerySchema } from '@/features/finance/contracts'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
@@ -69,7 +48,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    const validation = await validateRequest(request, pagamentoSchema)
+    const validation = await validateRequest(request, pagamentoCreateSchema)
 
     if ('error' in validation) {
       return validation.error

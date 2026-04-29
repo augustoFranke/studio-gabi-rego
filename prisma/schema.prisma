@@ -78,204 +78,210 @@ enum PagamentoImportRunStatus {
 // ==================== MODELS ====================
 
 model Usuario {
-  id            String    @id @default(cuid())
-  email         String?   @unique
+  id            String   @id @default(cuid())
+  email         String?  @unique
   senha         String
-  senhaDefinida Boolean   @default(false) @map("senha_definida")
+  senhaDefinida Boolean  @default(false) @map("senha_definida")
   nome          String?
-  role          Role      @default(MEMBRO)
-  criadoEm      DateTime  @default(now()) @map("criado_em")
-  atualizadoEm  DateTime  @updatedAt @map("atualizado_em")
+  role          Role     @default(MEMBRO)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
 
   // Email verification
-  emailVerificado       DateTime? @map("email_verificado")
-  tokenVerificacao      String?   @unique @map("token_verificacao")
+  emailVerificado        DateTime? @map("email_verificado")
+  tokenVerificacao       String?   @unique @map("token_verificacao")
   tokenVerificacaoExpira DateTime? @map("token_verificacao_expira")
 
   // Password reset
-  tokenReset            String?   @unique @map("token_reset")
-  tokenResetExpira      DateTime? @map("token_reset_expira")
+  tokenReset       String?   @unique @map("token_reset")
+  tokenResetExpira DateTime? @map("token_reset_expira")
 
   // Legacy profile completion
-  tokenPerfil           String?   @unique @map("token_perfil")
-  tokenPerfilExpira     DateTime? @map("token_perfil_expira")
+  tokenPerfil       String?   @unique @map("token_perfil")
+  tokenPerfilExpira DateTime? @map("token_perfil_expira")
 
   // Onboarding tracking
-  etapaOnboarding       Int       @default(1) @map("etapa_onboarding")
-  onboardingCompleto    Boolean   @default(false) @map("onboarding_completo")
+  etapaOnboarding    Int     @default(1) @map("etapa_onboarding")
+  onboardingCompleto Boolean @default(false) @map("onboarding_completo")
 
   // Relação com Membro (se for membro)
-  membro        Membro?
+  membro Membro?
 
   @@map("usuarios")
 }
 
 model Membro {
-  id              String        @id @default(cuid())
-  usuarioId       String        @unique @map("usuario_id")
-  cpf             String?       @unique
-  rg              String?
-  telefone        String?
-  dataNascimento  DateTime?     @map("data_nascimento")
-  observacoes     String?
-  status          StatusMembro  @default(PENDENTE)
-  fotoUrl         String?       @map("foto_url")
-  sexo            Sexo?
-  criadoEm        DateTime      @default(now()) @map("criado_em")
-  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
-  anamneseToken       String?   @unique @map("anamnese_token")
-  anamneseTokenExpira DateTime? @map("anamnese_token_expira")
+  id                  String       @id @default(cuid())
+  usuarioId           String       @unique @map("usuario_id")
+  cpf                 String?      @unique
+  rg                  String?
+  telefone            String?
+  dataNascimento      DateTime?    @map("data_nascimento")
+  observacoes         String?
+  status              StatusMembro @default(PENDENTE)
+  fotoUrl             String?      @map("foto_url")
+  sexo                Sexo?
+  criadoEm            DateTime     @default(now()) @map("criado_em")
+  atualizadoEm        DateTime     @updatedAt @map("atualizado_em")
+  anamneseToken       String?      @unique @map("anamnese_token")
+  anamneseTokenExpira DateTime?    @map("anamnese_token_expira")
 
   // Relações
-  usuario         Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  planoId         String?       @map("plano_id")
-  plano           Plano?        @relation(fields: [planoId], references: [id])
-  precoCustomizado Decimal?     @db.Decimal(10, 2) @map("preco_customizado")
-  agendamentos    Agendamento[]
-  pagamentos      Pagamento[]
-  fichasTreino    FichaTreino[]
-  notificacoes    Notificacao[]
-  anamnese        Anamnese?
-  horariosFixos   HorarioFixo[]
+  usuario          Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  planoId          String?       @map("plano_id")
+  plano            Plano?        @relation(fields: [planoId], references: [id])
+  precoCustomizado Decimal?      @map("preco_customizado") @db.Decimal(10, 2)
+  agendamentos     Agendamento[]
+  pagamentos       Pagamento[]
+  fichasTreino     FichaTreino[]
+  notificacoes     Notificacao[]
+  anamnese         Anamnese?
+  horariosFixos    HorarioFixo[]
 
   @@index([status])
+  @@index([planoId])
   @@map("membros")
 }
 
 model Plano {
-  id              String      @id @default(cuid())
-  nome            String
-  descricao       String?
-  valor           Decimal     @db.Decimal(10, 2)
-  duracaoDias     Int         @map("duracao_dias")
-  aulasSemanais   Int         @map("aulas_semanais")
-  ativo           Boolean     @default(true)
-  criadoEm        DateTime    @default(now()) @map("criado_em")
-  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+  id            String   @id @default(cuid())
+  nome          String
+  descricao     String?
+  valor         Decimal  @db.Decimal(10, 2)
+  duracaoDias   Int      @map("duracao_dias")
+  aulasSemanais Int      @map("aulas_semanais")
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  membros         Membro[]
-  pagamentos      Pagamento[]
+  membros    Membro[]
+  pagamentos Pagamento[]
 
   @@map("planos")
 }
 
 model HorarioDisponivel {
-  id              String      @id @default(cuid())
-  diaSemana       DiaSemana   @map("dia_semana")
-  horaInicio      String      @map("hora_inicio") // "08:00"
-  horaFim         String      @map("hora_fim")    // "09:00"
-  vagasTotal      Int         @map("vagas_total")
-  ativo           Boolean     @default(true)
-  criadoEm        DateTime    @default(now()) @map("criado_em")
-  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+  id           String    @id @default(cuid())
+  diaSemana    DiaSemana @map("dia_semana")
+  horaInicio   String    @map("hora_inicio") // "08:00"
+  horaFim      String    @map("hora_fim") // "09:00"
+  vagasTotal   Int       @map("vagas_total")
+  ativo        Boolean   @default(true)
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em")
 
   // Relações
-  agendamentos    Agendamento[]
+  agendamentos Agendamento[]
 
   @@unique([diaSemana, horaInicio, ativo])
   @@map("horarios_disponiveis")
 }
 
 model Agendamento {
-  id              String      @id @default(cuid())
-  membroId        String      @map("membro_id")
-  horarioId       String      @map("horario_id")
-  data            DateTime    @db.Date
-  presente        Boolean?    // null = não marcado, true = presente, false = falta
-  observacao      String?
-  criadoEm        DateTime    @default(now()) @map("criado_em")
-  atualizadoEm    DateTime    @updatedAt @map("atualizado_em")
+  id           String   @id @default(cuid())
+  membroId     String   @map("membro_id")
+  horarioId    String   @map("horario_id")
+  data         DateTime @db.Date
+  presente     Boolean? // null = não marcado, true = presente, false = falta
+  observacao   String?
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  membro          Membro              @relation(fields: [membroId], references: [id], onDelete: Cascade)
-  horario         HorarioDisponivel   @relation(fields: [horarioId], references: [id])
+  membro  Membro            @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  horario HorarioDisponivel @relation(fields: [horarioId], references: [id])
 
-  @@index([data])
   @@unique([membroId, horarioId, data])
+  @@index([data])
+  @@index([horarioId, data])
+  @@index([membroId, data])
   @@map("agendamentos")
 }
 
 model HorarioFixo {
-  id         String    @id @default(cuid())
-  membroId   String    @map("membro_id")
-  diaSemana  DiaSemana @map("dia_semana")
-  hora       String    @map("hora") // "08:00"
-  criadoEm   DateTime  @default(now()) @map("criado_em")
+  id        String    @id @default(cuid())
+  membroId  String    @map("membro_id")
+  diaSemana DiaSemana @map("dia_semana")
+  hora      String    @map("hora") // "08:00"
+  criadoEm  DateTime  @default(now()) @map("criado_em")
 
-  membro     Membro    @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  membro Membro @relation(fields: [membroId], references: [id], onDelete: Cascade)
 
   @@unique([membroId, diaSemana, hora])
+  @@index([diaSemana, hora])
   @@map("horarios_fixos")
 }
 
 model Pagamento {
-  id              String          @id @default(cuid())
-  membroId        String?         @map("membro_id")
-  planoId         String          @map("plano_id")
-  payerNome       String?         @map("payer_nome")
-  valor           Decimal         @db.Decimal(10, 2)
-  dataVencimento  DateTime        @map("data_vencimento") @db.Date
-  dataPagamento   DateTime?       @map("data_pagamento")
-  status          StatusPagamento @default(PENDENTE)
-  formaPagamento  String?         @map("forma_pagamento") // PIX, Cartão, Dinheiro
-  comprovante     String?         // URL do comprovante
-  observacao      String?
-  importRunId     String?         @map("import_run_id")
-  importKey       String?         @unique @map("import_key")
-  criadoEm        DateTime        @default(now()) @map("criado_em")
-  atualizadoEm    DateTime        @updatedAt @map("atualizado_em")
+  id             String          @id @default(cuid())
+  membroId       String?         @map("membro_id")
+  planoId        String          @map("plano_id")
+  payerNome      String?         @map("payer_nome")
+  valor          Decimal         @db.Decimal(10, 2)
+  dataVencimento DateTime        @map("data_vencimento") @db.Date
+  dataPagamento  DateTime?       @map("data_pagamento")
+  status         StatusPagamento @default(PENDENTE)
+  formaPagamento String?         @map("forma_pagamento") // PIX, Cartão, Dinheiro
+  comprovante    String? // URL do comprovante
+  observacao     String?
+  importRunId    String?         @map("import_run_id")
+  importKey      String?         @unique @map("import_key")
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
 
   // Relações
-  membro          Membro?         @relation(fields: [membroId], references: [id], onDelete: SetNull)
-  plano           Plano           @relation(fields: [planoId], references: [id])
-  importRun       PagamentoImportRun? @relation(fields: [importRunId], references: [id], onDelete: SetNull)
+  membro    Membro?             @relation(fields: [membroId], references: [id], onDelete: SetNull)
+  plano     Plano               @relation(fields: [planoId], references: [id])
+  importRun PagamentoImportRun? @relation(fields: [importRunId], references: [id], onDelete: SetNull)
 
   @@index([status, dataVencimento])
+  @@index([membroId, dataVencimento])
+  @@index([status, dataPagamento])
   @@index([importRunId])
   @@map("pagamentos")
 }
 
 model PagamentoImportRun {
-  id                    String                    @id @default(cuid())
-  batchId               String                    @unique @map("batch_id")
-  sourceFilename        String                    @map("source_filename")
-  sourceBasename        String                    @map("source_basename")
-  competenciaMes        DateTime                  @map("competencia_mes") @db.Date
-  status                PagamentoImportRunStatus
-  totalRowsSeen         Int                       @default(0) @map("total_rows_seen")
-  rowsWithNumericPago   Int                       @default(0) @map("rows_with_numeric_pago")
-  inserted              Int                       @default(0)
-  skipped               Int                       @default(0)
-  matched               Int                       @default(0)
-  ambiguous             Int                       @default(0)
-  unmatched             Int                       @default(0)
-  dryRun                Boolean                   @default(true) @map("dry_run")
-  rollbackOfRunId       String?                   @map("rollback_of_run_id")
-  criadoEm              DateTime                  @default(now()) @map("criado_em")
-  atualizadoEm          DateTime                  @updatedAt @map("atualizado_em")
-  pagamentos            Pagamento[]
-  logs                  PagamentoImportLog[]
+  id                  String                   @id @default(cuid())
+  batchId             String                   @unique @map("batch_id")
+  sourceFilename      String                   @map("source_filename")
+  sourceBasename      String                   @map("source_basename")
+  competenciaMes      DateTime                 @map("competencia_mes") @db.Date
+  status              PagamentoImportRunStatus
+  totalRowsSeen       Int                      @default(0) @map("total_rows_seen")
+  rowsWithNumericPago Int                      @default(0) @map("rows_with_numeric_pago")
+  inserted            Int                      @default(0)
+  skipped             Int                      @default(0)
+  matched             Int                      @default(0)
+  ambiguous           Int                      @default(0)
+  unmatched           Int                      @default(0)
+  dryRun              Boolean                  @default(true) @map("dry_run")
+  rollbackOfRunId     String?                  @map("rollback_of_run_id")
+  criadoEm            DateTime                 @default(now()) @map("criado_em")
+  atualizadoEm        DateTime                 @updatedAt @map("atualizado_em")
+  pagamentos          Pagamento[]
+  logs                PagamentoImportLog[]
 
   @@index([competenciaMes])
   @@map("pagamento_import_runs")
 }
 
 model PagamentoImportLog {
-  id                    String                  @id @default(cuid())
-  importRunId           String                  @map("import_run_id")
-  rowIndex              Int                     @map("row_index")
-  rawName               String?                 @map("raw_name")
-  rawPago               String?                 @map("raw_pago")
-  parsedAmount          Decimal?                @db.Decimal(10, 2) @map("parsed_amount")
-  decision              PagamentoImportDecision
-  matchScore            Decimal?                @db.Decimal(5, 4) @map("match_score")
-  matchedMembroId       String?                 @map("matched_membro_id")
-  importKey             String?                 @map("import_key")
-  pagamentoId           String?                 @map("pagamento_id")
-  detalhe               String?
-  criadoEm              DateTime                @default(now()) @map("criado_em")
-  importRun             PagamentoImportRun      @relation(fields: [importRunId], references: [id], onDelete: Cascade)
+  id              String                  @id @default(cuid())
+  importRunId     String                  @map("import_run_id")
+  rowIndex        Int                     @map("row_index")
+  rawName         String?                 @map("raw_name")
+  rawPago         String?                 @map("raw_pago")
+  parsedAmount    Decimal?                @map("parsed_amount") @db.Decimal(10, 2)
+  decision        PagamentoImportDecision
+  matchScore      Decimal?                @map("match_score") @db.Decimal(5, 4)
+  matchedMembroId String?                 @map("matched_membro_id")
+  importKey       String?                 @map("import_key")
+  pagamentoId     String?                 @map("pagamento_id")
+  detalhe         String?
+  criadoEm        DateTime                @default(now()) @map("criado_em")
+  importRun       PagamentoImportRun      @relation(fields: [importRunId], references: [id], onDelete: Cascade)
 
   @@index([importRunId, rowIndex])
   @@index([decision])
@@ -283,162 +289,166 @@ model PagamentoImportLog {
 }
 
 model FichaTreino {
-  id              String        @id @default(cuid())
-  membroId        String        @map("membro_id")
-  nome            String        // Ex: "Treino Janeiro 2026"
-  data            String?       // Ex: "01/2026"
-  objetivo        String?       // Ex: "Hipertrofia", "Emagrecimento"
-  observacoes     String?
-  ativo           Boolean       @default(true)
-  criadoEm        DateTime      @default(now()) @map("criado_em")
-  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+  id           String   @id @default(cuid())
+  membroId     String   @map("membro_id")
+  nome         String // Ex: "Treino Janeiro 2026"
+  data         String? // Ex: "01/2026"
+  objetivo     String? // Ex: "Hipertrofia", "Emagrecimento"
+  observacoes  String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  membro          Membro        @relation(fields: [membroId], references: [id], onDelete: Cascade)
-  exercicios      Exercicio[]
+  membro     Membro      @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  exercicios Exercicio[]
 
+  @@index([membroId, ativo])
   @@map("fichas_treino")
 }
 
 model Exercicio {
-  id              String        @id @default(cuid())
-  fichaId         String        @map("ficha_id")
-  sessao          String        @default("A") // Ex: "A", "B", "C"
-  nome            String        // Ex: "Supino Reto"
-  grupoMuscular   String?       @map("grupo_muscular") // Ex: "Peito"
-  series          String        // Ex: "3", "3-4", "2 a 3"
-  repeticoes      String        // Ex: "12", "8-12", "Até falha"
-  descanso        String?       // Ex: "60s", "90s"
-  observacoes     String?
-  ordem           Int           @default(0)
-  criadoEm        DateTime      @default(now()) @map("criado_em")
-  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+  id            String   @id @default(cuid())
+  fichaId       String   @map("ficha_id")
+  sessao        String   @default("A") // Ex: "A", "B", "C"
+  nome          String // Ex: "Supino Reto"
+  grupoMuscular String?  @map("grupo_muscular") // Ex: "Peito"
+  series        String // Ex: "3", "3-4", "2 a 3"
+  repeticoes    String // Ex: "12", "8-12", "Até falha"
+  descanso      String? // Ex: "60s", "90s"
+  observacoes   String?
+  ordem         Int      @default(0)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  ficha           FichaTreino   @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+  ficha FichaTreino @relation(fields: [fichaId], references: [id], onDelete: Cascade)
 
+  @@index([fichaId, sessao, ordem])
   @@map("exercicios")
 }
 
 model TreinoTemplate {
-  id              String                   @id @default(cuid())
-  nome            String
-  objetivo        String?
-  observacoes     String?
-  criadoEm        DateTime                 @default(now()) @map("criado_em")
-  atualizadoEm    DateTime                 @updatedAt @map("atualizado_em")
+  id           String   @id @default(cuid())
+  nome         String
+  objetivo     String?
+  observacoes  String?
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  exercicios      TreinoTemplateExercicio[]
+  exercicios TreinoTemplateExercicio[]
 
   @@map("treinos_template")
 }
 
 model TreinoTemplateExercicio {
-  id              String         @id @default(cuid())
-  templateId      String         @map("template_id")
-  sessao          String         @default("A")
-  nome            String
-  grupoMuscular   String?        @map("grupo_muscular")
-  series          String
-  repeticoes      String
-  descanso        String?
-  observacoes     String?
-  ordem           Int            @default(0)
-  criadoEm        DateTime       @default(now()) @map("criado_em")
-  atualizadoEm    DateTime       @updatedAt @map("atualizado_em")
+  id            String   @id @default(cuid())
+  templateId    String   @map("template_id")
+  sessao        String   @default("A")
+  nome          String
+  grupoMuscular String?  @map("grupo_muscular")
+  series        String
+  repeticoes    String
+  descanso      String?
+  observacoes   String?
+  ordem         Int      @default(0)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
 
   // Relações
-  template        TreinoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template TreinoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
+  @@index([templateId, sessao, ordem])
   @@map("treinos_template_exercicios")
 }
 
 model Notificacao {
-  id              String          @id @default(cuid())
-  membroId        String?         @map("membro_id")
-  tipo            TipoNotificacao
-  titulo          String
-  mensagem        String
-  enviada         Boolean         @default(false)
-  enviadaEm       DateTime?       @map("enviada_em")
-  agendadaPara    DateTime?       @map("agendada_para")
-  canalEmail      Boolean         @default(false) @map("canal_email")
-  statusEntrega   StatusEntregaNotificacao @default(PENDENTE) @map("status_entrega")
-  tentativasEntrega Int          @default(0) @map("tentativas_entrega")
-  ultimaTentativaEm DateTime?    @map("ultima_tentativa_em")
-  ultimoErro      String?        @map("ultimo_erro")
-  chaveDedupe     String?        @unique @map("chave_dedupe")
-  criadoEm        DateTime        @default(now()) @map("criado_em")
+  id                String                   @id @default(cuid())
+  membroId          String?                  @map("membro_id")
+  tipo              TipoNotificacao
+  titulo            String
+  mensagem          String
+  enviada           Boolean                  @default(false)
+  enviadaEm         DateTime?                @map("enviada_em")
+  agendadaPara      DateTime?                @map("agendada_para")
+  canalEmail        Boolean                  @default(false) @map("canal_email")
+  statusEntrega     StatusEntregaNotificacao @default(PENDENTE) @map("status_entrega")
+  tentativasEntrega Int                      @default(0) @map("tentativas_entrega")
+  ultimaTentativaEm DateTime?                @map("ultima_tentativa_em")
+  ultimoErro        String?                  @map("ultimo_erro")
+  chaveDedupe       String?                  @unique @map("chave_dedupe")
+  criadoEm          DateTime                 @default(now()) @map("criado_em")
 
   // Relações
-  membro          Membro?         @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  membro Membro? @relation(fields: [membroId], references: [id], onDelete: Cascade)
 
+  @@index([membroId, tipo, criadoEm])
+  @@index([statusEntrega, agendadaPara])
   @@map("notificacoes")
 }
 
 // Anamnese do membro
 model Anamnese {
-  id                        String    @id @default(cuid())
-  membroId                  String    @unique @map("membro_id")
+  id       String @id @default(cuid())
+  membroId String @unique @map("membro_id")
 
   // Basic info
-  altura                    String?
-  pesoAtual                 String?   @map("peso_atual")
-  objetivo                  String?
+  altura    String?
+  pesoAtual String? @map("peso_atual")
+  objetivo  String?
 
   // Activity
-  praticaAtividade          String?   @map("pratica_atividade")
-  praticaAtividadeQual      String?   @map("pratica_atividade_qual")
-  tempoSedentario           String?   @map("tempo_sedentario")
+  praticaAtividade     String? @map("pratica_atividade")
+  praticaAtividadeQual String? @map("pratica_atividade_qual")
+  tempoSedentario      String? @map("tempo_sedentario")
 
   // Medical history
-  condicaoMedica            String?   @map("condicao_medica")
-  condicaoMedicaQual        String?   @map("condicao_medica_qual")
+  condicaoMedica            String? @map("condicao_medica")
+  condicaoMedicaQual        String? @map("condicao_medica_qual")
   lesao                     String?
-  lesaoQual                 String?   @map("lesao_qual")
-  restricaoMovimento        String?   @map("restricao_movimento")
-  restricaoMovimentoQual    String?   @map("restricao_movimento_qual")
-  desconfortoMovimento      String?   @map("desconforto_movimento")
-  desconfortoMovimentoQual  String?   @map("desconforto_movimento_qual")
-  problemasOrtopedicos      String?   @map("problemas_ortopedicos")
-  problemasOrtopedicosQual  String?   @map("problemas_ortopedicos_qual")
-  medicamentoControlado     String?   @map("medicamento_controlado")
-  medicamentoControladoQual String?   @map("medicamento_controlado_qual")
-  obesoSobrepeso            String?   @map("obeso_sobrepeso")
-  colesterolElevado         String?   @map("colesterol_elevado")
+  lesaoQual                 String? @map("lesao_qual")
+  restricaoMovimento        String? @map("restricao_movimento")
+  restricaoMovimentoQual    String? @map("restricao_movimento_qual")
+  desconfortoMovimento      String? @map("desconforto_movimento")
+  desconfortoMovimentoQual  String? @map("desconforto_movimento_qual")
+  problemasOrtopedicos      String? @map("problemas_ortopedicos")
+  problemasOrtopedicosQual  String? @map("problemas_ortopedicos_qual")
+  medicamentoControlado     String? @map("medicamento_controlado")
+  medicamentoControladoQual String? @map("medicamento_controlado_qual")
+  obesoSobrepeso            String? @map("obeso_sobrepeso")
+  colesterolElevado         String? @map("colesterol_elevado")
   taquicardia               String?
-  doencasCardiacas          String?   @map("doencas_cardiacas")
+  doencasCardiacas          String? @map("doencas_cardiacas")
   diabetes                  String?
-  dificuldadeExercicio      String?   @map("dificuldade_exercicio")
+  dificuldadeExercicio      String? @map("dificuldade_exercicio")
 
   // Women-specific
-  cicloMenstrual            String?   @map("ciclo_menstrual")
+  cicloMenstrual String? @map("ciclo_menstrual")
 
   // Experience
-  experienciaMusculacao     String?   @map("experiencia_musculacao")
-  ondeConheceu              String?   @map("onde_conheceu")
-  expectativas              String?
+  experienciaMusculacao String? @map("experiencia_musculacao")
+  ondeConheceu          String? @map("onde_conheceu")
+  expectativas          String?
 
   // PAR-Q
-  parq1                     String?
-  parq2                     String?
-  parq3                     String?
-  parq4                     String?
-  parq5                     String?
-  parq6                     String?
-  parq7                     String?
+  parq1 String?
+  parq2 String?
+  parq3 String?
+  parq4 String?
+  parq5 String?
+  parq6 String?
+  parq7 String?
 
   // NextFit sync
-  nextfitAvaliacaoId        String?   @map("nextfit_avaliacao_id")
-  sincronizadoEm            DateTime? @map("sincronizado_em")
+  nextfitAvaliacaoId String?   @map("nextfit_avaliacao_id")
+  sincronizadoEm     DateTime? @map("sincronizado_em")
 
-  criadoEm                  DateTime  @default(now()) @map("criado_em")
-  atualizadoEm              DateTime  @updatedAt @map("atualizado_em")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   // Relations
-  membro                    Membro    @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  membro Membro @relation(fields: [membroId], references: [id], onDelete: Cascade)
 
   @@map("anamneses")
 }
-

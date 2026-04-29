@@ -5,38 +5,7 @@ import {
   createAgendamento,
   listAgendamentos,
 } from '@/services/agendamento.service'
-import { DiaSemana } from '@prisma/client'
-import { z } from 'zod'
-
-const hourSchema = z.string().regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
-
-const agendamentoSchema = z.object({
-  membroId: z.string().optional(),
-  horarioId: z.string().optional(),
-  diaSemana: z.nativeEnum(DiaSemana).optional(),
-  horaInicio: hourSchema.optional(),
-  data: z.string().optional(),
-  scope: z.enum(['single', 'weekly']).optional(),
-}).refine(
-  (value) => Boolean(value.horarioId || (value.diaSemana && value.horaInicio)),
-  { message: 'Horário não informado' }
-)
-
-const dateParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-
-const agendamentosQuerySchema = z.object({
-  membroId: z.string().min(1).nullable(),
-  dataInicio: dateParamSchema,
-  dataFim: dateParamSchema,
-}).refine((value) => {
-  const start = new Date(`${value.dataInicio}T00:00:00.000Z`)
-  const end = new Date(`${value.dataFim}T00:00:00.000Z`)
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
-    return false
-  }
-
-  return end.getTime() - start.getTime() <= 1000 * 60 * 60 * 24 * 45
-}, 'Intervalo de datas inválido')
+import { agendamentoCreateSchema, agendamentosQuerySchema } from '@/features/scheduling/contracts'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
@@ -71,7 +40,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withApiAuth(async (session) => {
-    const validation = await validateRequest(request, agendamentoSchema)
+    const validation = await validateRequest(request, agendamentoCreateSchema)
 
     if ('error' in validation) {
       return validation.error
