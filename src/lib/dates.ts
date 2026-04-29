@@ -1,7 +1,7 @@
-const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
+import { getAppTimezoneConfig } from '@/lib/runtime-config'
 
 export function getAppTimezone(): string {
-  return process.env.APP_TIMEZONE || DEFAULT_APP_TIMEZONE
+  return getAppTimezoneConfig()
 }
 
 export function getYmdInTimeZone(date: Date, timeZone: string): string {

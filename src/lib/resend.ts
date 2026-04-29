@@ -10,8 +10,9 @@ import {
   PROVIDER_SEND_FAILED,
   PROVIDER_NOT_CONFIGURED,
 } from '@/lib/observability/events'
+import { getEmailConfig } from '@/lib/runtime-config'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
+const { resendApiKey: RESEND_API_KEY } = getEmailConfig()
 const PROVIDER = 'resend'
 
 const escapeHtml = (value: string) =>

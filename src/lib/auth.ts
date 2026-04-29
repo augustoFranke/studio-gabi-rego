@@ -5,6 +5,7 @@ import { compare } from "bcryptjs"
 import { cache } from "react"
 import { logWarn, logInfo } from "@/lib/observability/logger"
 import { AUTH_SIGN_IN_FAILED, AUTH_SIGN_IN_OK } from "@/lib/observability/events"
+import { getAuthSecretConfig } from "@/lib/runtime-config"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -12,7 +13,7 @@ const authError = (code: string) => (isProduction ? "INVALID_CREDENTIALS" : code
 
 const nextAuth = NextAuth({
   trustHost: process.env.NODE_ENV !== "production" || process.env.VERCEL === "1",
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  secret: getAuthSecretConfig() ?? undefined,
   providers: [
     Credentials({
       name: "credentials",

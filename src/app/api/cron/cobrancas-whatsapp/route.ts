@@ -5,6 +5,7 @@ import { isEvolutionConfigured } from '@/lib/whatsapp/evolution'
 import { runWithExecutionContext } from '@/lib/observability/request-context'
 import { logInfo, logWarn, logError, safeErrorData } from '@/lib/observability/logger'
 import { CRON_RUN_STARTED, CRON_RUN_COMPLETED, CRON_RUN_FAILED, PROVIDER_NOT_CONFIGURED } from '@/lib/observability/events'
+import { getRequiredCronSecretConfig } from '@/lib/runtime-config'
 
 const ROUTE = '/api/cron/cobrancas-whatsapp'
 const JOB_NAME = 'cobrancas-whatsapp'
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
   return runWithExecutionContext(
     { source: 'cron', route: ROUTE, jobName: JOB_NAME },
     async () => {
-      const authResult = validateCronRequest(request, process.env.CRON_SECRET)
+      const authResult = validateCronRequest(request, getRequiredCronSecretConfig())
       if (!authResult.ok) {
         if (authResult.reason === 'missing_secret') {
           return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
