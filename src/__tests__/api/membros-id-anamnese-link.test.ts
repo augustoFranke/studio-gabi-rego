@@ -63,9 +63,12 @@ describe('Membros Anamnese Link API', () => {
       expect.objectContaining({
         where: { id: 'm-1' },
         data: expect.objectContaining({
-          anamneseToken: '746f6b656e2d686578',
+          anamneseToken: expect.any(String),
         }),
       })
+    )
+    expect(prismaMock.membro.update.mock.calls[0][0].data.anamneseToken).not.toBe(
+      '746f6b656e2d686578'
     )
     expect(json.link).toContain('/anamnese#token=')
     expect(json.expiresAt).toBeTruthy()

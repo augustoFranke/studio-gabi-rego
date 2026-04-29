@@ -77,13 +77,11 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
       logError(PROVIDER_SEND_FAILED, {
         provider: PROVIDER,
         statusCode: response.status,
       })
-      const message = errorText ? `Evolution API error: ${errorText}` : 'Evolution API error'
-      throw new Error(message)
+      throw new Error(`Evolution API error (${response.status})`)
     }
 
     logInfo(PROVIDER_SEND_OK, { provider: PROVIDER })

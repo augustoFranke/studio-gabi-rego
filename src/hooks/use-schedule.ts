@@ -41,6 +41,15 @@ interface UseScheduleReturn {
   ) => Promise<boolean>
 }
 
+async function getResponseError(response: Response, fallback: string) {
+  try {
+    const error = await response.json()
+    return error.error || fallback
+  } catch {
+    return fallback
+  }
+}
+
 export function useSchedule({
   initialDate = new Date(),
   initialView = 'weekly',
@@ -110,35 +119,20 @@ export function useSchedule({
         const diaSemana = getDiaSemanaFromDay(date.getDay())
         const horaInicio = `${hour.toString().padStart(2, '0')}:00`
 
-        // First get or create the horario
-        const horarioResponse = await fetch('/api/horarios/get-or-create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ diaSemana, horaInicio }),
-        })
-
-        if (!horarioResponse.ok) {
-          const error = await horarioResponse.json()
-          throw new Error(error.error || 'Erro ao obter horario')
-        }
-
-        const horario = await horarioResponse.json()
-
-        // Then create the agendamento
         const response = await fetch('/api/agendamentos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             membroId,
-            horarioId: horario.id,
+            diaSemana,
+            horaInicio,
             data: formatDateISO(date),
             scope,
           }),
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Erro ao criar agendamento')
+          throw new Error(await getResponseError(response, 'Erro ao criar agendamento'))
         }
 
         toast.success('Agendamento criado com sucesso')
@@ -169,8 +163,7 @@ export function useSchedule({
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Erro ao atualizar agendamento')
+          throw new Error(await getResponseError(response, 'Erro ao atualizar agendamento'))
         }
 
         toast.success('Agendamento atualizado com sucesso')
@@ -198,8 +191,7 @@ export function useSchedule({
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Erro ao remover agendamento')
+          throw new Error(await getResponseError(response, 'Erro ao remover agendamento'))
         }
 
         toast.success('Agendamento removido com sucesso')
@@ -228,34 +220,19 @@ export function useSchedule({
         const diaSemana = getDiaSemanaFromDay(newDate.getDay())
         const horaInicio = `${newHour.toString().padStart(2, '0')}:00`
 
-        // First get or create the horario
-        const horarioResponse = await fetch('/api/horarios/get-or-create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ diaSemana, horaInicio }),
-        })
-
-        if (!horarioResponse.ok) {
-          const error = await horarioResponse.json()
-          throw new Error(error.error || 'Erro ao obter horario')
-        }
-
-        const horario = await horarioResponse.json()
-
-        // Then update the agendamento
         const response = await fetch(`/api/agendamentos/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            horarioId: horario.id,
+            diaSemana,
+            horaInicio,
             data: formatDateISO(newDate),
             scope,
           }),
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Erro ao mover agendamento')
+          throw new Error(await getResponseError(response, 'Erro ao mover agendamento'))
         }
 
         toast.success('Agendamento movido com sucesso')

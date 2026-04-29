@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { rateLimitByKey } from "@/lib/rate-limit"
 import {
   OnboardingServiceError,
   verifyEmailToken,
@@ -16,6 +17,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Token não fornecido" },
         { status: 400 }
+      )
+    }
+
+    const rateLimit = await rateLimitByKey(request, "auth:verify-email", validation.data.token)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
       )
     }
 

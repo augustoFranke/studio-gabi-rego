@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, Trash2, UserMinus } from "lucide-react"
+import { ShieldCheck, UserMinus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { deactivateMembro, deleteMembro, toggleMembroStatus } from "@/app/actions/membros"
 import { toast } from "sonner"
@@ -55,11 +55,11 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
     startTransition(async () => {
       const result = await deleteMembro(id)
       if (result.success) {
-        toast.success("Aluno excluído permanentemente")
+        toast.success("Aluno inativado")
         setShowConfirmDialog(false)
         router.refresh()
       } else {
-        toast.error(result.message || "Erro ao excluir aluno")
+        toast.error(result.message || "Erro ao inativar aluno")
       }
     })
   }
@@ -69,8 +69,8 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       <DropdownMenuItem onSelect={handleSelect} disabled={isPending}>
         {isActive ? (
           <>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Excluir
+            <UserMinus className="mr-2 h-4 w-4" />
+            Inativar
           </>
         ) : (
           <>
@@ -83,11 +83,10 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogTitle>Confirmar inativação</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir {nome ? <strong>{nome}</strong> : "este aluno"}?
-              Esta ação é <strong>permanente</strong> e irá remover todos os dados do aluno,
-              incluindo agendamentos, pagamentos, treinos e anamnese.
+              Tem certeza que deseja inativar {nome ? <strong>{nome}</strong> : "este aluno"}?
+              Os dados do aluno serão preservados para histórico e auditoria.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -103,7 +102,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
               onClick={handleConfirmDelete}
               disabled={isPending}
             >
-              {isPending ? "Excluindo..." : "Excluir permanentemente"}
+              {isPending ? "Inativando..." : "Inativar aluno"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -139,10 +138,10 @@ export function MemberDeactivateItem({
     startTransition(async () => {
       const result = await deactivateMembro(id)
       if (result.success) {
-        toast.success("Aluno desativado")
+        toast.success("Aluno inativado")
         router.refresh()
       } else {
-        toast.error(result.message || "Erro ao desativar aluno")
+        toast.error(result.message || "Erro ao inativar aluno")
       }
     })
   }
@@ -150,7 +149,7 @@ export function MemberDeactivateItem({
   return (
     <DropdownMenuItem onSelect={handleDeactivate} disabled={disabled || isPending}>
       <UserMinus className="mr-2 h-4 w-4" />
-      {isPending ? "Desativando..." : "Desativar"}
+      {isPending ? "Inativando..." : "Inativar"}
     </DropdownMenuItem>
   )
 }

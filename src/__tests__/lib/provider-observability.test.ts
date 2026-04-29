@@ -155,7 +155,7 @@ describe('provider observability', () => {
             text: 'Mensagem de teste',
           }),
       ),
-    ).rejects.toThrow('Evolution API error: downstream unavailable')
+    ).rejects.toThrow('Evolution API error (503)')
 
     const infoLogs = parseCalls(logSpy)
     const errorLogs = parseCalls(errorSpy)

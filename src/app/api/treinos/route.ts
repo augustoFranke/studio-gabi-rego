@@ -3,8 +3,7 @@ import { withApiAuth, validateRequest } from '@/lib/api'
 import { Prisma } from '@prisma/client'
 import { fichaCreateSchema } from '@/schemas/treino.schema'
 import {
-  createFichaTreino,
-  deactivateActiveFichas,
+  createActiveFichaTreino,
   listFichasTreino,
 } from '@/services/treino.service'
 
@@ -50,9 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'membroId é obrigatório' }, { status: 400 })
     }
 
-    await deactivateActiveFichas(membroId)
-
-    const ficha = await createFichaTreino({
+    const ficha = await createActiveFichaTreino({
       membroId,
       nome,
       data,

@@ -51,13 +51,31 @@ export function mockWithApiAuth(sessionRef: SessionRef) {
 }
 
 export function createPrismaMock(shape: PrismaMockShape) {
-  const prismaMock: Record<string, Record<string, ReturnType<typeof vi.fn>>> = {}
+  const prismaMock: Record<string, Record<string, ReturnType<typeof vi.fn>>> & {
+    $transaction?: ReturnType<typeof vi.fn>
+    $queryRaw?: ReturnType<typeof vi.fn>
+  } = {}
 
   for (const [model, methods] of Object.entries(shape)) {
     prismaMock[model] = Object.fromEntries(
       methods.map((method) => [method, vi.fn()])
     )
+
+    if (!prismaMock[model].findFirst && prismaMock[model].findUnique) {
+      prismaMock[model].findFirst = vi.fn((args) => prismaMock[model].findUnique(args))
+    }
   }
+
+  prismaMock.$transaction = vi.fn(async (callbackOrOperations: unknown) => {
+    if (typeof callbackOrOperations === 'function') {
+      return (callbackOrOperations as (tx: typeof prismaMock) => unknown)(prismaMock)
+    }
+    if (Array.isArray(callbackOrOperations)) {
+      return Promise.all(callbackOrOperations)
+    }
+    return callbackOrOperations
+  })
+  prismaMock.$queryRaw = vi.fn(async () => [])
 
   return prismaMock as Record<string, Record<string, ReturnType<typeof vi.fn>>>
 }

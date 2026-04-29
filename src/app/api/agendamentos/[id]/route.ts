@@ -6,15 +6,23 @@ import {
   getAgendamentoById,
   updateAgendamento,
 } from '@/services/agendamento.service'
+import { DiaSemana } from '@prisma/client'
 import { z } from 'zod'
+
+const hourSchema = z.string().regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
 
 const agendamentoUpdateSchema = z.object({
   presente: z.boolean().optional(),
   observacao: z.string().optional(),
   horarioId: z.string().optional(),
+  diaSemana: z.nativeEnum(DiaSemana).optional(),
+  horaInicio: hourSchema.optional(),
   data: z.string().optional(),
   scope: z.enum(['single', 'future']).optional(),
-})
+}).refine(
+  (value) => !value.diaSemana === !value.horaInicio,
+  { message: 'Informe dia da semana e horário juntos' }
+)
 
 const agendamentoDeleteSchema = z.object({
   scope: z.enum(['single', 'future']).optional(),

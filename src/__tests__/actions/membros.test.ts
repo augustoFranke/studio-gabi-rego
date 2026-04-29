@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { toggleMembroStatus, deleteMembro, deactivateMembro } from '@/app/actions/membros'
 import { prisma } from '@/lib/prisma'
-import type { Membro } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 // Mocks
@@ -85,39 +84,26 @@ describe('Membros Server Actions', () => {
   })
 
   describe('deleteMembro', () => {
-    it('should delete usuario associated with membro', async () => {
+    it('should inactivate member without deleting associated usuario', async () => {
       const { revalidatePath } = await import('next/cache')
       const mockMembroId = 'membro-123'
-      const mockUsuarioId = 'user-123'
-
-      vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce({
-        usuarioId: mockUsuarioId,
-      } as Pick<Membro, 'usuarioId'>)
 
       const result = await deleteMembro(mockMembroId)
 
-      expect(prisma.membro.findUnique).toHaveBeenCalledWith({
+      expect(prisma.membro.update).toHaveBeenCalledWith({
         where: { id: mockMembroId },
-        select: { usuarioId: true },
+        data: { status: 'INATIVO' },
       })
-      expect(prisma.usuario.delete).toHaveBeenCalledWith({
-        where: { id: mockUsuarioId },
-      })
+      expect(prisma.usuario.delete).not.toHaveBeenCalled()
       expect(revalidatePath).toHaveBeenCalledWith('/alunos')
-      expect(result).toEqual({ success: true, message: 'Membro excluído com sucesso' })
-    })
-
-    it('should return error if membro not found', async () => {
-      vi.mocked(prisma.membro.findUnique).mockResolvedValueOnce(null)
-      const result = await deleteMembro('non-existent')
-      expect(result).toEqual({ success: false, message: 'Membro não encontrado' })
+      expect(result).toEqual({ success: true, message: 'Aluno inativado com sucesso' })
     })
 
     it('should handle db errors', async () => {
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-        vi.mocked(prisma.membro.findUnique).mockRejectedValueOnce(new Error('DB Error'))
+        vi.mocked(prisma.membro.update).mockRejectedValueOnce(new Error('DB Error'))
         const result = await deleteMembro('123')
-        expect(result).toEqual({ success: false, message: 'Falha ao excluir membro' })
+        expect(result).toEqual({ success: false, message: 'Falha ao inativar aluno' })
         consoleSpy.mockRestore()
     })
 
@@ -128,22 +114,23 @@ describe('Membros Server Actions', () => {
 
       expect(result).toEqual({ success: false, message: 'Unauthorized' })
       expect(prisma.membro.findUnique).not.toHaveBeenCalled()
+      expect(prisma.membro.update).not.toHaveBeenCalled()
       expect(prisma.usuario.delete).not.toHaveBeenCalled()
     })
   })
 
   describe('deactivateMembro', () => {
-    it('should set status to PENDENTE and revalidate /alunos', async () => {
+    it('should set status to INATIVO and revalidate /alunos', async () => {
       const { revalidatePath } = await import('next/cache')
 
       const result = await deactivateMembro('m-1')
 
       expect(prisma.membro.update).toHaveBeenCalledWith({
         where: { id: 'm-1' },
-        data: { status: 'PENDENTE' },
+        data: { status: 'INATIVO' },
       })
       expect(revalidatePath).toHaveBeenCalledWith('/alunos')
-      expect(result).toEqual({ success: true, message: 'Membro desativado com sucesso' })
+      expect(result).toEqual({ success: true, message: 'Aluno inativado com sucesso' })
     })
 
     it('should handle errors gracefully', async () => {

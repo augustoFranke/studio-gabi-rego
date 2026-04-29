@@ -88,6 +88,40 @@ export async function createFichaTreino(data: {
   })
 }
 
+export async function createActiveFichaTreino(data: {
+  membroId: string
+  nome?: string
+  data?: string
+  objetivo?: string
+  observacoes?: string
+  exercicios?: ExercicioInput[]
+}) {
+  const { membroId, nome, data: dataTreino, objetivo, observacoes, exercicios } = data
+
+  return prisma.$transaction(async (tx) => {
+    await tx.fichaTreino.updateMany({
+      where: { membroId, ativo: true },
+      data: { ativo: false },
+    })
+
+    return tx.fichaTreino.create({
+      data: {
+        membroId,
+        nome: nome || 'Treino',
+        data: dataTreino,
+        objetivo,
+        observacoes,
+        exercicios: exercicios
+          ? {
+              create: exercicios.map(mapExerciseToPrisma),
+            }
+          : undefined,
+      },
+      include: fichaInclude,
+    })
+  })
+}
+
 export async function deactivateActiveFichas(membroId: string) {
   return prisma.fichaTreino.updateMany({
     where: { membroId, ativo: true },
@@ -114,6 +148,35 @@ export async function updateFichaTreino(id: string, data: Prisma.FichaTreinoUpda
     where: { id },
     data,
     select: fichaSelect,
+  })
+}
+
+export async function updateFichaTreinoWithExercises(
+  id: string,
+  data: Prisma.FichaTreinoUpdateInput,
+  exercicios?: ExercicioInput[]
+) {
+  return prisma.$transaction(async (tx) => {
+    if (exercicios !== undefined) {
+      await tx.exercicio.deleteMany({
+        where: { fichaId: id },
+      })
+
+      if (exercicios.length > 0) {
+        await tx.exercicio.createMany({
+          data: exercicios.map((ex, index) => ({
+            fichaId: id,
+            ...mapExerciseToPrisma(ex, index),
+          })),
+        })
+      }
+    }
+
+    return tx.fichaTreino.update({
+      where: { id },
+      data,
+      select: fichaSelect,
+    })
   })
 }
 

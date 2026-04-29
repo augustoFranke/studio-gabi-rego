@@ -7,7 +7,7 @@ import {
   type CanonicalAnamneseData,
 } from "@/lib/anamnese"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
-import { createTimedToken, getAppBaseUrl } from "@/lib/auth-flow"
+import { createTimedToken, getAppBaseUrl, getTimedTokenLookup, hashTimedToken } from "@/lib/auth-flow"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
@@ -100,11 +100,12 @@ async function sendVerificationEmail(params: {
 
 async function issueProfileTokenForUser(userId: string) {
   const { token, expiresAt } = createTimedToken()
+  const tokenHash = await hashTimedToken(token)
 
   await prisma.usuario.update({
     where: { id: userId },
     data: {
-      tokenPerfil: token,
+      tokenPerfil: tokenHash,
       tokenPerfilExpira: expiresAt,
     },
   })
@@ -114,11 +115,12 @@ async function issueProfileTokenForUser(userId: string) {
 
 async function issueAnamneseTokenForMembro(membroId: string) {
   const { token, expiresAt } = createTimedToken()
+  const tokenHash = await hashTimedToken(token)
 
   await prisma.membro.update({
     where: { id: membroId },
     data: {
-      anamneseToken: token,
+      anamneseToken: tokenHash,
       anamneseTokenExpira: expiresAt,
     },
   })
@@ -193,6 +195,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
   }
 
   const { token: verificationToken, expiresAt: tokenExpiry } = createTimedToken()
+  const verificationTokenHash = await hashTimedToken(verificationToken)
 
   if (hasFullPayload && fullNome && input.anamnese) {
     await prisma.$transaction(async (tx) => {
@@ -205,7 +208,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
             nome: fullNome,
             senha: hashedPassword,
             senhaDefinida: true,
-            tokenVerificacao: verificationToken,
+            tokenVerificacao: verificationTokenHash,
             tokenVerificacaoExpira: tokenExpiry,
             etapaOnboarding: 1,
             onboardingCompleto: false,
@@ -220,7 +223,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
             senha: hashedPassword,
             senhaDefinida: true,
             role: "MEMBRO",
-            tokenVerificacao: verificationToken,
+            tokenVerificacao: verificationTokenHash,
             tokenVerificacaoExpira: tokenExpiry,
             etapaOnboarding: 1,
             onboardingCompleto: false,
@@ -264,7 +267,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
       data: {
         senha: hashedPassword,
         senhaDefinida: true,
-        tokenVerificacao: verificationToken,
+        tokenVerificacao: verificationTokenHash,
         tokenVerificacaoExpira: tokenExpiry,
         etapaOnboarding: 1,
         onboardingCompleto: false,
@@ -277,7 +280,7 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
         senha: hashedPassword,
         senhaDefinida: true,
         role: "MEMBRO",
-        tokenVerificacao: verificationToken,
+        tokenVerificacao: verificationTokenHash,
         tokenVerificacaoExpira: tokenExpiry,
         etapaOnboarding: 1,
         onboardingCompleto: false,
@@ -299,8 +302,9 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
 }
 
 export async function verifyEmailToken(token: string, origin?: string): Promise<VerifyEmailResult> {
-  const usuario = await prisma.usuario.findUnique({
-    where: { tokenVerificacao: token },
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const usuarioQuery = {
+    where: { tokenVerificacao: { in: [hashedToken, rawToken] } },
     include: {
       membro: {
         select: {
@@ -309,7 +313,13 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
         },
       },
     },
-  })
+  }
+  const usuario = typeof prisma.usuario.findFirst === 'function'
+    ? await prisma.usuario.findFirst(usuarioQuery)
+    : await prisma.usuario.findUnique({
+        where: { tokenVerificacao: rawToken },
+        include: usuarioQuery.include,
+      })
 
   if (!usuario) {
     throw new OnboardingServiceError("Token inválido", "INVALID_TOKEN", 400)
@@ -427,7 +437,7 @@ export async function resendVerificationEmail(email: string, origin?: string): P
   await prisma.usuario.update({
     where: { id: usuario.id },
     data: {
-      tokenVerificacao: verificationToken,
+      tokenVerificacao: await hashTimedToken(verificationToken),
       tokenVerificacaoExpira: tokenExpiry,
     },
   })
@@ -452,9 +462,10 @@ export async function resendVerificationEmail(email: string, origin?: string): P
 }
 
 export async function getAnamneseByToken(token: string) {
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
   const membro = await prisma.membro.findFirst({
     where: {
-      anamneseToken: token,
+      anamneseToken: { in: [hashedToken, rawToken] },
       anamneseTokenExpira: { gt: new Date() },
     },
     include: {
@@ -552,9 +563,10 @@ async function saveAnamneseForMembro(params: {
 }
 
 export async function saveAnamneseByToken(token: string, payload: unknown) {
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
   const membro = await prisma.membro.findFirst({
     where: {
-      anamneseToken: token,
+      anamneseToken: { in: [hashedToken, rawToken] },
       anamneseTokenExpira: { gt: new Date() },
     },
     include: {
