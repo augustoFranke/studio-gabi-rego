@@ -58,15 +58,17 @@ function buildHorarioFixoCreateData(horariosFixos: HorarioFixoInput[]) {
 
 export async function listMembros(params: {
   status?: StatusMembro
+  fields?: 'compact' | 'financeiro'
   compact?: boolean
 }) {
-  const { status, compact } = params
+  const { status } = params
+  const fields = params.fields ?? (params.compact ? 'compact' : undefined)
   const where: Prisma.MembroWhereInput = {}
   if (status) {
     where.status = status
   }
 
-  if (compact) {
+  if (fields === 'compact') {
     const compactSelect = {
       id: true,
       usuarioId: true,
@@ -85,6 +87,34 @@ export async function listMembros(params: {
     return prisma.membro.findMany({
       where,
       select: compactSelect,
+      orderBy: { criadoEm: 'desc' },
+    })
+  }
+
+  if (fields === 'financeiro') {
+    const financeiroSelect = {
+      id: true,
+      planoId: true,
+      precoCustomizado: true,
+      usuario: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+        },
+      },
+      plano: {
+        select: {
+          id: true,
+          nome: true,
+          valor: true,
+        },
+      },
+    } satisfies Prisma.MembroSelect
+
+    return prisma.membro.findMany({
+      where,
+      select: financeiroSelect,
       orderBy: { criadoEm: 'desc' },
     })
   }

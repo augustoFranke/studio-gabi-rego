@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const membros = await listMembros({
       status: status && status !== 'todos' ? (status as StatusMembro) : undefined,
-      compact: fields === 'compact',
+      fields: fields === 'compact' || fields === 'financeiro' ? fields : undefined,
     })
 
     return NextResponse.json(membros)

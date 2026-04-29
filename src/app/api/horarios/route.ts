@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
 import { DiaSemana } from '@prisma/client'
 import { z } from 'zod'
+import { MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
 import { createHorario, HorarioServiceError, listHorarios } from '@/services/horario.service'
+
+const hourSchema = z.string().regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
 
 const horarioSchema = z.object({
   diaSemana: z.nativeEnum(DiaSemana),
-  horaInicio: z.string().min(1, 'Informe a hora de início'),
-  horaFim: z.string().min(1, 'Informe a hora de fim'),
-  vagasTotal: z.number().int().positive('Informe a quantidade de vagas'),
+  horaInicio: hourSchema,
+  horaFim: hourSchema,
+  vagasTotal: z.number().int().min(1, 'Informe a quantidade de vagas').max(MAX_CAPACITY_PER_SLOT),
 })
 
 export async function GET(request: NextRequest) {

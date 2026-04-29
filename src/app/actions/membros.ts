@@ -33,25 +33,16 @@ export async function deleteMembro(id: string) {
       return { success: false, message: authz.message }
     }
 
-    const membro = await prisma.membro.findUnique({
+    await prisma.membro.update({
       where: { id },
-      select: { usuarioId: true }
-    })
-
-    if (!membro) {
-      return { success: false, message: 'Membro não encontrado' }
-    }
-
-    // Delete the Usuario - this cascades to delete Membro and all related data
-    await prisma.usuario.delete({
-      where: { id: membro.usuarioId }
+      data: { status: 'INATIVO' },
     })
 
     revalidatePath('/alunos')
-    return { success: true, message: 'Membro excluído com sucesso' }
+    return { success: true, message: 'Aluno inativado com sucesso' }
   } catch (error) {
-    console.error('Erro ao excluir membro:', error)
-    return { success: false, message: 'Falha ao excluir membro' }
+    console.error('Erro ao inativar membro:', error)
+    return { success: false, message: 'Falha ao inativar aluno' }
   }
 }
 
@@ -64,11 +55,11 @@ export async function deactivateMembro(id: string) {
 
     await prisma.membro.update({
       where: { id },
-      data: { status: 'PENDENTE' },
+      data: { status: 'INATIVO' },
     })
 
     revalidatePath('/alunos')
-    return { success: true, message: 'Membro desativado com sucesso' }
+    return { success: true, message: 'Aluno inativado com sucesso' }
   } catch (error) {
     console.error('Erro ao desativar membro:', error)
     return { success: false, message: 'Falha ao desativar membro' }

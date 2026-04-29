@@ -206,6 +206,14 @@ export default function FinanceiroPage() {
     () => groupPlansByCategory(planos),
     [planos]
   )
+  const membrosById = useMemo(
+    () => new Map(membros.map((membro) => [membro.id, membro])),
+    [membros]
+  )
+  const planosById = useMemo(
+    () => new Map(planos.map((plano) => [plano.id, plano])),
+    [planos]
+  )
   const pagamentoMembroOptions = useMemo<SearchableSelectOption[]>(
     () =>
       sortedMembros.map((membro) => ({
@@ -241,7 +249,7 @@ export default function FinanceiroPage() {
     [groupedPlanosAtivos]
   )
   const getMemberPlanDefaults = (memberId: string) => {
-    const member = membros.find((m) => m.id === memberId)
+    const member = membrosById.get(memberId)
     if (!member) {
       return { planoId: "", valor: "" }
     }
@@ -251,7 +259,7 @@ export default function FinanceiroPage() {
       return { planoId: "", valor: "" }
     }
 
-    const plano = planos.find((p) => p.id === planoId)
+    const plano = planosById.get(planoId)
     const customPrice = member.precoCustomizado
     const valor = customPrice !== null && customPrice !== undefined && String(customPrice).trim() !== ""
       ? String(customPrice)
@@ -355,7 +363,7 @@ export default function FinanceiroPage() {
     try {
       const [planosRes, membrosRes] = await Promise.all([
         fetch("/api/planos?includeInactive=true"),
-        fetch("/api/membros"),
+        fetch("/api/membros?fields=financeiro"),
       ])
 
       if (planosRes.ok) {

@@ -4,8 +4,7 @@ import { fichaUpdateSchema } from '@/schemas/treino.schema'
 import {
   deleteFichaTreino,
   getFichaTreinoById,
-  replaceFichaExercicios,
-  updateFichaTreino,
+  updateFichaTreinoWithExercises,
 } from '@/services/treino.service'
 
 interface RouteParams {
@@ -67,12 +66,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (objetivo !== undefined) updateData.objetivo = objetivo
     if (observacoes !== undefined) updateData.observacoes = observacoes
 
-    // If exercises are provided, delete old ones and create new
-    if (exercicios !== undefined) {
-      await replaceFichaExercicios(id, exercicios)
-    }
-
-    const ficha = await updateFichaTreino(id, updateData)
+    const ficha = await updateFichaTreinoWithExercises(id, updateData, exercicios)
 
     return NextResponse.json(ficha)
   }, { requiredRole: 'ADMIN' })

@@ -57,3 +57,9 @@ export async function rateLimitByIp(request: Request, keyPrefix: string) {
   const ip = getRequestIp(request)
   return rateLimiter.limit(`${keyPrefix}:${ip}`)
 }
+
+export async function rateLimitByKey(request: Request, keyPrefix: string, key: string) {
+  const ip = getRequestIp(request)
+  const normalizedKey = key.trim().toLowerCase().slice(0, 128) || "unknown"
+  return rateLimitByIp(request, `${keyPrefix}:${normalizedKey}:${ip}`)
+}

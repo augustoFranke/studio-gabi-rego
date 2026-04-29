@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
+import { StatusPagamento } from '@prisma/client'
 import { z } from 'zod'
 import { listPagamentos, createPagamento, PagamentoServiceError } from '@/services/pagamento.service'
 
@@ -14,15 +15,33 @@ const pagamentoSchema = z.object({
   observacao: z.string().nullable().optional(),
 })
 
+const pagamentosQuerySchema = z.object({
+  membroId: z.string().min(1).nullable(),
+  status: z.union([z.nativeEnum(StatusPagamento), z.literal('all')]).nullable(),
+  search: z.string().trim().max(120).nullable(),
+  sort: z.enum(['recent_desc', 'vencimento_asc', 'vencimento_desc']).catch('recent_desc'),
+  page: z.coerce.number().int().min(1).catch(1),
+  limit: z.coerce.number().int().min(1).max(100).catch(10),
+})
+
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     const searchParams = request.nextUrl.searchParams
-    const membroId = searchParams.get('membroId')
-    const status = searchParams.get('status')
-    const search = searchParams.get('search')
-    const sort = searchParams.get('sort') || 'recent_desc'
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const validation = pagamentosQuerySchema.safeParse({
+      membroId: searchParams.get('membroId'),
+      status: searchParams.get('status'),
+      search: searchParams.get('search'),
+      sort: searchParams.get('sort') || 'recent_desc',
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '10',
+    })
+
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Filtros inválidos' }, { status: 400 })
+    }
+
+    const { membroId, status, search, sort, page, limit } = validation.data
+
     try {
       const result = await listPagamentos({
         sessionRole: session.user.role,
