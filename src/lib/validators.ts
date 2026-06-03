@@ -83,16 +83,23 @@ export function validarEmail(email: string): boolean {
   return regex.test(email)
 }
 
+const moedaFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
+const dataFormatter = new Intl.DateTimeFormat('pt-BR')
+const dataHoraFormatter = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+})
+
 /**
  * Formata um valor monetário para o padrão brasileiro
  * @param valor - Valor a ser formatado
  * @returns Valor formatado (ex: R$ 1.234,56)
  */
 export function formatarMoeda(valor: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor)
+  return moedaFormatter.format(valor)
 }
 
 /**
@@ -102,7 +109,7 @@ export function formatarMoeda(valor: number): string {
  */
 export function formatarData(data: Date | string): string {
   const d = typeof data === 'string' ? new Date(data) : data
-  return new Intl.DateTimeFormat('pt-BR').format(d)
+  return dataFormatter.format(d)
 }
 
 /**
@@ -112,9 +119,5 @@ export function formatarData(data: Date | string): string {
  */
 export function formatarDataHora(data: Date | string): string {
   const d = typeof data === 'string' ? new Date(data) : data
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d)
+  return dataHoraFormatter.format(d)
 }
-

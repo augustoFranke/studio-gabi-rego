@@ -184,13 +184,16 @@ export async function replaceFichaExercicios(
   fichaId: string,
   exercicios: ExercicioInput[]
 ) {
+  if (exercicios.length === 0) {
+    await prisma.exercicio.deleteMany({
+      where: { fichaId },
+    })
+    return
+  }
+
   await prisma.exercicio.deleteMany({
     where: { fichaId },
   })
-
-  if (exercicios.length === 0) {
-    return
-  }
 
   await prisma.exercicio.createMany({
     data: exercicios.map((ex, index) => ({

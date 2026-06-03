@@ -70,14 +70,14 @@ export function ScheduleHeader({
           size="icon"
           onClick={() => handleNavigate('prev')}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="size-4" />
         </Button>
         <Button
           variant="outline"
           size="icon"
           onClick={() => handleNavigate('next')}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="size-4" />
         </Button>
         <Button variant="outline" onClick={onTodayClick}>
           Hoje
@@ -88,15 +88,15 @@ export function ScheduleHeader({
       <Tabs value={view} onValueChange={(v) => onViewChange(v as ScheduleView)}>
         <TabsList>
           <TabsTrigger value="daily" className="gap-1.5">
-            <CalendarIcon className="h-4 w-4" />
+            <CalendarIcon className="size-4" />
             <span className="hidden sm:inline">Dia</span>
           </TabsTrigger>
           <TabsTrigger value="weekly" className="gap-1.5">
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="size-4" />
             <span className="hidden sm:inline">Semana</span>
           </TabsTrigger>
           <TabsTrigger value="monthly" className="gap-1.5">
-            <CalendarRange className="h-4 w-4" />
+            <CalendarRange className="size-4" />
             <span className="hidden sm:inline">Mês</span>
           </TabsTrigger>
         </TabsList>

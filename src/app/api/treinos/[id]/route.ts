@@ -37,8 +37,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT /api/treinos/[id] - Update a training plan (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(async () => {
-    const { id } = await params
-    const validation = await validateRequest(request, fichaUpdateSchema)
+    const [{ id }, validation] = await Promise.all([
+      params,
+      validateRequest(request, fichaUpdateSchema),
+    ])
 
     if ('error' in validation) {
       return validation.error

@@ -71,7 +71,7 @@ describe('Membros Anamnese API', () => {
     expect(json.member.sexo).toBeNull()
   })
 
-  it('GET normalizes persisted anamnese and self-heals changed values', async () => {
+  it('GET normalizes persisted anamnese without writing back', async () => {
     prismaMock.membro.findUnique.mockResolvedValueOnce({
       id: 'm-1',
       sexo: 'MASCULINO',
@@ -84,12 +84,7 @@ describe('Membros Anamnese API', () => {
 
     expect(res.status).toBe(200)
     expect(json.anamnese.objetivo).toBe('Saude')
-    expect(prismaMock.anamnese.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { membroId: 'm-1' },
-        data: expect.objectContaining({ objetivo: 'Saude' }),
-      })
-    )
+    expect(prismaMock.anamnese.update).not.toHaveBeenCalled()
   })
 
   it('POST returns 404 when membro not found', async () => {

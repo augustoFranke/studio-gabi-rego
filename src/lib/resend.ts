@@ -11,6 +11,7 @@ import {
   PROVIDER_NOT_CONFIGURED,
 } from '@/lib/observability/events'
 import { getEmailConfig } from '@/lib/runtime-config'
+import { fetchWithTimeout } from '@/lib/http'
 
 const { resendApiKey: RESEND_API_KEY } = getEmailConfig()
 const PROVIDER = 'resend'
@@ -85,7 +86,7 @@ export async function enviarEmail({
   try {
     const plainText = texto?.trim() ? texto : buildTextFallback(html)
 
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetchWithTimeout('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -99,6 +100,7 @@ export async function enviarEmail({
         html,
         text: plainText,
       }),
+      timeoutMs: 10_000,
     })
 
     if (!response.ok) {

@@ -1,14 +1,14 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { requireAdminAction } from '@/lib/security/server-action-auth'
+import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 export async function toggleMembroStatus(id: string, currentStatus: string) {
   try {
-    const authz = await requireAdminAction({ action: 'toggleMembroStatus', resourceId: id })
-    if (!authz.allowed) {
-      return { success: false, message: authz.message }
+    const session = await auth()
+    if (session?.user?.role !== 'ADMIN') {
+      return { success: false, message: 'Unauthorized' }
     }
 
     const newStatus = currentStatus === 'ATIVO' ? 'INATIVO' : 'ATIVO'
@@ -28,9 +28,9 @@ export async function toggleMembroStatus(id: string, currentStatus: string) {
 
 export async function deleteMembro(id: string) {
   try {
-    const authz = await requireAdminAction({ action: 'deleteMembro', resourceId: id })
-    if (!authz.allowed) {
-      return { success: false, message: authz.message }
+    const session = await auth()
+    if (session?.user?.role !== 'ADMIN') {
+      return { success: false, message: 'Unauthorized' }
     }
 
     await prisma.membro.update({
@@ -48,9 +48,9 @@ export async function deleteMembro(id: string) {
 
 export async function deactivateMembro(id: string) {
   try {
-    const authz = await requireAdminAction({ action: 'deactivateMembro', resourceId: id })
-    if (!authz.allowed) {
-      return { success: false, message: authz.message }
+    const session = await auth()
+    if (session?.user?.role !== 'ADMIN') {
+      return { success: false, message: 'Unauthorized' }
     }
 
     await prisma.membro.update({

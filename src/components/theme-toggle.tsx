@@ -6,18 +6,22 @@ import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 
+const subscribeMounted = () => () => {}
+const getMountedSnapshot = () => true
+const getServerMountedSnapshot = () => false
+
 export function ThemeToggleSimple() {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = React.useSyncExternalStore(
+    subscribeMounted,
+    getMountedSnapshot,
+    getServerMountedSnapshot
+  )
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-8 w-8">
-        <Sun className="h-4 w-4 text-primary" />
+      <Button variant="ghost" size="icon" className="size-8">
+        <Sun className="size-4 text-primary" />
       </Button>
     )
   }
@@ -28,13 +32,13 @@ export function ThemeToggleSimple() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-8 w-8"
+      className="size-8"
       onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
     >
       {currentTheme === "dark" ? (
-        <Sun className="h-4 w-4 text-primary transition-transform hover:rotate-45" />
+        <Sun className="size-4 text-primary transition-transform hover:rotate-45" />
       ) : (
-        <Moon className="h-4 w-4 text-primary transition-transform hover:-rotate-12" />
+        <Moon className="size-4 text-primary transition-transform hover:-rotate-12" />
       )}
       <span className="sr-only">Alternar tema</span>
     </Button>
