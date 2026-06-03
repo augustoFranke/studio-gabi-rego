@@ -192,12 +192,8 @@ export async function deletePagamentoById(id: string) {
     throw new PagamentoServiceError('Pagamento não encontrado', 'PAGAMENTO_NOT_FOUND', 404)
   }
 
-  if (pagamento.status === 'PAGO') {
-    return prisma.pagamento.update({
-      where: { id },
-      data: { status: 'CANCELADO' },
-    })
-  }
-
-  return prisma.pagamento.delete({ where: { id } })
+  return prisma.pagamento.update({
+    where: { id },
+    data: { status: 'CANCELADO', dataPagamento: null },
+  })
 }

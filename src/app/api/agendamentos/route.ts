@@ -5,25 +5,26 @@ import {
   createAgendamento,
   listAgendamentos,
 } from '@/services/agendamento.service'
-import { z } from 'zod'
-
-const agendamentoSchema = z.object({
-  membroId: z.string().optional(),
-  horarioId: z.string().optional(),
-  data: z.string().optional(),
-  scope: z.enum(['single', 'weekly']).optional(),
-})
+import { agendamentoCreateSchema, agendamentosQuerySchema } from '@/features/scheduling/contracts'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
     const searchParams = request.nextUrl.searchParams
     try {
-      const agendamentos = await listAgendamentos({
-        sessionRole: session.user.role,
-        sessionMembroId: session.user.membroId,
+      const validation = agendamentosQuerySchema.safeParse({
         membroId: searchParams.get('membroId'),
         dataInicio: searchParams.get('dataInicio'),
         dataFim: searchParams.get('dataFim'),
+      })
+
+      if (!validation.success) {
+        return NextResponse.json({ error: 'Informe um intervalo de datas válido' }, { status: 400 })
+      }
+
+      const agendamentos = await listAgendamentos({
+        sessionRole: session.user.role,
+        sessionMembroId: session.user.membroId,
+        ...validation.data,
       })
 
       return NextResponse.json(agendamentos)
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withApiAuth(async (session) => {
-    const validation = await validateRequest(request, agendamentoSchema)
+    const validation = await validateRequest(request, agendamentoCreateSchema)
 
     if ('error' in validation) {
       return validation.error

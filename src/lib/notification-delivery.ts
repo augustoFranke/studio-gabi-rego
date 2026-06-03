@@ -24,7 +24,8 @@ type CreateOrRefreshNotificationParams = {
 }
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Erro ao entregar notificacao'
+  const message = error instanceof Error ? error.message : 'Erro ao entregar notificacao'
+  return message.replace(/[\r\n\t]+/g, ' ').slice(0, 240)
 }
 
 export async function findExistingNotification({

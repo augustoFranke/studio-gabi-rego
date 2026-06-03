@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuth } from '@/lib/api'
 import { generateTrainingPDF } from '@/lib/pdf'
-import type { TrainingPDFData } from '@/domain/treino'
 import { logError, safeErrorData } from '@/lib/observability/logger'
+import { trainingPdfSchema } from '@/schemas/treino.schema'
 
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
-      const body: TrainingPDFData = await request.json()
-      const { aluno, date, observacoes, sessions } = body
+      const validation = trainingPdfSchema.safeParse(await request.json())
+
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: validation.error.issues[0]?.message ?? 'Dados inválidos.' },
+          { status: 400 }
+        )
+      }
+
+      const { aluno, date, observacoes, sessions } = validation.data
 
       if (!aluno || !date || !sessions || sessions.length === 0) {
         return NextResponse.json(
@@ -55,9 +63,8 @@ export async function POST(request: NextRequest) {
         message: 'Error generating PDF:',
         ...safeErrorData(error),
       })
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return NextResponse.json(
-        { error: `Erro ao gerar PDF: ${errorMessage}` },
+        { error: 'Erro ao gerar PDF.' },
         { status: 500 }
       )
     }

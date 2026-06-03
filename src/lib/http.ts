@@ -1,3 +1,5 @@
+import { safeJsonParse } from '@/lib/safe-json'
+
 type ErrorResponseBody = {
   error?: unknown
 }
@@ -93,16 +95,34 @@ export async function readResponseErrorMessage(
     return fallback
   }
 
-  try {
-    const body: unknown = JSON.parse(bodyText)
-    if (isErrorResponseBody(body) && typeof body.error === 'string' && body.error.trim()) {
-      return body.error
+  const parsedBody = safeJsonParse(bodyText)
+  if (parsedBody.ok) {
+    if (
+      isErrorResponseBody(parsedBody.data) &&
+      typeof parsedBody.data.error === 'string' &&
+      parsedBody.data.error.trim()
+    ) {
+      return parsedBody.data.error
     }
-  } catch {
-    // Fall back to the caller-provided message when the body is not JSON.
   }
 
   return fallback
+}
+
+export async function readOptionalJsonBody(request: Request): Promise<
+  { ok: true; body: unknown } | { ok: false }
+> {
+  const bodyText = await request.text()
+  if (!bodyText.trim()) {
+    return { ok: true, body: {} }
+  }
+
+  const parsedBody = safeJsonParse(bodyText)
+  if (!parsedBody.ok) {
+    return { ok: false }
+  }
+
+  return { ok: true, body: parsedBody.data }
 }
 
 export async function fetchJson<T>(

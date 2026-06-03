@@ -1,7 +1,7 @@
-const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
+import { getAppTimezoneConfig } from '@/lib/runtime-config'
 
 export function getAppTimezone(): string {
-  return process.env.APP_TIMEZONE || DEFAULT_APP_TIMEZONE
+  return getAppTimezoneConfig()
 }
 
 function normalizeDateInput(date: Date | string | number): Date {

@@ -57,6 +57,8 @@ type CreateAgendamentoParams = {
   sessionMembroId?: string
   membroId?: string
   horarioId?: string
+  diaSemana?: DiaSemana
+  horaInicio?: string
   data?: string
   scope?: 'single' | 'weekly'
 }
@@ -66,6 +68,8 @@ type UpdateAgendamentoParams = {
   presente?: boolean
   observacao?: string
   horarioId?: string
+  diaSemana?: DiaSemana
+  horaInicio?: string
   data?: string
   scope?: 'single' | 'future'
 }
@@ -74,6 +78,8 @@ type DeleteAgendamentoParams = {
   id: string
   scope?: 'single' | 'future'
 }
+
+type TransactionClient = Prisma.TransactionClient
 
 export class AgendamentoServiceError extends Error {
   constructor(
@@ -111,6 +117,67 @@ function buildHoraFim(horaInicio: string) {
 
 function slotKey(diaSemana: DiaSemana, hora: string) {
   return `${diaSemana}-${hora}`
+}
+
+async function lockHorarioSlot(tx: TransactionClient, horarioId: string) {
+  await tx.$queryRaw(
+    Prisma.sql`SELECT id FROM "horarios_disponiveis" WHERE id = ${horarioId} FOR UPDATE`
+  )
+}
+
+async function getOrCreateHorarioInTransaction(
+  tx: TransactionClient,
+  params: { horarioId?: string; diaSemana?: DiaSemana; horaInicio?: string }
+) {
+  if (params.horarioId) {
+    return params.horarioId
+  }
+
+  if (!params.diaSemana || !params.horaInicio) {
+    throwAgendamentoError('Horário não informado')
+  }
+
+  const existing = await tx.horarioDisponivel.findFirst({
+    where: {
+      diaSemana: params.diaSemana,
+      horaInicio: params.horaInicio,
+      ativo: true,
+    },
+    select: { id: true },
+  })
+
+  if (existing) {
+    return existing.id
+  }
+
+  try {
+    const created = await tx.horarioDisponivel.create({
+      data: {
+        diaSemana: params.diaSemana,
+        horaInicio: params.horaInicio,
+        horaFim: buildHoraFim(params.horaInicio),
+        vagasTotal: MAX_CAPACITY_PER_SLOT,
+      },
+      select: { id: true },
+    })
+    return created.id
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const createdByRace = await tx.horarioDisponivel.findFirst({
+        where: {
+          diaSemana: params.diaSemana,
+          horaInicio: params.horaInicio,
+          ativo: true,
+        },
+        select: { id: true },
+      })
+      if (createdByRace) {
+        return createdByRace.id
+      }
+    }
+
+    throw error
+  }
 }
 
 export async function validateHorarioFixoLimit(params: LimitCheckParams): Promise<LimitCheckResult> {
@@ -188,7 +255,7 @@ export async function getAgendamentoById(id: string) {
 }
 
 export async function createAgendamento(params: CreateAgendamentoParams) {
-  const { sessionRole, sessionMembroId, membroId, horarioId, data, scope } = params
+  const { sessionRole, sessionMembroId, membroId, horarioId, diaSemana, horaInicio, data, scope } = params
   const recurrenceScope = sessionRole === 'ADMIN' ? scope ?? 'single' : 'single'
   const membroIdFinal = sessionRole === 'MEMBRO' ? sessionMembroId : membroId
 
@@ -196,227 +263,238 @@ export async function createAgendamento(params: CreateAgendamentoParams) {
     throwAgendamentoError('Membro ID não identificado')
   }
 
-  if (!horarioId) {
-    throwAgendamentoError('Horário não informado')
-  }
-
   if (!data) {
     throwAgendamentoError('Data não informada')
   }
 
-  const dataAgendamento = parseLocalDate(data)
-  const [horario, agendamentosExistentes, jaAgendado] = await Promise.all([
-    prisma.horarioDisponivel.findUnique({
-      where: { id: horarioId },
-    }),
-    prisma.agendamento.count({
+  return prisma.$transaction(async (tx) => {
+    const dataAgendamento = parseLocalDate(data)
+    const resolvedHorarioId = await getOrCreateHorarioInTransaction(tx, {
+      horarioId,
+      diaSemana,
+      horaInicio,
+    })
+    await lockHorarioSlot(tx, resolvedHorarioId)
+
+    const horario = await tx.horarioDisponivel.findUnique({
+      where: { id: resolvedHorarioId },
+    })
+    const agendamentosExistentes = await tx.agendamento.count({
       where: {
-        horarioId,
+        horarioId: resolvedHorarioId,
         data: dataAgendamento,
       },
-    }),
-    prisma.agendamento.findFirst({
+    })
+    const jaAgendado = await tx.agendamento.findFirst({
       where: {
         membroId: membroIdFinal,
-        horarioId,
+        horarioId: resolvedHorarioId,
         data: dataAgendamento,
       },
-    }),
-  ])
-
-  if (!horario || !horario.ativo) {
-    throwAgendamentoError('Horário não disponível')
-  }
-
-  if (agendamentosExistentes >= horario.vagasTotal) {
-    throwAgendamentoError('Não há vagas disponíveis neste horário')
-  }
-
-  if (jaAgendado) {
-    throwAgendamentoError('Você já tem um agendamento neste horário')
-  }
-
-  if (recurrenceScope === 'weekly') {
-    const limitCheck = await validateHorarioFixoLimit({
-      membroId: membroIdFinal,
-      diaSemana: horario.diaSemana,
-      hora: horario.horaInicio,
     })
 
-    if (!limitCheck.ok) {
-      throwAgendamentoError(limitCheck.error)
+    if (!horario || !horario.ativo) {
+      throwAgendamentoError('Horário não disponível')
     }
 
-    const horarioFixoExistente = await prisma.horarioFixo.findFirst({
-      where: {
+    if (agendamentosExistentes >= horario.vagasTotal) {
+      throwAgendamentoError('Não há vagas disponíveis neste horário')
+    }
+
+    if (jaAgendado) {
+      throwAgendamentoError('Você já tem um agendamento neste horário')
+    }
+
+    if (recurrenceScope === 'weekly') {
+      const limitCheck = await validateHorarioFixoLimit({
         membroId: membroIdFinal,
         diaSemana: horario.diaSemana,
         hora: horario.horaInicio,
-      },
-      select: { id: true },
-    })
+      })
 
-    if (!horarioFixoExistente) {
-      await prisma.horarioFixo.create({
-        data: {
+      if (!limitCheck.ok) {
+        throwAgendamentoError(limitCheck.error)
+      }
+
+      const horarioFixoExistente = await tx.horarioFixo.findFirst({
+        where: {
           membroId: membroIdFinal,
           diaSemana: horario.diaSemana,
           hora: horario.horaInicio,
         },
+        select: { id: true },
       })
-    }
-  }
 
-  return prisma.agendamento.create({
-    data: {
-      membroId: membroIdFinal,
-      horarioId,
-      data: dataAgendamento,
-    },
-    select: agendamentoSelect,
+      if (!horarioFixoExistente) {
+        await tx.horarioFixo.create({
+          data: {
+            membroId: membroIdFinal,
+            diaSemana: horario.diaSemana,
+            hora: horario.horaInicio,
+          },
+        })
+      }
+    }
+
+    return tx.agendamento.create({
+      data: {
+        membroId: membroIdFinal,
+        horarioId: resolvedHorarioId,
+        data: dataAgendamento,
+      },
+      select: agendamentoSelect,
+    })
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   })
 }
 
 export async function updateAgendamento(params: UpdateAgendamentoParams) {
-  const { id, presente, observacao, horarioId, data, scope } = params
+  const { id, presente, observacao, horarioId, diaSemana, horaInicio, data, scope } = params
   const updateScope = scope ?? 'single'
-  const agendamento = await prisma.agendamento.findUnique({
-    where: { id },
-  })
 
-  if (!agendamento) {
-    throwAgendamentoError('Agendamento nao encontrado', 404)
-  }
+  return prisma.$transaction(async (tx) => {
+    const agendamento = await tx.agendamento.findUnique({
+      where: { id },
+    })
 
-  const updateData: Prisma.AgendamentoUpdateInput = {}
+    if (!agendamento) {
+      throwAgendamentoError('Agendamento nao encontrado', 404)
+    }
 
-  if (presente !== undefined) {
-    updateData.presente = presente
-  }
+    const updateData: Prisma.AgendamentoUpdateInput = {}
 
-  if (observacao !== undefined) {
-    updateData.observacao = observacao
-  }
+    if (presente !== undefined) {
+      updateData.presente = presente
+    }
 
-  if (horarioId || data) {
-    const newHorarioId = horarioId || agendamento.horarioId
-    const newData = data ? parseLocalDate(data) : agendamento.data
+    if (observacao !== undefined) {
+      updateData.observacao = observacao
+    }
 
-    const [existente, horario, agendamentosExistentes] = await Promise.all([
-      prisma.agendamento.findFirst({
+    if (horarioId || diaSemana || horaInicio || data) {
+      const newHorarioId =
+        horarioId || diaSemana || horaInicio
+          ? await getOrCreateHorarioInTransaction(tx, { horarioId, diaSemana, horaInicio })
+          : agendamento.horarioId
+      const newData = data ? parseLocalDate(data) : agendamento.data
+
+      await lockHorarioSlot(tx, newHorarioId)
+
+      const existente = await tx.agendamento.findFirst({
         where: {
           membroId: agendamento.membroId,
           horarioId: newHorarioId,
           data: newData,
           id: { not: id },
         },
-      }),
-      prisma.horarioDisponivel.findUnique({
+      })
+      const horario = await tx.horarioDisponivel.findUnique({
         where: { id: newHorarioId },
-      }),
-      prisma.agendamento.count({
+      })
+      const agendamentosExistentes = await tx.agendamento.count({
         where: {
           horarioId: newHorarioId,
           data: newData,
           id: { not: id },
         },
-      }),
-    ])
+      })
 
-    if (existente) {
-      throwAgendamentoError('Ja existe agendamento neste horario e data')
-    }
+      if (existente) {
+        throwAgendamentoError('Ja existe agendamento neste horario e data')
+      }
 
-    if (!horario || !horario.ativo) {
-      throwAgendamentoError('Horario nao disponivel')
-    }
+      if (!horario || !horario.ativo) {
+        throwAgendamentoError('Horario nao disponivel')
+      }
 
-    if (agendamentosExistentes >= horario.vagasTotal) {
-      throwAgendamentoError('Nao ha vagas disponiveis neste horario')
-    }
+      if (agendamentosExistentes >= horario.vagasTotal) {
+        throwAgendamentoError('Nao ha vagas disponiveis neste horario')
+      }
 
-    if (updateScope === 'future' && newHorarioId !== agendamento.horarioId) {
-      const selectedOccurrenceDate = getOccurrenceDate(agendamento.data)
+      if (updateScope === 'future' && newHorarioId !== agendamento.horarioId) {
+        const selectedOccurrenceDate = getOccurrenceDate(agendamento.data)
 
-      const [horarioAtual, horarioFixoNovo] = await Promise.all([
-        prisma.horarioDisponivel.findUnique({
+        const horarioAtual = await tx.horarioDisponivel.findUnique({
           where: { id: agendamento.horarioId },
-        }),
-        prisma.horarioFixo.findFirst({
+        })
+        const horarioFixoNovo = await tx.horarioFixo.findFirst({
           where: {
             membroId: agendamento.membroId,
             diaSemana: horario.diaSemana,
             hora: horario.horaInicio,
           },
           select: { id: true },
-        }),
-      ])
-
-      if (!horarioAtual) {
-        throwAgendamentoError('Horario atual nao encontrado')
-      }
-
-      const horarioFixoAtual = await prisma.horarioFixo.findFirst({
-        where: {
-          membroId: agendamento.membroId,
-          diaSemana: horarioAtual.diaSemana,
-          hora: horarioAtual.horaInicio,
-        },
-        select: { id: true },
-      })
-
-      if (!horarioFixoNovo && !horarioFixoAtual) {
-        const limitCheck = await validateHorarioFixoLimit({
-          membroId: agendamento.membroId,
-          diaSemana: horario.diaSemana,
-          hora: horario.horaInicio,
         })
 
-        if (!limitCheck.ok) {
-          throwAgendamentoError(limitCheck.error)
+        if (!horarioAtual) {
+          throwAgendamentoError('Horario atual nao encontrado')
         }
-      }
 
-      if (horarioFixoAtual && !horarioFixoNovo) {
-        await prisma.horarioFixo.update({
-          where: { id: horarioFixoAtual.id },
-          data: {
-            diaSemana: horario.diaSemana,
-            hora: horario.horaInicio,
+        const horarioFixoAtual = await tx.horarioFixo.findFirst({
+          where: {
+            membroId: agendamento.membroId,
+            diaSemana: horarioAtual.diaSemana,
+            hora: horarioAtual.horaInicio,
           },
+          select: { id: true },
         })
-      } else if (!horarioFixoNovo && !horarioFixoAtual) {
-        await prisma.horarioFixo.create({
-          data: {
+
+        if (!horarioFixoNovo && !horarioFixoAtual) {
+          const limitCheck = await validateHorarioFixoLimit({
             membroId: agendamento.membroId,
             diaSemana: horario.diaSemana,
             hora: horario.horaInicio,
+          })
+
+          if (!limitCheck.ok) {
+            throwAgendamentoError(limitCheck.error)
+          }
+        }
+
+        if (horarioFixoAtual && !horarioFixoNovo) {
+          await tx.horarioFixo.update({
+            where: { id: horarioFixoAtual.id },
+            data: {
+              diaSemana: horario.diaSemana,
+              hora: horario.horaInicio,
+            },
+          })
+        } else if (!horarioFixoNovo && !horarioFixoAtual) {
+          await tx.horarioFixo.create({
+            data: {
+              membroId: agendamento.membroId,
+              diaSemana: horario.diaSemana,
+              hora: horario.horaInicio,
+            },
+          })
+        } else if (horarioFixoAtual && horarioFixoNovo) {
+          await tx.horarioFixo.delete({
+            where: { id: horarioFixoAtual.id },
+          })
+        }
+
+        await tx.agendamento.deleteMany({
+          where: {
+            membroId: agendamento.membroId,
+            horarioId: agendamento.horarioId,
+            data: { gte: selectedOccurrenceDate },
+            id: { not: id },
           },
-        })
-      } else if (horarioFixoAtual && horarioFixoNovo) {
-        await prisma.horarioFixo.delete({
-          where: { id: horarioFixoAtual.id },
         })
       }
 
-      await prisma.agendamento.deleteMany({
-        where: {
-          membroId: agendamento.membroId,
-          horarioId: agendamento.horarioId,
-          data: { gte: selectedOccurrenceDate },
-          id: { not: id },
-        },
-      })
+      if (horarioId) updateData.horario = { connect: { id: horarioId } }
+      if (data) updateData.data = newData
     }
 
-    if (horarioId) updateData.horario = { connect: { id: horarioId } }
-    if (data) updateData.data = newData
-  }
-
-  return prisma.agendamento.update({
-    where: { id },
-    data: updateData,
-    select: agendamentoSelect,
+    return tx.agendamento.update({
+      where: { id },
+      data: updateData,
+      select: agendamentoSelect,
+    })
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   })
 }
 

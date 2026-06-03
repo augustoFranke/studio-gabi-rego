@@ -48,7 +48,7 @@ describe('Agendamentos API', () => {
     prismaMock.agendamento.findMany.mockResolvedValue([])
 
     const req = new NextRequest(
-      'http://localhost:3000/api/agendamentos?membroId=m-2'
+      'http://localhost:3000/api/agendamentos?membroId=m-2&dataInicio=2025-01-01&dataFim=2025-01-31'
     )
     const res = await GET(req)
 

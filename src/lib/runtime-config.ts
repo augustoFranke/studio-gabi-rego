@@ -159,6 +159,85 @@ export interface ReadinessSummary {
   rateLimit: boolean
 }
 
+export const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
+export const DEFAULT_WHATSAPP_COUNTRY_CODE = '55'
+export const DEFAULT_APP_BASE_URL = 'https://studiogabirego.com'
+
+function normalizeBaseUrl(value?: string | null) {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.origin
+  } catch {
+    return null
+  }
+}
+
+export function getAppTimezoneConfig(): string {
+  return process.env.APP_TIMEZONE || DEFAULT_APP_TIMEZONE
+}
+
+export function getAuthSecretConfig(): string | null {
+  return process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || null
+}
+
+export function getRequiredCronSecretConfig(): string | undefined {
+  return process.env.CRON_SECRET || undefined
+}
+
+export function getWhatsappCountryCodeConfig(defaultCode = DEFAULT_WHATSAPP_COUNTRY_CODE): string {
+  return process.env.WHATSAPP_COUNTRY_CODE || defaultCode
+}
+
+export function getEvolutionConfig() {
+  return {
+    url: process.env.EVOLUTION_API_URL,
+    key: process.env.EVOLUTION_API_KEY,
+    instance: process.env.EVOLUTION_INSTANCE,
+  }
+}
+
+export function getRateLimitConfig() {
+  return {
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  }
+}
+
+export function getEmailConfig() {
+  return {
+    resendApiKey: process.env.RESEND_API_KEY,
+  }
+}
+
+export function isTestRuntime(): boolean {
+  return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true'
+}
+
+export function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === 'production'
+}
+
+export function isDevelopmentRuntime(): boolean {
+  return process.env.NODE_ENV === 'development'
+}
+
+export function getAppBaseUrlConfig(origin?: string): string {
+  const configuredUrl =
+    normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL) ||
+    normalizeBaseUrl(process.env.NEXTAUTH_URL) ||
+    normalizeBaseUrl(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+
+  if (configuredUrl) return configuredUrl
+
+  if (process.env.NODE_ENV !== 'production') {
+    return normalizeBaseUrl(origin) || DEFAULT_APP_BASE_URL
+  }
+
+  return DEFAULT_APP_BASE_URL
+}
+
 /**
  * Return a safe readiness summary based on config presence.
  * Does NOT check live connectivity — only configuration completeness.

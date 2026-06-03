@@ -66,7 +66,7 @@ describe('pagamento.service', () => {
     expect(prisma.pagamento.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'pag-1' },
-        data: { status: 'CANCELADO' },
+        data: { status: 'CANCELADO', dataPagamento: null },
       })
     )
     expect(result).toEqual({ id: 'pag-1', status: 'CANCELADO' })

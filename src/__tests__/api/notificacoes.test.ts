@@ -76,7 +76,7 @@ describe('Notificacoes API', () => {
       method: 'POST',
       body: JSON.stringify({
         membroId: 'm-1',
-        tipo: 'INFO',
+        tipo: 'AVISO_GERAL',
         titulo: 'Oi',
         mensagem: 'Mensagem',
         canalEmail: true,
@@ -90,7 +90,7 @@ describe('Notificacoes API', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           membroId: 'm-1',
-          tipo: 'INFO',
+          tipo: 'AVISO_GERAL',
           titulo: 'Oi',
           mensagem: 'Mensagem',
           canalEmail: true,
@@ -105,7 +105,7 @@ describe('Notificacoes API', () => {
     const req = new NextRequest('http://localhost:3000/api/notificacoes', {
       method: 'POST',
       body: JSON.stringify({
-        tipo: 'INFO',
+        tipo: 'AVISO_GERAL',
         titulo: 'Oi',
         mensagem: 'Mensagem',
       }),

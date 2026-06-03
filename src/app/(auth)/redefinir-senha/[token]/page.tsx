@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AuthThemeBackdrop } from "@/components/auth-theme-backdrop"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { AlertCircle, CheckCircle2, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import Image from "next/image"
@@ -156,7 +157,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
   // Invalid token
   if (tokenStatus !== "valid") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+        <AuthThemeBackdrop />
         <div className="absolute top-4 right-4 z-20">
           <ThemeToggleSimple />
         </div>
@@ -189,7 +191,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
   // Success state
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+        <AuthThemeBackdrop />
         <div className="absolute top-4 right-4 z-20">
           <ThemeToggleSimple />
         </div>
@@ -221,14 +224,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
 
   // Password reset form
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+      <AuthThemeBackdrop />
 
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggleSimple />

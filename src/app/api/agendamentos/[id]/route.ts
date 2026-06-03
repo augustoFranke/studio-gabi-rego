@@ -6,15 +6,9 @@ import {
   getAgendamentoById,
   updateAgendamento,
 } from '@/services/agendamento.service'
+import { agendamentoUpdateSchema } from '@/features/scheduling/contracts'
+import { readOptionalJsonBody } from '@/lib/http'
 import { z } from 'zod'
-
-const agendamentoUpdateSchema = z.object({
-  presente: z.boolean().optional(),
-  observacao: z.string().optional(),
-  horarioId: z.string().optional(),
-  data: z.string().optional(),
-  scope: z.enum(['single', 'future']).optional(),
-})
 
 const agendamentoDeleteSchema = z.object({
   scope: z.enum(['single', 'future']).optional(),
@@ -46,17 +40,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    const [{ id }, rawBody] = await Promise.all([params, request.text()])
-    let body: unknown = {}
-    if (rawBody) {
-      try {
-        body = JSON.parse(rawBody)
-      } catch {
-        return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
-      }
+    const { id } = await params
+    const parsedBody = await readOptionalJsonBody(request)
+    if (!parsedBody.ok) {
+      return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
     }
 
-    const validation = agendamentoUpdateSchema.safeParse(body)
+    const validation = agendamentoUpdateSchema.safeParse(parsedBody.body)
     if (!validation.success) {
       return NextResponse.json({ error: validation.error.issues[0]?.message ?? 'Dados inválidos.' }, { status: 400 })
     }
@@ -83,16 +73,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    const [{ id }, rawBody] = await Promise.all([params, request.text()])
-    let body: unknown = {}
-    if (rawBody) {
-      try {
-        body = JSON.parse(rawBody)
-      } catch {
-        return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
-      }
+    const { id } = await params
+    const parsedBody = await readOptionalJsonBody(request)
+    if (!parsedBody.ok) {
+      return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
     }
-    const validation = agendamentoDeleteSchema.safeParse(body)
+    const validation = agendamentoDeleteSchema.safeParse(parsedBody.body)
     if (!validation.success) {
       return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
     }

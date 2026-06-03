@@ -6,7 +6,7 @@ import { getOrCreateHorario, HorarioServiceError } from '@/services/horario.serv
 
 const getOrCreateSchema = z.object({
   diaSemana: z.nativeEnum(DiaSemana),
-  horaInicio: z.string().min(1, 'Informe a hora de início'),
+  horaInicio: z.string().regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida'),
 })
 
 export async function POST(request: NextRequest) {

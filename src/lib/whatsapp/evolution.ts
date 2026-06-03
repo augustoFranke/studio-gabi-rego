@@ -4,20 +4,16 @@ import {
   PROVIDER_SEND_OK,
   PROVIDER_SEND_FAILED,
 } from '@/lib/observability/events'
+import {
+  getEvolutionConfig,
+  getWhatsappCountryCodeConfig,
+} from '@/lib/runtime-config'
 import { fetchWithTimeout } from '@/lib/http'
 
 const PROVIDER = 'evolution'
 
-function getEvolutionConfig() {
-  return {
-    url: process.env.EVOLUTION_API_URL,
-    key: process.env.EVOLUTION_API_KEY,
-    instance: process.env.EVOLUTION_INSTANCE,
-  }
-}
-
 function getCountryCode(defaultCode = '55') {
-  return process.env.WHATSAPP_COUNTRY_CODE || defaultCode
+  return getWhatsappCountryCodeConfig(defaultCode)
 }
 
 export function isEvolutionConfigured(): boolean {
@@ -79,13 +75,11 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
       logError(PROVIDER_SEND_FAILED, {
         provider: PROVIDER,
         statusCode: response.status,
       })
-      const message = errorText ? `Evolution API error: ${errorText}` : 'Evolution API error'
-      throw new Error(message)
+      throw new Error(`Evolution API error (${response.status})`)
     }
 
     logInfo(PROVIDER_SEND_OK, { provider: PROVIDER })

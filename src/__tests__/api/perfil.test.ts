@@ -132,10 +132,11 @@ describe('Perfil API', () => {
         data: expect.objectContaining({
           usuarioId: 'u-1',
           status: 'PENDENTE',
-          anamneseToken: '746f6b656e',
+          anamneseToken: expect.any(String),
         }),
       })
     )
+    expect(prismaMock.membro.create.mock.calls[0][0].data.anamneseToken).not.toBe('746f6b656e')
     expect(prismaMock.usuario.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'u-1' },

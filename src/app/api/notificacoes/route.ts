@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withApiAuth } from '@/lib/api'
-import { Prisma } from '@prisma/client'
+import { Prisma, TipoNotificacao } from '@prisma/client'
 import { logError, safeErrorData } from '@/lib/observability/logger'
+import { z } from 'zod'
+
+const notificacaoSchema = z.object({
+  membroId: z.string().min(1).nullable().optional(),
+  tipo: z.nativeEnum(TipoNotificacao),
+  titulo: z.string().trim().min(1).max(120),
+  mensagem: z.string().trim().min(1).max(2000),
+  canalEmail: z.boolean().optional(),
+  agendadaPara: z.string().datetime().nullable().optional(),
+})
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
@@ -48,15 +58,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
     try {
-      const body = await request.json()
-      const { membroId, tipo, titulo, mensagem, canalEmail, agendadaPara } = body
+      let body: unknown
+      try {
+        body = await request.json()
+      } catch {
+        return NextResponse.json({ error: 'Dados inválidos enviados' }, { status: 400 })
+      }
 
-      if (!tipo || !titulo || !mensagem) {
+      const validation = notificacaoSchema.safeParse(body)
+
+      if (!validation.success) {
         return NextResponse.json(
           { error: 'Campos obrigatórios: tipo, titulo, mensagem' },
           { status: 400 }
         )
       }
+
+      const { membroId, tipo, titulo, mensagem, canalEmail, agendadaPara } = validation.data
 
       const notificacao = await prisma.notificacao.create({
         data: {

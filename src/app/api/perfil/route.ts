@@ -3,6 +3,7 @@ import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { withApiAuth, validateRequest } from "@/lib/api"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
+import { rateLimitByKey } from "@/lib/rate-limit"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
 import {
@@ -97,6 +98,16 @@ export async function POST(request: Request) {
     }
 
     const { token, nome, cpf, rg, telefone, dataNascimento, sexo } = validation.data
+    if (token) {
+      const rateLimit = await rateLimitByKey(request, "onboarding:complete-profile", token)
+      if (!rateLimit.success) {
+        return NextResponse.json(
+          { error: "Muitas tentativas. Tente novamente em instantes." },
+          { status: 429 }
+        )
+      }
+    }
+
     const hasCpf = cpf !== undefined
     const hasRg = rg !== undefined
     const hasTelefone = telefone !== undefined
