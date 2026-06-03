@@ -25,6 +25,7 @@ import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
 import { normalizeEmail } from "@/lib/email"
 import { unstable_cache } from "next/cache"
+import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
@@ -113,7 +114,7 @@ export default async function MembrosPage({
         <div className="flex items-center gap-2">
           <Button asChild className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
             <Link href="/alunos/novo">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 size-4" />
               Novo Aluno
             </Link>
           </Button>
@@ -124,8 +125,8 @@ export default async function MembrosPage({
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
+              <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="size-5 text-primary" />
               </div>
               <div>
                 <CardTitle>Filtros</CardTitle>
@@ -134,13 +135,15 @@ export default async function MembrosPage({
                 </CardDescription>
               </div>
             </div>
-            <AlunosFilters
-              search={search}
-              status={status}
-              plano={plano}
-              order={order}
-              planos={planos}
-            />
+            <Suspense>
+              <AlunosFilters
+                search={search}
+                status={status}
+                plano={plano}
+                order={order}
+                planos={planos}
+              />
+            </Suspense>
           </div>
         </CardHeader>
         <CardContent>
@@ -172,11 +175,11 @@ export default async function MembrosPage({
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center text-xs">
-                            <Phone className="mr-1.5 h-3 w-3 text-primary" />
+                            <Phone className="mr-1.5 size-3 text-primary" />
                             {membro.telefone ? membro.telefone : "Não informado"}
                           </div>
                           <div className="flex items-center text-xs">
-                            <Mail className="mr-1.5 h-3 w-3 text-primary" />
+                            <Mail className="mr-1.5 size-3 text-primary" />
                             {email ? email : <span className="text-muted-foreground">Não informado</span>}
                           </div>
                         </div>
@@ -184,7 +187,7 @@ export default async function MembrosPage({
                       <TableCell>
                         {membro.plano ? (
                           <Badge variant="outline" className="flex items-center w-fit border-primary/30 text-primary">
-                            <CreditCard className="mr-1 h-3 w-3" />
+                            <CreditCard className="mr-1 size-3" />
                             {membro.plano.nome}
                           </Badge>
                         ) : (
@@ -206,14 +209,14 @@ export default async function MembrosPage({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-primary/10">
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
                               <Link href={`/alunos/${membro.id}`} className="flex items-center">
-                                <User className="mr-2 h-4 w-4 text-primary" />
+                                <User className="mr-2 size-4 text-primary" />
                                 Ver Detalhes
                               </Link>
                             </DropdownMenuItem>
@@ -233,8 +236,8 @@ export default async function MembrosPage({
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <Users className="h-6 w-6 text-muted-foreground" />
+                        <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <Users className="size-6 text-muted-foreground" />
                         </div>
                         <p className="text-muted-foreground">Nenhum aluno encontrado.</p>
                       </div>
@@ -246,7 +249,9 @@ export default async function MembrosPage({
           </div>
           {totalPages > 1 && (
             <div className="mt-4">
-              <Pagination currentPage={currentPage} totalPages={totalPages} />
+              <Suspense>
+                <Pagination currentPage={currentPage} totalPages={totalPages} />
+              </Suspense>
             </div>
           )}
         </CardContent>

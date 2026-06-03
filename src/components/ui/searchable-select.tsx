@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -61,6 +61,7 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const listId = useId()
   const listRef = useRef<HTMLDivElement>(null)
 
   const resetListScroll = useCallback(() => {
@@ -148,7 +149,7 @@ export function SearchableSelect({
     >
       <Check
         className={cn(
-          "mr-2 h-4 w-4",
+          "mr-2 size-4",
           option.value === value ? "opacity-100" : "opacity-0"
         )}
       />
@@ -164,6 +165,7 @@ export function SearchableSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listId}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
         >
@@ -172,7 +174,7 @@ export function SearchableSelect({
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -185,7 +187,7 @@ export function SearchableSelect({
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList ref={listRef}>
+          <CommandList id={listId} ref={listRef}>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             {ungrouped.length > 0 && <CommandGroup>{ungrouped.map(renderItem)}</CommandGroup>}
             {hasGroups &&

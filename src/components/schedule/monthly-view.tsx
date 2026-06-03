@@ -80,6 +80,7 @@ export const MonthlyView = memo(function MonthlyView({
 
               return (
                 <button
+                  type="button"
                   key={dateKey}
                   onClick={() => handleDayClick(day)}
                   className={cn(
@@ -95,7 +96,7 @@ export const MonthlyView = memo(function MonthlyView({
                       className={cn(
                         'text-sm font-medium mb-1',
                         isTodayDate &&
-                        'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center'
+                        'bg-primary text-primary-foreground rounded-full size-7 flex items-center justify-center'
                       )}
                     >
                       {day.getDate()}

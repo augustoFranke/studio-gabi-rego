@@ -1,6 +1,8 @@
 import type {
+  TreinoExercise,
   TreinoEditorExercise,
   TreinoEditorSession,
+  TreinoTemplateExercise,
 } from '@/domain/treino'
 
 export type {
@@ -49,6 +51,77 @@ export function addSession(name: string): TreinoEditorSession {
 
 export function reindexSessions(sessions: TreinoEditorSession[]): TreinoEditorSession[] {
   return sessions.map((s, idx) => ({ ...s, name: String.fromCharCode(65 + idx) }))
+}
+
+export function parseSessionName(fullName: string): { letter: string; description: string } {
+  const match = fullName.match(/^([A-Z])(?:\s*-\s*(.*))?$/)
+  if (match) {
+    return { letter: match[1], description: match[2] || '' }
+  }
+
+  return { letter: fullName.charAt(0) || 'A', description: '' }
+}
+
+export function getFullSessionName(session: Pick<TreinoEditorSession, 'name' | 'description'>): string {
+  return session.description.trim()
+    ? `${session.name} - ${session.description.trim()}`
+    : session.name
+}
+
+export function createEditorSessionsFromExercises(
+  exercises: Array<Pick<TreinoExercise | TreinoTemplateExercise, 'id' | 'sessao' | 'nome' | 'series' | 'repeticoes'>>,
+  createId: () => string = () => crypto.randomUUID()
+): TreinoEditorSession[] {
+  const sessionsMap = new Map<string, TreinoEditorExercise[]>()
+  for (const exercise of exercises) {
+    const sessionExercises = sessionsMap.get(exercise.sessao) || []
+    sessionExercises.push({
+      id: exercise.id,
+      name: exercise.nome,
+      sets: exercise.series,
+      reps: exercise.repeticoes,
+    })
+    sessionsMap.set(exercise.sessao, sessionExercises)
+  }
+
+  const sessions = Array.from(sessionsMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([fullName, sessionExercises]) => {
+      const { letter, description } = parseSessionName(fullName)
+      return {
+        id: createId(),
+        name: letter,
+        description,
+        exercises: sessionExercises,
+      }
+    })
+
+  return sessions.length > 0
+    ? sessions
+    : [{ id: createId(), name: 'A', description: '', exercises: [] }]
+}
+
+export function mergeExerciseHistory(
+  currentHistory: string[],
+  sessions: TreinoEditorSession[]
+): { history: string[]; changed: boolean } {
+  const historySet = new Set(currentHistory)
+  let changed = false
+
+  for (const session of sessions) {
+    for (const exercise of session.exercises) {
+      const trimmed = exercise.name.trim()
+      if (trimmed && !historySet.has(trimmed)) {
+        historySet.add(trimmed)
+        changed = true
+      }
+    }
+  }
+
+  return {
+    history: changed ? [...historySet].toSorted() : currentHistory,
+    changed,
+  }
 }
 
 export function addExercise(): TreinoEditorExercise {

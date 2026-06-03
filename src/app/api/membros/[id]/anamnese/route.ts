@@ -47,13 +47,6 @@ export async function GET(
       return NextResponse.json({ error: 'Dados de anamnese inválidos' }, { status: 500 })
     }
 
-    if (membro.anamnese && normalized.changed) {
-      await prisma.anamnese.update({
-        where: { membroId: id },
-        data: normalized.data,
-      })
-    }
-
     return NextResponse.json({
       member: {
         id: membro.id,

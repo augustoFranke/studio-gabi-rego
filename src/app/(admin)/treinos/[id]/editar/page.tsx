@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef, useReducer } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, ArrowLeft, AlertTriangle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,11 @@ import Link from 'next/link';
 import {
     addExercise as addExerciseEditor,
     addSession as addSessionEditor,
+    createEditorSessionsFromExercises,
     type ExerciseField,
+    getFullSessionName,
     loadExerciseHistory,
+    mergeExerciseHistory,
     removeExercise as removeExerciseEditor,
     reindexSessions as reindexSessionsEditor,
     saveExerciseHistory,
@@ -32,11 +35,10 @@ import {
 import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import type {
-    TreinoEditorExercise,
     TreinoEditorSession,
     TreinoFicha,
 } from '@/domain/treino';
-import { readResponseErrorMessage } from '@/lib/http';
+import { fetchWithTimeout, LONG_RUNNING_FETCH_TIMEOUT_MS, readResponseErrorMessage } from '@/lib/http';
 
 interface PageProps {
     params: Promise<{
@@ -44,15 +46,67 @@ interface PageProps {
     }>;
 }
 
+type EditorState = {
+    loading: boolean;
+    date: string;
+    observacoes: string;
+    sessions: TreinoEditorSession[];
+    exerciseHistory: string[];
+};
+
+type EditorAction =
+    | { type: 'loaded'; date: string; observacoes: string; sessions: TreinoEditorSession[] }
+    | { type: 'loading'; loading: boolean }
+    | { type: 'date'; date: string }
+    | { type: 'observacoes'; observacoes: string }
+    | { type: 'sessions'; sessions: TreinoEditorSession[] }
+    | { type: 'exerciseHistory'; exerciseHistory: string[] };
+
+const initialEditorState: EditorState = {
+    loading: true,
+    date: '',
+    observacoes: '',
+    sessions: [],
+    exerciseHistory: [],
+};
+
+function editorReducer(state: EditorState, action: EditorAction): EditorState {
+    switch (action.type) {
+        case 'loaded':
+            return {
+                ...state,
+                loading: false,
+                date: action.date,
+                observacoes: action.observacoes,
+                sessions: action.sessions,
+            };
+        case 'loading':
+            return { ...state, loading: action.loading };
+        case 'date':
+            return { ...state, date: action.date };
+        case 'observacoes':
+            return { ...state, observacoes: action.observacoes };
+        case 'sessions':
+            return { ...state, sessions: action.sessions };
+        case 'exerciseHistory':
+            return { ...state, exerciseHistory: action.exerciseHistory };
+    }
+}
+
 export default function EditarTreinoPage({ params }: PageProps) {
+    return useEditarTreinoPage(params);
+}
+
+function useEditarTreinoPage(params: PageProps["params"]) {
     const { id } = use(params);
-    const router = useRouter();
-    const [loading, setLoading] = useState(true);
-    const [treino, setTreino] = useState<TreinoFicha | null>(null);
-    const [date, setDate] = useState('');
-    const [observacoes, setObservacoes] = useState('');
-    const [sessions, setSessions] = useState<TreinoEditorSession[]>([]);
-    const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
+    const { push } = useRouter();
+    const treinoRef = useRef<TreinoFicha | null>(null);
+    const [{ loading, date, observacoes, sessions, exerciseHistory }, dispatchEditor] =
+        useReducer(editorReducer, initialEditorState);
+    const setDate = (date: string) => dispatchEditor({ type: 'date', date });
+    const setObservacoes = (observacoes: string) => dispatchEditor({ type: 'observacoes', observacoes });
+    const setSessions = (sessions: TreinoEditorSession[]) => dispatchEditor({ type: 'sessions', sessions });
+    const setExerciseHistory = (exerciseHistory: string[]) => dispatchEditor({ type: 'exerciseHistory', exerciseHistory });
     const [isSaving, setIsSaving] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -62,64 +116,26 @@ export default function EditarTreinoPage({ params }: PageProps) {
     useEffect(() => {
         const fetchTreino = async () => {
             try {
-                const response = await fetch(`/api/treinos/${id}`);
+                const response = await fetchWithTimeout(`/api/treinos/${id}`);
                 if (response.ok) {
                     const data: TreinoFicha = await response.json();
-                    setTreino(data);
-                    setDate(data.data || '');
-                    setObservacoes(data.observacoes || '');
-
-                    // Convert exercises to sessions format
-                    const sessionsMap = new Map<string, TreinoEditorExercise[]>();
-                    data.exercicios.forEach((ex: TreinoFicha['exercicios'][0]) => {
-                        const exercises = sessionsMap.get(ex.sessao) || [];
-                        exercises.push({
-                            id: ex.id,
-                            name: ex.nome,
-                            sets: ex.series,
-                            reps: ex.repeticoes,
-                        });
-                        sessionsMap.set(ex.sessao, exercises);
+                    treinoRef.current = data;
+                    dispatchEditor({
+                        type: 'loaded',
+                        date: data.data || '',
+                        observacoes: data.observacoes || '',
+                        sessions: createEditorSessionsFromExercises(data.exercicios),
                     });
-
-                    // Parse session names to extract letter and description
-                    // Format: "A" or "A - Description"
-                    const parseSessionName = (fullName: string): { letter: string; description: string } => {
-                        const match = fullName.match(/^([A-Z])(?:\s*-\s*(.*))?$/);
-                        if (match) {
-                            return { letter: match[1], description: match[2] || '' };
-                        }
-                        // Fallback: use first character as letter
-                        return { letter: fullName.charAt(0) || 'A', description: '' };
-                    };
-
-                    const loadedSessions: TreinoEditorSession[] = Array.from(sessionsMap.entries())
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([fullName, exercises]) => {
-                            const { letter, description } = parseSessionName(fullName);
-                            return {
-                                id: crypto.randomUUID(),
-                                name: letter,
-                                description,
-                                exercises,
-                            };
-                        });
-
-                    if (loadedSessions.length === 0) {
-                        loadedSessions.push({ id: crypto.randomUUID(), name: 'A', description: '', exercises: [] });
-                    }
-
-                    setSessions(loadedSessions);
                 } else {
                     toast.error('Treino não encontrado');
-                    router.push('/treinos');
+                    push('/treinos');
                 }
             } catch (error) {
                 console.error('Error loading training:', error);
                 toast.error('Erro ao carregar treino');
-                router.push('/treinos');
+                push('/treinos');
             } finally {
-                setLoading(false);
+                dispatchEditor({ type: 'loading', loading: false });
             }
         };
 
@@ -132,7 +148,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
         if (stored && parsed) {
             setExerciseHistory(history);
         }
-    }, [id, router]);
+    }, [id, push]);
 
     const addSession = () => {
         const nextLetter = String.fromCharCode(65 + sessions.length);
@@ -158,13 +174,6 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 return s;
             })
         );
-    };
-
-    // Get full session name combining letter and description
-    const getFullSessionName = (session: TreinoEditorSession) => {
-        return session.description.trim()
-            ? `${session.name} - ${session.description.trim()}`
-            : session.name;
     };
 
     const addExercise = (sessionId: string) => {
@@ -223,22 +232,8 @@ export default function EditarTreinoPage({ params }: PageProps) {
     };
 
     const saveAllToHistory = () => {
-        // Use Set for O(1) lookup instead of O(n) array.includes()
-        const historySet = new Set(exerciseHistory);
-        let changed = false;
-        sessions.forEach(s => {
-            s.exercises.forEach(e => {
-                const trimmed = e.name.trim();
-                if (trimmed && !historySet.has(trimmed)) {
-                    historySet.add(trimmed);
-                    changed = true;
-                }
-            });
-        });
-
+        const { history: newHistory, changed } = mergeExerciseHistory(exerciseHistory, sessions);
         if (changed) {
-            // Use toSorted() for immutable sort
-            const newHistory = [...historySet].toSorted();
             setExerciseHistory(newHistory);
             saveExerciseHistory(localStorage, newHistory);
         }
@@ -272,7 +267,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 });
             });
 
-            const response = await fetch(`/api/treinos/${id}`, {
+            const response = await fetchWithTimeout(`/api/treinos/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -290,7 +285,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             }
 
             toast.success('Treino atualizado com sucesso!');
-            router.push(`/treinos/${id}`);
+            push(`/treinos/${id}`);
         } catch (error) {
             console.error('Error saving training:', error);
             toast.error(error instanceof Error ? error.message : 'Erro ao salvar treino');
@@ -302,7 +297,9 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const handleGeneratePDF = async () => {
         setIsGenerating(true);
         try {
-            const response = await fetch(`/api/treinos/${id}/pdf`);
+            const response = await fetchWithTimeout(`/api/treinos/${id}/pdf`, {
+                timeoutMs: LONG_RUNNING_FETCH_TIMEOUT_MS,
+            });
             
             if (!response.ok) {
                 throw new Error(await readResponseErrorMessage(response, 'Erro ao gerar PDF'));
@@ -326,7 +323,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
-            const response = await fetch(`/api/treinos/${id}`, {
+            const response = await fetchWithTimeout(`/api/treinos/${id}`, {
                 method: 'DELETE',
             });
 
@@ -335,7 +332,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
             }
 
             toast.success('Treino excluído com sucesso!');
-            router.push('/treinos');
+            push('/treinos');
         } catch (error) {
             console.error('Error deleting training:', error);
             toast.error(error instanceof Error ? error.message : 'Erro ao excluir treino');
@@ -348,10 +345,12 @@ export default function EditarTreinoPage({ params }: PageProps) {
     if (loading) {
         return (
             <div className="container mx-auto max-w-5xl py-8 flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="size-8 animate-spin text-primary" />
             </div>
         );
     }
+
+    const treino = treinoRef.current;
 
     if (!treino) {
         return null;
@@ -367,7 +366,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 <div className="flex items-center gap-4">
                     <Link href={`/treinos/${id}`}>
                         <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeft className="size-5" />
                         </Button>
                     </Link>
                     <div>
@@ -383,7 +382,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         disabled={isDeleting || isSaving}
                         onClick={() => setShowDeleteDialog(true)}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                         Excluir
                     </Button>
 
@@ -394,9 +393,9 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         onClick={handleGeneratePDF}
                     >
                         {isGenerating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" />
                         ) : (
-                            <Printer className="h-4 w-4" />
+                            <Printer className="size-4" />
                         )}
                         Imprimir
                     </Button>
@@ -407,11 +406,11 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         onClick={handleSave}
                     >
                         {isSaving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" />
                         ) : (
-                            <Save className="h-4 w-4" />
+                            <Save className="size-4" />
                         )}
-                        {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                        {isSaving ? 'Salvando…' : 'Salvar Alterações'}
                     </Button>
                 </div>
             </div>
@@ -424,7 +423,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label className="font-medium text-base flex items-center gap-2">
-                                <User className="h-4 w-4" />
+                                <User className="size-4" />
                                 Aluno
                             </Label>
                             <Input
@@ -435,7 +434,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="date" className="font-medium text-base flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                                <Calendar className="size-4" />
                                 Data
                             </Label>
                             <Input
@@ -458,7 +457,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     </div>
                     <div className="mt-6 space-y-2">
                         <Label htmlFor="observacoes" className="font-medium text-base flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
+                            <FileText className="size-4" />
                             Observações
                         </Label>
                         <Textarea
@@ -474,7 +473,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
 
             <div className="grid grid-cols-1 gap-6">
                 {sessions.map((session) => (
-                    <Card key={session.id} className="relative overflow-hidden border-l-4 border-l-primary">
+                    <Card key={session.id} className="relative overflow-hidden shadow-[inset_4px_0_0_hsl(var(--primary))]">
                         <div className="absolute top-0 right-0 p-4">
                             <Button
                                 variant="ghost"
@@ -483,13 +482,13 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                 onClick={() => removeSession(session.id)}
                                 title="Remover Treino"
                             >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="size-4" />
                             </Button>
                         </div>
 
                         <CardHeader className="bg-muted/30 pb-4">
                             <CardTitle className="flex items-center gap-2 text-xl">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                     {session.name}
                                 </div>
                                 <span className="whitespace-nowrap">Treino {session.name}</span>
@@ -506,7 +505,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         <CardContent className="pt-6 space-y-4">
                             {session.exercises.length === 0 ? (
                                 <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                                    <Dumbbell className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                                    <Dumbbell className="mx-auto size-8 mb-2 opacity-50" />
                                     <p>Nenhum exercício adicionado ainda.</p>
                                 </div>
                             ) : (
@@ -559,10 +558,10 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="text-muted-foreground hover:text-destructive h-9 w-9"
+                                                    className="text-muted-foreground hover:text-destructive size-9"
                                                     onClick={() => removeExercise(session.id, exercise.id)}
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="size-4" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -575,7 +574,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                                 className="w-full border-dashed"
                                 onClick={() => addExercise(session.id)}
                             >
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="mr-2 size-4" />
                                 Adicionar Exercício
                             </Button>
                         </CardContent>
@@ -588,15 +587,15 @@ export default function EditarTreinoPage({ params }: PageProps) {
                     className="w-full py-8 text-lg font-medium border-2 border-dashed"
                     onClick={addSession}
                 >
-                    <Plus className="mr-2 h-6 w-6" />
+                    <Plus className="mr-2 size-6" />
                     Adicionar Novo Treino
                 </Button>
             </div>
 
             {/* Datalist for Autocomplete */}
             <datalist id="exercises-list">
-                {exerciseHistory.map((name, i) => (
-                    <option key={i} value={name} />
+                {exerciseHistory.map((name) => (
+                    <option key={name} value={name}>{name}</option>
                 ))}
             </datalist>
 
@@ -605,7 +604,7 @@ export default function EditarTreinoPage({ params }: PageProps) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            <AlertTriangle className="size-5 text-destructive" />
                             Excluir Treino
                         </DialogTitle>
                         <DialogDescription>
@@ -627,8 +626,8 @@ export default function EditarTreinoPage({ params }: PageProps) {
                         >
                             {isDeleting ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Excluindo...
+                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                    Excluindo…
                                 </>
                             ) : (
                                 'Excluir'

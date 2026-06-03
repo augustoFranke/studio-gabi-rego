@@ -39,21 +39,18 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     }
 
     try {
-      const sessionsMap = new Map<string, Array<{ name: string; sets: string; reps: string }>>()
-
-      for (const ex of ficha.exercicios) {
+      const sessionsByName = ficha.exercicios.reduce<Record<string, Array<{ name: string; sets: string; reps: string }>>>((acc, ex) => {
         const sessionName = ex.sessao || 'A'
-        if (!sessionsMap.has(sessionName)) {
-          sessionsMap.set(sessionName, [])
-        }
-        sessionsMap.get(sessionName)!.push({
+        acc[sessionName] ??= []
+        acc[sessionName].push({
           name: ex.nome,
           sets: ex.series,
           reps: ex.repeticoes,
         })
-      }
+        return acc
+      }, {})
 
-      const sessions = Array.from(sessionsMap.entries())
+      const sessions = Object.entries(sessionsByName)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([name, exercises]) => ({ name, exercises }))
 

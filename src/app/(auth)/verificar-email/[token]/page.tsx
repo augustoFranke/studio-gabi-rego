@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useReducer, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react"
 import Image from "next/image"
+import { fetchWithTimeout } from "@/lib/http"
 
 type VerificationStatus = "loading" | "success" | "error" | "expired"
 
@@ -18,22 +19,35 @@ type VerifyEmailResponse = {
   nextStep: "dashboard" | "login" | "complete_profile" | "complete_anamnese"
 }
 
+type VerificationState = {
+  status: VerificationStatus
+  message: string
+  nextStep: VerifyEmailResponse["nextStep"]
+}
+
+function verificationReducer(_: VerificationState, next: VerificationState) {
+  return next
+}
+
 export default function VerificarTokenPage({
   params,
 }: {
   params: Promise<{ token: string }>
 }) {
   const resolvedParams = use(params)
-  const [status, setStatus] = useState<VerificationStatus>("loading")
-  const [message, setMessage] = useState("")
-  const [redirectUrl, setRedirectUrl] = useState("/login")
-  const [nextStep, setNextStep] = useState<"dashboard" | "login" | "complete_profile" | "complete_anamnese">("login")
-  const router = useRouter()
+  const [verification, setVerification] = useReducer(verificationReducer, {
+    status: "loading",
+    message: "",
+    nextStep: "login",
+  })
+  const redirectUrlRef = useRef("/login")
+  const { push } = useRouter()
+  const { status, message, nextStep } = verification
 
   useEffect(() => {
     async function verifyToken() {
       try {
-        const response = await fetch("/api/auth/verificar-email", {
+        const response = await fetchWithTimeout("/api/auth/verificar-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: resolvedParams.token }),
@@ -42,20 +56,31 @@ export default function VerificarTokenPage({
         const data = (await response.json()) as VerifyEmailResponse
 
         if (response.ok) {
-          setStatus("success")
-          setMessage(data.message || "Email verificado com sucesso!")
-          setRedirectUrl(data.redirectUrl)
-          setNextStep(data.nextStep)
+          redirectUrlRef.current = data.redirectUrl
+          setVerification({
+            status: "success",
+            message: data.message || "Email verificado com sucesso!",
+            nextStep: data.nextStep,
+          })
         } else if (data.error === "Token expirado") {
-          setStatus("expired")
-          setMessage("O link de verificação expirou.")
+          setVerification({
+            status: "expired",
+            message: "O link de verificação expirou.",
+            nextStep: "login",
+          })
         } else {
-          setStatus("error")
-          setMessage(data.error || "Erro ao verificar email")
+          setVerification({
+            status: "error",
+            message: data.error || "Erro ao verificar email",
+            nextStep: "login",
+          })
         }
       } catch {
-        setStatus("error")
-        setMessage("Erro ao verificar email")
+        setVerification({
+          status: "error",
+          message: "Erro ao verificar email",
+          nextStep: "login",
+        })
       }
     }
 
@@ -63,15 +88,15 @@ export default function VerificarTokenPage({
   }, [resolvedParams.token])
 
   function handleContinue() {
-    router.push(redirectUrl)
+    push(redirectUrlRef.current)
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
       </div>
@@ -98,19 +123,19 @@ export default function VerificarTokenPage({
 
           {/* Status icon */}
           <div className="flex justify-center mb-4">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
+            <div className={`size-20 rounded-full flex items-center justify-center ${
               status === "loading" ? "bg-orange-500/10" :
               status === "success" ? "bg-green-500/10" :
               "bg-red-500/10"
             }`}>
               {status === "loading" && (
-                <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+                <Loader2 className="size-10 text-orange-500 animate-spin" />
               )}
               {status === "success" && (
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
+                <CheckCircle2 className="size-10 text-green-500" />
               )}
               {(status === "error" || status === "expired") && (
-                <XCircle className="h-10 w-10 text-red-500" />
+                <XCircle className="size-10 text-red-500" />
               )}
             </div>
           </div>
@@ -150,7 +175,7 @@ export default function VerificarTokenPage({
                 {nextStep === "login" && "Fazer login"}
                 {nextStep === "complete_profile" && "Completar perfil"}
                 {nextStep === "complete_anamnese" && "Abrir anamnese"}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="size-4" />
               </span>
             </Button>
           )}

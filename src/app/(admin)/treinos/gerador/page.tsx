@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +28,11 @@ import { cn } from '@/lib/utils';
 import {
     addExercise as addExerciseEditor,
     addSession as addSessionEditor,
+    createEditorSessionsFromExercises,
     type ExerciseField,
+    getFullSessionName,
     loadExerciseHistory,
+    mergeExerciseHistory,
     removeExercise as removeExerciseEditor,
     reindexSessions as reindexSessionsEditor,
     saveExerciseHistory,
@@ -37,11 +41,11 @@ import {
 import { formatTreinoDate, isValidTreinoDate } from '@/lib/dates';
 import { sortByTextPtBr } from '@/lib/select-options';
 import type {
-    TreinoEditorExercise,
     TreinoEditorSession,
     TreinoTemplate,
 } from '@/domain/treino';
-import { readResponseErrorMessage } from '@/lib/http';
+import { fetchWithTimeout, LONG_RUNNING_FETCH_TIMEOUT_MS, readResponseErrorMessage } from '@/lib/http';
+import { fetcher } from '@/lib/fetcher';
 
 type Member = {
     id: string;
@@ -50,81 +54,66 @@ type Member = {
     };
 };
 
+function createInitialSessions(): TreinoEditorSession[] {
+    return [{ id: crypto.randomUUID(), name: 'A', description: '', exercises: [] }];
+}
+
+function loadInitialExerciseHistory(): string[] {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+
+    const { history, stored, parsed } = loadExerciseHistory(localStorage, (error) => {
+        console.error('Failed to parse exercise history', error);
+    });
+
+    return stored && parsed ? history : [];
+}
+
+const subscribeMounted = () => () => {};
+const getMountedSnapshot = () => true;
+const getServerMountedSnapshot = () => false;
+
 export default function TrainingPlanGeneratorPage() {
-    const router = useRouter();
+    return useTrainingPlanGeneratorPage();
+}
+
+function useTrainingPlanGeneratorPage() {
+    const { push } = useRouter();
     const [selectedMemberId, setSelectedMemberId] = useState('');
-    const [members, setMembers] = useState<Member[]>([]);
-    const [membersLoading, setMembersLoading] = useState(true);
     const [memberSelectOpen, setMemberSelectOpen] = useState(false);
-    const [templates, setTemplates] = useState<TreinoTemplate[]>([]);
-    const [templatesLoading, setTemplatesLoading] = useState(true);
     const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
     const [date, setDate] = useState('');
     const [observacoes, setObservacoes] = useState('');
-    const [sessions, setSessions] = useState<TreinoEditorSession[]>([]);
-    const [exerciseHistory, setExerciseHistory] = useState<string[]>([]);
-    const [mounted, setMounted] = useState(false);
+    const [sessions, setSessions] = useState<TreinoEditorSession[]>(createInitialSessions);
+    const [exerciseHistory, setExerciseHistory] = useState<string[]>(loadInitialExerciseHistory);
+    const mounted = useSyncExternalStore(
+        subscribeMounted,
+        getMountedSnapshot,
+        getServerMountedSnapshot
+    );
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const { data: membersData, isLoading: membersLoading } = useSWR<Member[] | { membros?: Member[] }>(
+        '/api/membros?status=ATIVO&fields=compact',
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+    const { data: templatesData = [], isLoading: templatesLoading } = useSWR<TreinoTemplate[]>(
+        '/api/treinos/templates',
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+    const memberOptions = sortByTextPtBr(
+        Array.isArray(membersData) ? membersData : membersData?.membros || [],
+        (member) => member.usuario.nome
+    );
+    const templateOptions = sortByTextPtBr(templatesData, (template) => template.nome);
 
-    // Load members
-    useEffect(() => {
-        const fetchMembers = async () => {
-            try {
-                const response = await fetch('/api/membros?status=ATIVO&fields=compact');
-                if (response.ok) {
-                    const data = await response.json() as Member[] | { membros?: Member[] };
-                    const loadedMembers = Array.isArray(data) ? data : data.membros || [];
-                    setMembers(sortByTextPtBr(loadedMembers, (member) => member.usuario.nome));
-                }
-            } catch (error) {
-                console.error('Error loading members:', error);
-            } finally {
-                setMembersLoading(false);
-            }
-        };
-        fetchMembers();
-    }, []);
-
-    useEffect(() => {
-        const fetchTemplates = async () => {
-            try {
-                const response = await fetch('/api/treinos/templates');
-                if (response.ok) {
-                    const data: TreinoTemplate[] = await response.json();
-                    const loadedTemplates = data || [];
-                    setTemplates(sortByTextPtBr(loadedTemplates, (template) => template.nome));
-                }
-            } catch (error) {
-                console.error('Error loading templates:', error);
-            } finally {
-                setTemplatesLoading(false);
-            }
-        };
-        fetchTemplates();
-    }, []);
-
-    // Initialize
-    useEffect(() => {
-        setMounted(true);
-        // Load history
-        const { history, stored, parsed } = loadExerciseHistory(localStorage, (error) => {
-            console.error('Failed to parse exercise history', error);
-        });
-        if (stored && parsed) {
-            setExerciseHistory(history);
-        }
-
-        // Initial session
-        setSessions([
-            { id: crypto.randomUUID(), name: 'A', description: '', exercises: [] }
-        ]);
-    }, []);
-
-    const selectedMember = members.find(m => m.id === selectedMemberId);
-    const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+    const selectedMember = memberOptions.find(m => m.id === selectedMemberId);
+    const selectedTemplate = templateOptions.find(t => t.id === selectedTemplateId);
 
     const addSession = () => {
         const nextLetter = String.fromCharCode(65 + sessions.length); // A, B, C...
@@ -153,43 +142,7 @@ export default function TrainingPlanGeneratorPage() {
     };
 
     const applyTemplate = (template: TreinoTemplate) => {
-        const sessionsMap = new Map<string, TreinoEditorExercise[]>();
-        template.exercicios.forEach((ex) => {
-            const exercises = sessionsMap.get(ex.sessao) || [];
-            exercises.push({
-                id: crypto.randomUUID(),
-                name: ex.nome,
-                sets: ex.series,
-                reps: ex.repeticoes,
-            });
-            sessionsMap.set(ex.sessao, exercises);
-        });
-
-        const parseSessionName = (fullName: string): { letter: string; description: string } => {
-            const match = fullName.match(/^([A-Z])(?:\s*-\s*(.*))?$/);
-            if (match) {
-                return { letter: match[1], description: match[2] || '' };
-            }
-            return { letter: fullName.charAt(0) || 'A', description: '' };
-        };
-
-        const loadedSessions: TreinoEditorSession[] = Array.from(sessionsMap.entries())
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([fullName, exercises]) => {
-                const { letter, description } = parseSessionName(fullName);
-                return {
-                    id: crypto.randomUUID(),
-                    name: letter,
-                    description,
-                    exercises,
-                };
-            });
-
-        if (loadedSessions.length === 0) {
-            loadedSessions.push({ id: crypto.randomUUID(), name: 'A', description: '', exercises: [] });
-        }
-
-        setSessions(loadedSessions);
+        setSessions(createEditorSessionsFromExercises(template.exercicios, () => crypto.randomUUID()));
         setObservacoes(template.observacoes || '');
         setSelectedTemplateId(template.id);
         toast.success('Template aplicado!');
@@ -252,46 +205,39 @@ export default function TrainingPlanGeneratorPage() {
 
     // Helper to save all current exercise names to history
     const saveAllToHistory = () => {
-        // Use Set for O(1) lookup instead of O(n) array.includes()
-        const historySet = new Set(exerciseHistory);
-        let changed = false;
-        sessions.forEach(s => {
-            s.exercises.forEach(e => {
-                const trimmed = e.name.trim();
-                if (trimmed && !historySet.has(trimmed)) {
-                    historySet.add(trimmed);
-                    changed = true;
-                }
-            });
-        });
-
+        const { history: newHistory, changed } = mergeExerciseHistory(exerciseHistory, sessions);
         if (changed) {
-            // Use toSorted() for immutable sort
-            const newHistory = [...historySet].toSorted();
             setExerciseHistory(newHistory);
             saveExerciseHistory(localStorage, newHistory);
         }
     };
 
-    // Get full session name combining letter and description
-    const getFullSessionName = (session: TreinoEditorSession) => {
-        return session.description.trim()
-            ? `${session.name} - ${session.description.trim()}`
-            : session.name;
-    };
-
     // Get data for API calls
     const getTrainingData = () => {
-        const validSessions = sessions
-            .map(s => ({
-                name: getFullSessionName(s),
-                exercises: s.exercises.filter(e => e.name.trim()).map(e => ({
+        const validSessions = sessions.reduce<Array<{ name: string; exercises: Array<{ name: string; sets: string; reps: string }> }>>((acc, s) => {
+            const exercises = s.exercises.reduce<Array<{ name: string; sets: string; reps: string }>>((exerciseAcc, e) => {
+                if (!e.name.trim()) {
+                    return exerciseAcc;
+                }
+
+                exerciseAcc.push({
                     name: e.name,
                     sets: e.sets,
                     reps: e.reps,
-                })),
-            }))
-            .filter(s => s.exercises.length > 0);
+                });
+
+                return exerciseAcc;
+            }, []);
+
+            if (exercises.length > 0) {
+                acc.push({
+                    name: getFullSessionName(s),
+                    exercises,
+                });
+            }
+
+            return acc;
+        }, []);
 
         return {
             aluno: selectedMember?.usuario.nome || '',
@@ -310,12 +256,13 @@ export default function TrainingPlanGeneratorPage() {
 
         try {
             const data = getTrainingData();
-            const response = await fetch('/api/treinos/gerar-pdf', {
+            const response = await fetchWithTimeout('/api/treinos/gerar-pdf', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
+                timeoutMs: LONG_RUNNING_FETCH_TIMEOUT_MS,
             });
 
             if (!response.ok) {
@@ -372,7 +319,7 @@ export default function TrainingPlanGeneratorPage() {
                 });
             });
 
-            const saveResponse = await fetch('/api/treinos', {
+            const saveResponse = await fetchWithTimeout('/api/treinos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -394,12 +341,13 @@ export default function TrainingPlanGeneratorPage() {
 
             // Then generate PDF
             const data = getTrainingData();
-            const pdfResponse = await fetch('/api/treinos/gerar-pdf', {
+            const pdfResponse = await fetchWithTimeout('/api/treinos/gerar-pdf', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
+                timeoutMs: LONG_RUNNING_FETCH_TIMEOUT_MS,
             });
 
             if (pdfResponse.ok) {
@@ -415,7 +363,7 @@ export default function TrainingPlanGeneratorPage() {
                 toast.success('PDF gerado!');
             }
 
-            router.push('/treinos');
+            push('/treinos');
         } catch (error) {
             console.error('Error:', error);
             toast.error(error instanceof Error ? error.message : 'Erro ao processar');
@@ -446,9 +394,9 @@ export default function TrainingPlanGeneratorPage() {
                         onClick={handleGeneratePDF}
                     >
                         {isGenerating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" />
                         ) : (
-                            <Printer className="h-4 w-4" />
+                            <Printer className="size-4" />
                         )}
                         Apenas PDF
                     </Button>
@@ -459,11 +407,11 @@ export default function TrainingPlanGeneratorPage() {
                         onClick={handleSaveAndPrint}
                     >
                         {isSaving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" />
                         ) : (
-                            <Save className="h-4 w-4" />
+                            <Save className="size-4" />
                         )}
-                        {isSaving ? 'Salvando...' : 'Salvar e Imprimir'}
+                        {isSaving ? 'Salvando…' : 'Salvar e Imprimir'}
                     </Button>
                 </div>
             </div>
@@ -475,7 +423,7 @@ export default function TrainingPlanGeneratorPage() {
                 <CardContent className="pt-6">
                     <div className="space-y-2">
                         <Label className="font-medium text-base flex items-center gap-2">
-                            <Bookmark className="h-4 w-4" />
+                            <Bookmark className="size-4" />
                             Template
                         </Label>
                         <Popover open={templateSelectOpen} onOpenChange={setTemplateSelectOpen}>
@@ -484,28 +432,29 @@ export default function TrainingPlanGeneratorPage() {
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={templateSelectOpen}
+                                    aria-controls="template-select-list"
                                     className="w-full justify-between bg-background"
-                                    disabled={templatesLoading || templates.length === 0}
+                                    disabled={templatesLoading || templateOptions.length === 0}
                                 >
                                     {templatesLoading ? (
-                                        <span className="text-muted-foreground">Carregando...</span>
+                                        <span className="text-muted-foreground">Carregando…</span>
                                     ) : selectedTemplate ? (
                                         selectedTemplate.nome
-                                    ) : templates.length === 0 ? (
+                                    ) : templateOptions.length === 0 ? (
                                         <span className="text-muted-foreground">Nenhum template cadastrado</span>
                                     ) : (
-                                        <span className="text-muted-foreground">Selecione um template...</span>
+                                        <span className="text-muted-foreground">Selecione um template…</span>
                                     )}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-full p-0" align="start">
                                 <Command>
                                     <CommandInput placeholder="Buscar template..." />
-                                    <CommandList>
+                                    <CommandList id="template-select-list">
                                         <CommandEmpty>Nenhum template encontrado.</CommandEmpty>
                                         <CommandGroup>
-                                            {templates.map((template) => (
+                                            {templateOptions.map((template) => (
                                                 <CommandItem
                                                     key={template.id}
                                                     value={template.nome}
@@ -516,7 +465,7 @@ export default function TrainingPlanGeneratorPage() {
                                                 >
                                                     <Check
                                                         className={cn(
-                                                            "mr-2 h-4 w-4",
+                                                            "mr-2 size-4",
                                                             selectedTemplateId === template.id ? "opacity-100" : "opacity-0"
                                                         )}
                                                     />
@@ -536,7 +485,7 @@ export default function TrainingPlanGeneratorPage() {
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label className="font-medium text-base flex items-center gap-2">
-                                <User className="h-4 w-4" />
+                                <User className="size-4" />
                                 Aluno
                             </Label>
                             <Popover open={memberSelectOpen} onOpenChange={setMemberSelectOpen}>
@@ -545,26 +494,27 @@ export default function TrainingPlanGeneratorPage() {
                                         variant="outline"
                                         role="combobox"
                                         aria-expanded={memberSelectOpen}
+                                        aria-controls="member-select-list"
                                         className="w-full justify-between bg-background"
                                         disabled={membersLoading}
                                     >
                                         {membersLoading ? (
-                                            <span className="text-muted-foreground">Carregando...</span>
+                                            <span className="text-muted-foreground">Carregando…</span>
                                         ) : selectedMember ? (
                                             selectedMember.usuario.nome
                                         ) : (
-                                            <span className="text-muted-foreground">Selecione o aluno...</span>
+                                            <span className="text-muted-foreground">Selecione o aluno…</span>
                                         )}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                     <Command>
                                         <CommandInput placeholder="Buscar aluno..." />
-                                        <CommandList>
+                                        <CommandList id="member-select-list">
                                             <CommandEmpty>Nenhum aluno encontrado.</CommandEmpty>
                                             <CommandGroup>
-                                                {members.map((member) => (
+                                                {memberOptions.map((member) => (
                                                     <CommandItem
                                                         key={member.id}
                                                         value={member.usuario.nome}
@@ -575,7 +525,7 @@ export default function TrainingPlanGeneratorPage() {
                                                     >
                                                         <Check
                                                             className={cn(
-                                                                "mr-2 h-4 w-4",
+                                                                "mr-2 size-4",
                                                                 selectedMemberId === member.id ? "opacity-100" : "opacity-0"
                                                             )}
                                                         />
@@ -590,7 +540,7 @@ export default function TrainingPlanGeneratorPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="date" className="font-medium text-base flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                                <Calendar className="size-4" />
                                 Data
                             </Label>
                             <Input
@@ -613,7 +563,7 @@ export default function TrainingPlanGeneratorPage() {
                     </div>
                     <div className="mt-6 space-y-2">
                         <Label htmlFor="observacoes" className="font-medium text-base flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
+                            <FileText className="size-4" />
                             Observações
                         </Label>
                         <Textarea
@@ -629,7 +579,7 @@ export default function TrainingPlanGeneratorPage() {
 
             <div className="grid grid-cols-1 gap-6">
                 {sessions.map((session) => (
-                    <Card key={session.id} className="relative overflow-hidden border-l-4 border-l-primary">
+                    <Card key={session.id} className="relative overflow-hidden shadow-[inset_4px_0_0_hsl(var(--primary))]">
                         <div className="absolute top-0 right-0 p-4">
                             <Button
                                 variant="ghost"
@@ -638,13 +588,13 @@ export default function TrainingPlanGeneratorPage() {
                                 onClick={() => removeSession(session.id)}
                                 title="Remover Treino"
                             >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="size-4" />
                             </Button>
                         </div>
 
                         <CardHeader className="bg-muted/30 pb-4">
                             <CardTitle className="flex items-center gap-2 text-xl">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                     {session.name}
                                 </div>
                                 <span className="whitespace-nowrap">Treino {session.name}</span>
@@ -661,7 +611,7 @@ export default function TrainingPlanGeneratorPage() {
                         <CardContent className="pt-6 space-y-4">
                             {session.exercises.length === 0 ? (
                                 <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                                    <Dumbbell className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                                    <Dumbbell className="mx-auto size-8 mb-2 opacity-50" />
                                     <p>Nenhum exercício adicionado ainda.</p>
                                 </div>
                             ) : (
@@ -714,10 +664,10 @@ export default function TrainingPlanGeneratorPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="text-muted-foreground hover:text-destructive h-9 w-9"
+                                                    className="text-muted-foreground hover:text-destructive size-9"
                                                     onClick={() => removeExercise(session.id, exercise.id)}
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="size-4" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -730,7 +680,7 @@ export default function TrainingPlanGeneratorPage() {
                                 className="w-full border-dashed"
                                 onClick={() => addExercise(session.id)}
                             >
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="mr-2 size-4" />
                                 Adicionar Exercício
                             </Button>
                         </CardContent>
@@ -743,15 +693,15 @@ export default function TrainingPlanGeneratorPage() {
                     className="w-full py-8 text-lg font-medium border-2 border-dashed"
                     onClick={addSession}
                 >
-                    <Plus className="mr-2 h-6 w-6" />
+                    <Plus className="mr-2 size-6" />
                     Adicionar Novo Treino
                 </Button>
             </div>
 
             {/* Datalist for Autocomplete */}
             <datalist id="exercises-list">
-                {exerciseHistory.map((name, i) => (
-                    <option key={i} value={name} />
+                {exerciseHistory.map((name) => (
+                    <option key={name} value={name}>{name}</option>
                 ))}
             </datalist>
         </div>

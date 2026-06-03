@@ -92,7 +92,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
         <div className="flex items-center gap-4">
           <Link href="/treinos">
             <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="size-5" />
             </Button>
           </Link>
           <div>
@@ -105,13 +105,13 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
           <TreinoTemplateButton treinoId={treino.id} defaultName={templateDefaultName} />
           <Link href={`/treinos/${treino.id}/editar`}>
             <Button variant="outline" className="gap-2">
-              <Edit className="h-4 w-4" />
+              <Edit className="size-4" />
               Editar
             </Button>
           </Link>
           <Link href={`/api/treinos/${treino.id}/pdf`}>
             <Button className="gap-2">
-              <Printer className="h-4 w-4" />
+              <Printer className="size-4" />
               Imprimir
             </Button>
           </Link>
@@ -126,14 +126,14 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <User className="h-4 w-4" />
+                <User className="size-4" />
                 Aluno
               </p>
               <p className="text-lg font-semibold">{treino.membro.usuario.nome}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="size-4" />
                 Data
               </p>
               <p className="text-lg font-semibold">
@@ -142,7 +142,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Dumbbell className="h-4 w-4" />
+                <Dumbbell className="size-4" />
                 Total de Exercícios
               </p>
               <p className="text-lg font-semibold">{treino.exercicios.length} exercícios</p>
@@ -169,10 +169,10 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
           // Extract just the letter from session name (e.g., "A - Costas" → "A")
           const sessionLetter = sessao.charAt(0)
           return (
-          <Card key={sessao} className="relative overflow-hidden border-l-4 border-l-primary">
+          <Card key={sessao} className="relative overflow-hidden shadow-[inset_4px_0_0_hsl(var(--primary))]">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm">
+                <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-sm">
                   {sessionLetter}
                 </div>
                 Treino {sessao}
@@ -198,7 +198,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
                     className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-card md:bg-transparent p-3 md:p-2 rounded-lg border md:border-0 shadow-sm md:shadow-none hover:bg-muted/50 transition-colors"
                   >
                     <div className="col-span-1 md:col-span-6 w-full flex items-center gap-3">
-                      <span className="hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                      <span className="hidden md:flex items-center justify-center size-6 rounded-full bg-muted text-muted-foreground text-xs font-medium">
                         {index + 1}
                       </span>
                       <div>
@@ -229,7 +229,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
       {sessoes.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-16 text-center">
-            <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <Dumbbell className="size-12 mx-auto text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground">
               Nenhum exercício cadastrado neste treino.
             </p>
