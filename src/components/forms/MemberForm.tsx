@@ -8,6 +8,7 @@ import useSWR from "swr"
 import * as z from "zod"
 import { toast } from "sonner"
 import { fetcher } from "@/lib/fetcher"
+import { fetchJson } from "@/lib/http"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -113,7 +114,11 @@ function getDefaultValues(initialData?: {
   }
 }
 
-export function MemberForm({
+export function MemberForm(props: Parameters<typeof useMemberForm>[0]) {
+  return useMemberForm(props)
+}
+
+function useMemberForm({
   initialData,
   mode = 'create'
 }: {
@@ -138,7 +143,7 @@ export function MemberForm({
   },
   mode?: 'create' | 'edit'
 }) {
-  const router = useRouter()
+  const { back, push, refresh } = useRouter()
   const [loading, setLoading] = useState(false)
   const [sendingResetLink, setSendingResetLink] = useState(false)
   // Use SWR for planos with long cache (rarely changes)
@@ -213,23 +218,14 @@ export function MemberForm({
         body.cpf = null // Enviar null se vazio para permitir CPF opcional
       }
 
-      const response = await fetch(url, {
+      await fetchJson(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Ocorreu um erro ao processar sua solicitação.")
-      }
+        json: body,
+      }, "Ocorreu um erro ao processar sua solicitação.")
 
       toast.success(mode === 'create' ? "Aluno cadastrado com sucesso!" : "Dados do aluno atualizados com sucesso!")
-      router.push(mode === 'create' ? "/alunos" : `/alunos/${initialData!.id}`)
-      router.refresh()
+      push(mode === 'create' ? "/alunos" : `/alunos/${initialData!.id}`)
+      refresh()
     } catch (error) {
       console.error("Erro no formulário:", error)
       const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro inesperado. Tente novamente."
@@ -264,17 +260,10 @@ export function MemberForm({
 
     setSendingResetLink(true)
     try {
-      const response = await fetch("/api/auth/enviar-reset-senha", {
+      await fetchJson("/api/auth/enviar-reset-senha", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuarioId: initialData.usuarioId }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao enviar link")
-      }
+        json: { usuarioId: initialData.usuarioId },
+      }, "Erro ao enviar link")
 
       toast.success("Link de redefinição de senha enviado para o email do aluno!")
     } catch (error) {
@@ -479,7 +468,7 @@ export function MemberForm({
 
                             return (
                               <span className="flex items-center gap-2">
-                                <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                                <span className={`size-1.5 rounded-full ${dotClass}`} />
                                 {option.label}
                               </span>
                             )
@@ -611,13 +600,13 @@ export function MemberForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={() => back()}
                 disabled={loading}
               >
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : (mode === 'create' ? "Cadastrar Aluno" : "Salvar Alterações")}
+                {loading ? "Salvando…" : (mode === 'create' ? "Cadastrar Aluno" : "Salvar Alterações")}
               </Button>
             </div>
           </form>

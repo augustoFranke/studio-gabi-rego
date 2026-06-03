@@ -1,16 +1,18 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { validateRuntimeConfig } = await import(
-      "@/lib/runtime-config"
-    )
-    const { logInfo, logError, logWarn } = await import(
-      "@/lib/observability/logger"
-    )
-    const {
-      RUNTIME_CONFIG_VALID,
-      RUNTIME_CONFIG_INVALID,
-      RUNTIME_CONFIG_DEGRADED,
-    } = await import("@/lib/observability/events")
+    const [
+      { validateRuntimeConfig },
+      { logInfo, logError, logWarn },
+      {
+        RUNTIME_CONFIG_VALID,
+        RUNTIME_CONFIG_INVALID,
+        RUNTIME_CONFIG_DEGRADED,
+      },
+    ] = await Promise.all([
+      import("@/lib/runtime-config"),
+      import("@/lib/observability/logger"),
+      import("@/lib/observability/events"),
+    ])
 
     const result = validateRuntimeConfig()
 

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 interface PaginationProps {
     currentPage: number
@@ -10,8 +11,8 @@ interface PaginationProps {
     className?: string
 }
 
-export function Pagination({ currentPage, totalPages, className }: PaginationProps) {
-    const router = useRouter()
+function PaginationContent({ currentPage, totalPages, className }: PaginationProps) {
+    const { push } = useRouter()
     const searchParams = useSearchParams()
 
     const createPageURL = (pageNumber: number | string) => {
@@ -21,7 +22,7 @@ export function Pagination({ currentPage, totalPages, className }: PaginationPro
     }
 
     const navigateToPage = (pageNumber: number) => {
-        router.push(createPageURL(pageNumber))
+        push(createPageURL(pageNumber))
     }
 
     return (
@@ -29,44 +30,52 @@ export function Pagination({ currentPage, totalPages, className }: PaginationPro
             <div className="flex-1 text-sm text-muted-foreground">
                 Página {currentPage} de {totalPages}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-x-2">
                 <Button
                     variant="outline"
-                    className="h-8 w-8 p-0 lg:flex"
+                    className="size-8 p-0 lg:flex"
                     onClick={() => navigateToPage(1)}
                     disabled={currentPage === 1}
                 >
                     <span className="sr-only">Primeira página</span>
-                    <ChevronsLeft className="h-4 w-4" />
+                    <ChevronsLeft className="size-4" />
                 </Button>
                 <Button
                     variant="outline"
-                    className="h-8 w-8 p-0"
+                    className="size-8 p-0"
                     onClick={() => navigateToPage(currentPage - 1)}
                     disabled={currentPage === 1}
                 >
                     <span className="sr-only">Página anterior</span>
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="size-4" />
                 </Button>
                 <Button
                     variant="outline"
-                    className="h-8 w-8 p-0"
+                    className="size-8 p-0"
                     onClick={() => navigateToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
                 >
                     <span className="sr-only">Próxima página</span>
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="size-4" />
                 </Button>
                 <Button
                     variant="outline"
-                    className="h-8 w-8 p-0 lg:flex"
+                    className="size-8 p-0 lg:flex"
                     onClick={() => navigateToPage(totalPages)}
                     disabled={currentPage === totalPages}
                 >
                     <span className="sr-only">Última página</span>
-                    <ChevronsRight className="h-4 w-4" />
+                    <ChevronsRight className="size-4" />
                 </Button>
             </div>
         </div>
+    )
+}
+
+export function Pagination(props: PaginationProps) {
+    return (
+        <Suspense>
+            <PaginationContent {...props} />
+        </Suspense>
     )
 }

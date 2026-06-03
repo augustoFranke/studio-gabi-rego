@@ -52,7 +52,7 @@ export default async function TreinosPage() {
         </div>
         <Link href="/treinos/gerador">
           <Button>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 size-4" />
             Novo Treino
           </Button>
         </Link>
@@ -62,8 +62,8 @@ export default async function TreinosPage() {
         <Card className="border-primary/10">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Dumbbell className="h-5 w-5 text-primary" />
+              <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Dumbbell className="size-5 text-primary" />
               </div>
               <div>
                 <CardTitle>Fichas de Treino</CardTitle>
@@ -75,8 +75,8 @@ export default async function TreinosPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Dumbbell className="h-8 w-8 text-primary" />
+              <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Dumbbell className="size-8 text-primary" />
               </div>
               <p className="text-muted-foreground text-center">
                 Nenhuma ficha de treino cadastrada.
@@ -114,7 +114,7 @@ export default async function TreinosPage() {
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="secondary">{treino.exercicios.length} exercícios</Badge>
                           <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
+                            <Calendar className="size-3" />
                             {displayDate}
                           </span>
                         </div>
@@ -140,7 +140,7 @@ export default async function TreinosPage() {
                         </Button>
                         <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">
                           <Link href={`/api/treinos/${treino.id}/pdf`}>
-                            <Printer className="h-4 w-4" />
+                            <Printer className="size-4" />
                             <span className="sr-only">Baixar PDF</span>
                           </Link>
                         </Button>

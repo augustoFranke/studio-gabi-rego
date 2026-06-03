@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { AuthThemeBackdrop } from "@/components/auth-theme-backdrop"
 import Image from "next/image"
 
+const COPYRIGHT_YEAR = 2026
+
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const searchParams = useSearchParams()
@@ -90,7 +92,7 @@ function LoginContent() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Email
               </Label>
               <Input
@@ -105,7 +107,7 @@ function LoginContent() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Senha
               </Label>
               <Input
@@ -125,8 +127,8 @@ function LoginContent() {
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Entrando...
+                  <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Entrando…
                 </span>
               ) : (
                 "Entrar"
@@ -137,7 +139,7 @@ function LoginContent() {
           {/* Decorative divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50" />
+            <div className="size-1.5 rounded-full bg-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 
@@ -149,7 +151,7 @@ function LoginContent() {
               </Link>
             </p>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+              © {COPYRIGHT_YEAR} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
             </p>
           </div>
         </CardContent>
@@ -162,7 +164,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
       <LoginContent />

@@ -110,7 +110,7 @@ const TimeSlotBase = function TimeSlot({
                   type="button"
                   className="text-xs text-muted-foreground px-1.5 py-0.5 hover:bg-accent rounded transition-colors flex items-center gap-0.5"
                 >
-                  <Users className="h-3 w-3" />
+                  <Users className="size-3" />
                   +{agendamentos.length - 3}
                 </button>
               </TimeSlotPopover>
@@ -122,17 +122,18 @@ const TimeSlotBase = function TimeSlot({
                 className="p-1 text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors flex items-center justify-center"
                 aria-label="Adicionar agendamento"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="size-3" />
               </button>
             )}
           </div>
         ) : (
           isEditable && (
             <button
+              type="button"
               onClick={handleSlotClick}
               className="w-full h-full min-h-[32px] flex items-center justify-center text-muted-foreground hover:bg-accent rounded transition-colors"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="size-3" />
             </button>
           )
         )}
@@ -181,17 +182,18 @@ const TimeSlotBase = function TimeSlot({
                 onClick={handleSlotClick}
                 className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:bg-accent rounded border border-dashed border-muted-foreground/30 transition-colors"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="size-3" />
                 <span>Adicionar</span>
               </button>
             )}
           </div>
         ) : isEditable ? (
           <button
+            type="button"
             onClick={handleSlotClick}
             className="w-full h-full min-h-[44px] flex items-center justify-center text-muted-foreground hover:bg-accent rounded-lg border-2 border-dashed border-muted-foreground/20 transition-colors"
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="size-4 mr-1" />
             <span className="text-sm">Adicionar</span>
           </button>
         ) : (

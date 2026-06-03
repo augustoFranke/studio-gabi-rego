@@ -3,6 +3,8 @@
  * Provides consistent error handling and response parsing
  */
 
+import { fetchWithTimeout } from '@/lib/http'
+
 export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[]
 
@@ -19,7 +21,7 @@ export class FetchError extends Error {
 }
 
 export const fetcher = async <T>(url: string): Promise<T> => {
-  const res = await fetch(url)
+  const res = await fetchWithTimeout(url)
 
   if (!res.ok) {
     let info: string | JsonValue

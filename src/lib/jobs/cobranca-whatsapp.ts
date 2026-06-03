@@ -118,19 +118,17 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
 
   const vencimento = formatBrFromYmd(targetYmd)
 
-  for (const [membroId, items] of grouped.entries()) {
+  const results = await Promise.all(Array.from(grouped.entries()).map(async ([membroId, items]) => {
     const membro = items[0]?.membro
     if (!membro) {
-      summary.skipped += 1
-      continue
+      return { sent: 0, skipped: 1, failed: 0 }
     }
     const nome = membro.usuario?.nome || 'Aluno(a)'
     const telefone = membro.telefone || ''
     const numero = formatWhatsappNumber(telefone, getCountryCode())
 
     if (!numero) {
-      summary.skipped += 1
-      continue
+      return { sent: 0, skipped: 1, failed: 0 }
     }
 
     const mensagem = buildMensagem(nome, items, vencimento)
@@ -154,8 +152,7 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
     })
 
     if (isNotificationDelivered(existingNotificacao)) {
-      summary.skipped += 1
-      continue
+      return { sent: 0, skipped: 1, failed: 0 }
     }
 
     const notificacao = await createOrRefreshNotification({
@@ -174,11 +171,17 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
     try {
       await sendWhatsappText({ to: numero, text: mensagem })
       await markNotificationDelivered(notificacao)
-      summary.sent += 1
+      return { sent: 1, skipped: 0, failed: 0 }
     } catch (error) {
       await markNotificationFailed(notificacao, error)
-      summary.failed += 1
+      return { sent: 0, skipped: 0, failed: 1 }
     }
+  }))
+
+  for (const result of results) {
+    summary.sent += result.sent
+    summary.skipped += result.skipped
+    summary.failed += result.failed
   }
 
   return summary
