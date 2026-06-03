@@ -46,8 +46,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    const { id } = await params
-    const rawBody = await request.text()
+    const [{ id }, rawBody] = await Promise.all([params, request.text()])
     let body: unknown = {}
     if (rawBody) {
       try {
@@ -84,8 +83,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    const { id } = await params
-    const rawBody = await request.text()
+    const [{ id }, rawBody] = await Promise.all([params, request.text()])
     let body: unknown = {}
     if (rawBody) {
       try {

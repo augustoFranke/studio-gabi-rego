@@ -75,7 +75,7 @@ export function DayDetailModal({
                         </span>
                     </DialogTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
+                        <Users className="size-4" />
                         <span>
                             {agendamentos.length} {agendamentos.length === 1 ? 'aula agendada' : 'aulas agendadas'}
                         </span>
@@ -85,7 +85,7 @@ export function DayDetailModal({
                 <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
                     {hoursWithAgendamentos.length === 0 ? (
                         <div className="py-12 text-center text-muted-foreground">
-                            <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <Clock className="size-12 mx-auto mb-3 opacity-50" />
                             <p>Nenhuma aula agendada para este dia</p>
                         </div>
                     ) : (
@@ -101,7 +101,7 @@ export function DayDetailModal({
                                     >
                                         <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b">
                                             <div className="flex items-center gap-2">
-                                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                                <Clock className="size-4 text-muted-foreground" />
                                                 <span className="font-medium">{hourLabel}</span>
                                             </div>
                                             <Badge variant="secondary" className="text-xs">
@@ -116,6 +116,7 @@ export function DayDetailModal({
 
                                                 return (
                                                     <button
+                                                        type="button"
                                                         key={agendamento.id}
                                                         onClick={() => onMemberClick?.(agendamento)}
                                                         className={cn(
@@ -124,7 +125,7 @@ export function DayDetailModal({
                                                             onMemberClick && 'cursor-pointer'
                                                         )}
                                                     >
-                                                        <Avatar className="h-10 w-10 shrink-0">
+                                                        <Avatar className="size-10 shrink-0">
                                                             <AvatarImage
                                                                 src={agendamento.membro.fotoUrl || undefined}
                                                             />
@@ -146,7 +147,7 @@ export function DayDetailModal({
                                                                 status.bg
                                                             )}
                                                         >
-                                                            <StatusIcon className={cn('h-4 w-4', status.color)} />
+                                                            <StatusIcon className={cn('size-4', status.color)} />
                                                         </div>
                                                     </button>
                                                 )

@@ -77,7 +77,7 @@ export default async function EditarMembroPage({ params }: EditarMembroPageProps
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={`/alunos/${id}`}>
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="size-4" />
                     </Link>
                 </Button>
                 <div>

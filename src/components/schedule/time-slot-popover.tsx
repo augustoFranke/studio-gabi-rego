@@ -71,11 +71,11 @@ export function TimeSlotPopover({
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                     <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Clock className="size-4 text-muted-foreground" />
                         <span className="font-medium">{hourLabel}</span>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                        <Users className="h-3 w-3 mr-1" />
+                        <Users className="size-3 mr-1" />
                         {agendamentos.length}
                     </Badge>
                 </div>
@@ -88,6 +88,7 @@ export function TimeSlotPopover({
 
                         return (
                             <button
+                                type="button"
                                 key={agendamento.id}
                                 onClick={() => {
                                     onMemberClick?.(agendamento)
@@ -99,7 +100,7 @@ export function TimeSlotPopover({
                                     onMemberClick && 'cursor-pointer'
                                 )}
                             >
-                                <Avatar className="h-8 w-8 shrink-0">
+                                <Avatar className="size-8 shrink-0">
                                     <AvatarImage src={agendamento.membro.fotoUrl || undefined} />
                                     <AvatarFallback className="text-xs">
                                         {getInitials(agendamento.membro.usuario.nome)}
@@ -113,7 +114,7 @@ export function TimeSlotPopover({
                                 <div
                                     className={cn('p-1 rounded-full shrink-0', status.bg)}
                                 >
-                                    <StatusIcon className={cn('h-3 w-3', status.color)} />
+                                    <StatusIcon className={cn('size-3', status.color)} />
                                 </div>
                             </button>
                         )

@@ -99,3 +99,9 @@ utility/csv/
 /PROJECT_REVIEW.md
 /.specify/
 **/AGENTS.md
+
+# Local dev database (native postgres data dir)
+.localdb/
+
+# Playwright MCP artifacts
+.playwright-mcp/

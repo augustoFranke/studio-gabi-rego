@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useEffectEvent, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,8 +32,8 @@ interface AlunosFiltersProps {
   planos: PlanoOption[]
 }
 
-export function AlunosFilters({ search, status, plano, order, planos }: AlunosFiltersProps) {
-  const router = useRouter()
+function AlunosFiltersContent({ search, status, plano, order, planos }: AlunosFiltersProps) {
+  const { push } = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -95,8 +95,9 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
     if (nextQuery === currentQuery) {
       return
     }
-    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
-  }, [buildQuery, pathname, router, searchParams])
+    push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+  }, [buildQuery, pathname, push, searchParams])
+  const applyFiltersEvent = useEffectEvent(applyFilters)
 
   useEffect(() => {
     const currentSearch = searchParams.get("search") ?? ""
@@ -116,15 +117,15 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
     }
 
     const timer = setTimeout(() => {
-      applyFilters({ search: nextSearch, status: statusValue, plano: planoValue, order: orderValue })
+      applyFiltersEvent({ search: nextSearch, status: statusValue, plano: planoValue, order: orderValue })
     }, 300)
     return () => clearTimeout(timer)
-  }, [applyFilters, orderValue, planoValue, searchParams, searchValue, statusValue])
+  }, [searchParams, orderValue, planoValue, searchValue, statusValue])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative w-full md:w-64">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
         <Input
           name="search"
           placeholder="Nome, CPF ou Email..."
@@ -175,7 +176,7 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
 
           return (
             <span className="flex items-center gap-2">
-              <span className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+              <span className={cn("size-1.5 rounded-full", dotClass)} />
               {option.label}
             </span>
           )
@@ -209,10 +210,18 @@ export function AlunosFilters({ search, status, plano, order, planos }: AlunosFi
         type="button"
         variant="ghost"
         className="hover:text-primary"
-        onClick={() => router.push(pathname)}
+        onClick={() => push(pathname)}
       >
         Limpar
       </Button>
     </div>
+  )
+}
+
+export function AlunosFilters(props: AlunosFiltersProps) {
+  return (
+    <Suspense>
+      <AlunosFiltersContent {...props} />
+    </Suspense>
   )
 }

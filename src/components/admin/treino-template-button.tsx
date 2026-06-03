@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { readResponseErrorMessage } from "@/lib/http"
+import { fetchJson } from "@/lib/http"
 
 type TreinoTemplateButtonProps = {
   treinoId: string
@@ -28,12 +28,6 @@ export function TreinoTemplateButton({
   const [templateName, setTemplateName] = useState(defaultName)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    if (open) {
-      setTemplateName(defaultName)
-    }
-  }, [defaultName, open])
-
   const handleSave = async () => {
     const trimmed = templateName.trim()
     if (!trimmed) {
@@ -43,20 +37,13 @@ export function TreinoTemplateButton({
 
     setIsSaving(true)
     try {
-      const response = await fetch("/api/treinos/templates", {
+      await fetchJson("/api/treinos/templates", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        json: {
           fichaId: treinoId,
           nome: trimmed,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(await readResponseErrorMessage(response, "Erro ao salvar template"))
-      }
+        },
+      }, "Erro ao salvar template")
 
       toast.success("Template salvo com sucesso!")
       setOpen(false)
@@ -70,8 +57,15 @@ export function TreinoTemplateButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
-        <Bookmark className="h-4 w-4" />
+      <Button
+        variant="outline"
+        className="gap-2"
+        onClick={() => {
+          setTemplateName(defaultName)
+          setOpen(true)
+        }}
+      >
+        <Bookmark className="size-4" />
         Salvar como Template
       </Button>
       <DialogContent>
@@ -97,7 +91,7 @@ export function TreinoTemplateButton({
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isSaving || !templateName.trim()}>
-            {isSaving ? "Salvando..." : "Salvar template"}
+            {isSaving ? "Salvando…" : "Salvar template"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -10,6 +10,7 @@ import {
   PROVIDER_SEND_FAILED,
   PROVIDER_NOT_CONFIGURED,
 } from '@/lib/observability/events'
+import { fetchWithTimeout } from '@/lib/http'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const PROVIDER = 'resend'
@@ -84,7 +85,7 @@ export async function enviarEmail({
   try {
     const plainText = texto?.trim() ? texto : buildTextFallback(html)
 
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetchWithTimeout('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,6 +99,7 @@ export async function enviarEmail({
         html,
         text: plainText,
       }),
+      timeoutMs: 10_000,
     })
 
     if (!response.ok) {
