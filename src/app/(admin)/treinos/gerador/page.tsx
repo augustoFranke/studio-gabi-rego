@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText, Bookmark } from 'lucide-react';
