@@ -32,16 +32,11 @@ const EXTRA_ROWS = 3
 
 
 function getLogoPath(): string | null {
-  const possiblePaths = [
-    path.join(process.cwd(), 'public', 'logo-black.png'),
-    path.join(__dirname, '..', '..', 'public', 'logo-black.png'),
-  ]
-
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p
-    }
+  const logoPath = path.join(/* turbopackIgnore: true */ process.cwd(), 'public', 'logo-black.png')
+  if (fs.existsSync(logoPath)) {
+    return logoPath
   }
+
   return null
 }
 

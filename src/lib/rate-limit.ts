@@ -1,13 +1,21 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import { logError, logWarn } from "@/lib/observability/logger"
+import {
+  getRateLimitConfig,
+  isDevelopmentRuntime,
+  isProductionRuntime,
+  isTestRuntime,
+} from "@/lib/runtime-config"
 
-const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
-const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+const rateLimitConfig = getRateLimitConfig()
 
-const rateLimiter = UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN
+const rateLimiter = rateLimitConfig.url && rateLimitConfig.token
   ? new Ratelimit({
-      redis: Redis.fromEnv(),
+      redis: new Redis({
+        url: rateLimitConfig.url,
+        token: rateLimitConfig.token,
+      }),
       limiter: Ratelimit.slidingWindow(5, "1 m"),
     })
   : null
@@ -31,12 +39,12 @@ function getRequestIp(request: Request) {
 }
 
 export async function rateLimitByIp(request: Request, keyPrefix: string) {
-  if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
+  if (isTestRuntime()) {
     return { success: true }
   }
 
   if (!rateLimiter) {
-    if (process.env.NODE_ENV === "production") {
+    if (isProductionRuntime()) {
       logError("rate_limit_unavailable", {
         message:
           "CRITICAL: Rate limiter unavailable in production. Denying request. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
@@ -44,7 +52,7 @@ export async function rateLimitByIp(request: Request, keyPrefix: string) {
       return { success: false, error: "Rate limit unavailable" }
     }
 
-    if (process.env.NODE_ENV === "development") {
+    if (isDevelopmentRuntime()) {
       logWarn("rate_limit_unavailable", {
         message:
           "WARNING: Rate limiter unavailable in development. Allowing request (fail-open). Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
@@ -56,4 +64,10 @@ export async function rateLimitByIp(request: Request, keyPrefix: string) {
 
   const ip = getRequestIp(request)
   return rateLimiter.limit(`${keyPrefix}:${ip}`)
+}
+
+export async function rateLimitByKey(request: Request, keyPrefix: string, key: string) {
+  const ip = getRequestIp(request)
+  const normalizedKey = key.trim().toLowerCase().slice(0, 128) || "unknown"
+  return rateLimitByIp(request, `${keyPrefix}:${normalizedKey}:${ip}`)
 }

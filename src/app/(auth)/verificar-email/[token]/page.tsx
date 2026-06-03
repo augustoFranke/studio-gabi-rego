@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AuthThemeBackdrop } from "@/components/auth-theme-backdrop"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react"
 import Image from "next/image"
@@ -93,13 +94,7 @@ export default function VerificarTokenPage({
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
-      </div>
+      <AuthThemeBackdrop />
 
       {/* Theme toggle */}
       <div className="absolute top-4 right-4 z-20">

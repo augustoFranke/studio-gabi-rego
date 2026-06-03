@@ -4,6 +4,7 @@ import { validateCronRequest } from '@/lib/security/cron-auth'
 import { runWithExecutionContext } from '@/lib/observability/request-context'
 import { logInfo, logError, safeErrorData } from '@/lib/observability/logger'
 import { CRON_RUN_STARTED, CRON_RUN_COMPLETED, CRON_RUN_FAILED } from '@/lib/observability/events'
+import { getRequiredCronSecretConfig } from '@/lib/runtime-config'
 
 const ROUTE = '/api/cron/cleanup'
 const JOB_NAME = 'cleanup'
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
   return runWithExecutionContext(
     { source: 'cron', route: ROUTE, jobName: JOB_NAME },
     async () => {
-      const authResult = validateCronRequest(request, process.env.CRON_SECRET)
+      const authResult = validateCronRequest(request, getRequiredCronSecretConfig())
       if (!authResult.ok) {
         if (authResult.reason === 'missing_secret') {
           return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })

@@ -13,12 +13,11 @@ import {
   isEvolutionConfigured,
   sendWhatsappText,
 } from '@/lib/whatsapp/evolution'
+import { getWhatsappCountryCodeConfig } from '@/lib/runtime-config'
 import { Prisma, TipoNotificacao } from '@prisma/client'
 
-const DEFAULT_COUNTRY_CODE = '55'
-
 function getCountryCode() {
-  return process.env.WHATSAPP_COUNTRY_CODE || DEFAULT_COUNTRY_CODE
+  return getWhatsappCountryCodeConfig()
 }
 
 export type NotificationJobSummary = {

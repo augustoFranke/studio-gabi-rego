@@ -2,7 +2,7 @@ import { hash } from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
-import { createTimedToken, getAppBaseUrl } from "@/lib/auth-flow"
+import { createTimedToken, getAppBaseUrl, getTimedTokenLookup, hashTimedToken } from "@/lib/auth-flow"
 
 export class AccountRecoveryServiceError extends Error {
   constructor(
@@ -52,7 +52,7 @@ export async function issuePasswordResetLink(usuarioId: string, origin?: string)
   await prisma.usuario.update({
     where: { id: usuario.id },
     data: {
-      tokenReset: resetToken,
+      tokenReset: await hashTimedToken(resetToken),
       tokenResetExpira: tokenExpiry,
     },
   })
@@ -89,13 +89,20 @@ export async function validateResetToken(token: string) {
     return { valid: false }
   }
 
-  const usuario = await prisma.usuario.findUnique({
-    where: { tokenReset: token },
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const usuarioQuery = {
+    where: { tokenReset: { in: [hashedToken, rawToken] } },
     select: {
       id: true,
       tokenResetExpira: true,
     },
-  })
+  }
+  const usuario = typeof prisma.usuario.findFirst === 'function'
+    ? await prisma.usuario.findFirst(usuarioQuery)
+    : await prisma.usuario.findUnique({
+        where: { tokenReset: rawToken },
+        select: usuarioQuery.select,
+      })
 
   if (!usuario) {
     return { valid: false }
@@ -119,13 +126,20 @@ export async function resetPasswordWithToken(token: string, senha: string) {
 
   validatePasswordOrThrow(senha)
 
-  const usuario = await prisma.usuario.findUnique({
-    where: { tokenReset: token },
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const usuarioQuery = {
+    where: { tokenReset: { in: [hashedToken, rawToken] } },
     select: {
       id: true,
       tokenResetExpira: true,
     },
-  })
+  }
+  const usuario = typeof prisma.usuario.findFirst === 'function'
+    ? await prisma.usuario.findFirst(usuarioQuery)
+    : await prisma.usuario.findUnique({
+        where: { tokenReset: rawToken },
+        select: usuarioQuery.select,
+      })
 
   if (!usuario) {
     throw new AccountRecoveryServiceError(

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
+import { AuthThemeBackdrop } from "@/components/auth-theme-backdrop"
 import Image from "next/image"
 
 const COPYRIGHT_YEAR = 2026
@@ -60,26 +61,13 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
-      {/* Animated background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Large orange glow - top right */}
-        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        {/* Deep orange glow - bottom left */}
-        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
-        {/* Center accent */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+      <AuthThemeBackdrop />
 
-        {/* Decorative lines */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
-      </div>
-
-      {/* Floating decorative elements */}
-      <div className="absolute top-20 left-10 size-2 rounded-full bg-orange-500/60 animate-pulse" />
-      <div className="absolute top-40 right-20 size-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
-      <div className="absolute bottom-32 left-20 size-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
-      <div className="absolute bottom-20 right-32 size-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
+      <div className="absolute top-20 left-10 hidden h-2 w-2 rounded-full bg-orange-500/60 animate-pulse dark:block" />
+      <div className="absolute top-40 right-20 hidden h-3 w-3 rounded-full bg-orange-400/40 animate-pulse delay-300 dark:block" />
+      <div className="absolute bottom-32 left-20 hidden h-2 w-2 rounded-full bg-orange-600/50 animate-pulse delay-700 dark:block" />
+      <div className="absolute bottom-20 right-32 hidden h-1.5 w-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500 dark:block" />
 
       <Card className="w-full max-w-md relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
         {/* Orange accent line at top of card */}

@@ -62,7 +62,7 @@ describe('Horarios API - POST /api/horarios/get-or-create', () => {
       ativo: true,
     })
 
-    const res = await POST(createRequest({ diaSemana: 'SEGUNDA', horaInicio: '9:00' }))
+    const res = await POST(createRequest({ diaSemana: 'SEGUNDA', horaInicio: '09:00' }))
     const json = await res.json()
 
     expect(res.status).toBe(200)
@@ -81,7 +81,7 @@ describe('Horarios API - POST /api/horarios/get-or-create', () => {
       ativo: true,
     })
 
-    const res = await POST(createRequest({ diaSemana: 'SEGUNDA', horaInicio: '9:15' }))
+    const res = await POST(createRequest({ diaSemana: 'SEGUNDA', horaInicio: '09:00' }))
 
     expect(res.status).toBe(200)
     expect(prismaMock.horarioDisponivel.create).toHaveBeenCalledWith(

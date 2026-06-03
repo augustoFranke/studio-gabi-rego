@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { createTimedToken } from "@/lib/auth-flow"
+import { createTimedToken, getTimedTokenLookup, hashTimedToken } from "@/lib/auth-flow"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
 
 type PerfilBaseInput = {
@@ -131,6 +131,7 @@ export async function savePerfilForUser({
 
   const { token: anamneseToken, expiresAt: anamneseTokenExpira } =
     createAnamneseToken(issueAnamneseToken)
+  const anamneseTokenHash = anamneseToken ? await hashTimedToken(anamneseToken) : null
 
   await prisma.$transaction(async (tx) => {
     if (existingMembro) {
@@ -144,7 +145,7 @@ export async function savePerfilForUser({
           ...(hasSexo ? { sexo: normalizedSexo } : {}),
           ...(issueAnamneseToken
             ? {
-                anamneseToken,
+                anamneseToken: anamneseTokenHash,
                 anamneseTokenExpira,
               }
             : {}),
@@ -162,7 +163,7 @@ export async function savePerfilForUser({
           status: "PENDENTE",
           ...(issueAnamneseToken
             ? {
-                anamneseToken,
+                anamneseToken: anamneseTokenHash,
                 anamneseTokenExpira,
               }
             : {}),
@@ -241,13 +242,20 @@ export async function completePerfilFromToken({
   token,
   ...data
 }: PerfilTokenFlowParams): Promise<PerfilSaveResult> {
-  const usuario = await prisma.usuario.findUnique({
-    where: { tokenPerfil: token },
+  const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const usuarioQuery = {
+    where: { tokenPerfil: { in: [hashedToken, rawToken] } },
     select: {
       id: true,
       tokenPerfilExpira: true,
     },
-  })
+  }
+  const usuario = typeof prisma.usuario.findFirst === 'function'
+    ? await prisma.usuario.findFirst(usuarioQuery)
+    : await prisma.usuario.findUnique({
+        where: { tokenPerfil: rawToken },
+        select: usuarioQuery.select,
+      })
 
   if (!usuario) {
     return {
@@ -289,7 +297,7 @@ export async function createPerfilTokenForMembro(membroId: string) {
   await prisma.usuario.update({
     where: { id: membro.usuarioId },
     data: {
-      tokenPerfil: token,
+      tokenPerfil: await hashTimedToken(token),
       tokenPerfilExpira: tokenExpiry,
     },
   })
