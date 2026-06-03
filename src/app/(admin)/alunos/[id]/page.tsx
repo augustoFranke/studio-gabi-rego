@@ -41,11 +41,13 @@ interface MembroPageProps {
   }>
 }
 
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+})
+
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value)
+  return currencyFormatter.format(value)
 }
 
 function formatCPF(cpf: string): string {
@@ -62,10 +64,10 @@ function formatPhone(phone: string): string {
 
 function getStatusBadge(status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADO") {
   const variants: Record<typeof status, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
-    PAGO: { variant: "default", icon: <Check className="h-3 w-3" />, label: "Pago" },
-    PENDENTE: { variant: "secondary", icon: <Clock className="h-3 w-3" />, label: "Pendente" },
-    ATRASADO: { variant: "destructive", icon: <AlertCircle className="h-3 w-3" />, label: "Atrasado" },
-    CANCELADO: { variant: "outline", icon: <XCircle className="h-3 w-3" />, label: "Cancelado" },
+    PAGO: { variant: "default", icon: <Check className="size-3" />, label: "Pago" },
+    PENDENTE: { variant: "secondary", icon: <Clock className="size-3" />, label: "Pendente" },
+    ATRASADO: { variant: "destructive", icon: <AlertCircle className="size-3" />, label: "Atrasado" },
+    CANCELADO: { variant: "outline", icon: <XCircle className="size-3" />, label: "Cancelado" },
   }
   const { variant, icon, label } = variants[status]
   return (
@@ -85,7 +87,11 @@ function getMemberStatusBadge(status: "ATIVO" | "INATIVO" | "PENDENTE") {
   return <Badge variant={variants[status]}>{status}</Badge>
 }
 
-export default async function MembroPage({ params }: MembroPageProps) {
+export default async function MembroPage(props: MembroPageProps) {
+  return renderMembroPage(props)
+}
+
+async function renderMembroPage({ params }: MembroPageProps) {
   const session = await auth()
 
   if (!session) {
@@ -185,7 +191,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
   const pagamentosPagos = membro.pagamentos.filter(p => p.status === "PAGO").length
   const pagamentosPendentes = membro.pagamentos.filter(p => p.status === "PENDENTE").length
   const pagamentosAtrasados = membro.pagamentos.filter(p => p.status === "ATRASADO").length
-  const horariosFixosOrdenados = [...membro.horariosFixos].sort((a, b) => {
+  const horariosFixosOrdenados = membro.horariosFixos.toSorted((a, b) => {
     const dayDiff = DiaSemanaMap[a.diaSemana] - DiaSemanaMap[b.diaSemana]
     if (dayDiff !== 0) return dayDiff
     return a.hora.localeCompare(b.hora)
@@ -199,7 +205,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/alunos">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Link>
           </Button>
           <div>
@@ -215,13 +221,13 @@ export default async function MembroPage({ params }: MembroPageProps) {
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href={`/alunos/${id}/anamnese`}>
-              <ClipboardList className="mr-2 h-4 w-4" />
+              <ClipboardList className="mr-2 size-4" />
               Anamnese
             </Link>
           </Button>
           <Button asChild>
             <Link href={`/alunos/${id}/editar`}>
-              <Pencil className="mr-2 h-4 w-4" />
+              <Pencil className="mr-2 size-4" />
               Editar
             </Link>
           </Button>
@@ -234,7 +240,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <User className="size-5" />
               Dados Pessoais
             </CardTitle>
             <CardDescription>
@@ -267,7 +273,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
 
             <div>
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+                <Calendar className="size-3" />
                 Data de Nascimento
               </p>
               <p className="text-sm">
@@ -287,7 +293,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
 
             <div>
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Phone className="h-3 w-3" />
+                <Phone className="size-3" />
                 Telefone
               </p>
               <p className="text-sm">
@@ -301,7 +307,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
 
             <div>
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3" />
+                <Mail className="size-3" />
                 Email
               </p>
               <p className="text-sm">
@@ -326,7 +332,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
+              <CreditCard className="size-5" />
               Plano Atual
             </CardTitle>
             <CardDescription>
@@ -410,7 +416,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
               </div>
             ) : (
               <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <CreditCard className="size-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">Nenhum plano atribuído</p>
                 <Button variant="outline" className="mt-4" asChild>
                   <Link href={`/alunos/${id}/editar`}>Atribuir Plano</Link>
@@ -424,7 +430,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+              <Clock className="size-5" />
               Horários Fixos
             </CardTitle>
             <CardDescription>
@@ -458,7 +464,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <FileText className="size-5" />
                 Ficha de Treino
               </CardTitle>
               <CardDescription>
@@ -492,7 +498,7 @@ export default async function MembroPage({ params }: MembroPageProps) {
             </div>
           ) : (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <FileText className="size-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Nenhuma ficha de treino cadastrada</p>
               <Button variant="outline" className="mt-4" asChild>
                 <Link href={`/treinos?novo=true&membro=${id}`}>Criar Ficha de Treino</Link>

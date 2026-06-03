@@ -7,14 +7,22 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, X, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, X, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { fetchWithTimeout } from "@/lib/http"
 import type { AnamneseFormData } from '@/lib/anamnese'
+import {
+  AnamneseBasicSection,
+  AnamneseExperienceSection,
+  AnamneseMedicalSection,
+  AnamneseParqSection,
+  type AnamneseSectionKey,
+} from "@/components/anamnese/anamnese-form-sections"
 
 const SESSION_STORAGE_KEY = "cadastro_wizard_state"
+const COPYRIGHT_YEAR = 2026
 
 interface WizardState {
   step: number
@@ -76,6 +84,10 @@ function clearState() {
 }
 
 export default function CadastroPage() {
+  return useCadastroPage()
+}
+
+function useCadastroPage() {
   const [state, setState] = useState<WizardState>(loadState)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -86,7 +98,7 @@ export default function CadastroPage() {
     parq: false,
     experience: false,
   })
-  const router = useRouter()
+  const { push } = useRouter()
   const isFirstRender = useRef(true)
 
   // Persist state to sessionStorage on changes (except passwords), skip initial render
@@ -109,7 +121,7 @@ export default function CadastroPage() {
     }))
   }, [])
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
+  const toggleSection = (section: AnamneseSectionKey) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
@@ -213,7 +225,7 @@ export default function CadastroPage() {
       const cpfNumbers = state.cpf.replace(/\D/g, "")
       const telefoneNumbers = state.telefone.replace(/\D/g, "")
 
-      const response = await fetch("/api/auth/cadastro", {
+      const response = await fetchWithTimeout("/api/auth/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,7 +251,7 @@ export default function CadastroPage() {
 
       clearState()
       toast.success("Cadastro realizado! Verifique seu email.")
-      router.push("/verificar-email?email=" + encodeURIComponent(state.email))
+      push("/verificar-email?email=" + encodeURIComponent(state.email))
     } catch (error) {
       toast.error("Ocorreu um erro ao criar sua conta")
       console.error(error)
@@ -254,18 +266,18 @@ export default function CadastroPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       {/* Animated background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
       </div>
 
       {/* Floating decorative elements */}
-      <div className="absolute top-20 left-10 w-2 h-2 rounded-full bg-orange-500/60 animate-pulse" />
-      <div className="absolute top-40 right-20 w-3 h-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
-      <div className="absolute bottom-32 left-20 w-2 h-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
-      <div className="absolute bottom-20 right-32 w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
+      <div className="absolute top-20 left-10 size-2 rounded-full bg-orange-500/60 animate-pulse" />
+      <div className="absolute top-40 right-20 size-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
+      <div className="absolute bottom-32 left-20 size-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
+      <div className="absolute bottom-20 right-32 size-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
 
       <div className={`w-full relative z-10 ${state.step === 3 ? "max-w-2xl" : "max-w-md"}`}>
         {state.step === 3 ? (
@@ -283,13 +295,13 @@ export default function CadastroPage() {
               {/* Progress indicator */}
               <div className="flex items-center justify-center gap-3 mb-4">
                 {stepLabels.map((label, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                  <div key={label} className="flex items-center gap-1.5">
+                    <div className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                       i + 1 <= state.step
                         ? "bg-orange-500 text-white"
                         : "bg-muted text-muted-foreground"
                     }`}>
-                      {i + 1 < state.step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                      {i + 1 < state.step ? <Check className="size-3.5" /> : i + 1}
                     </div>
                     <span className={`text-xs font-medium ${
                       i + 1 === state.step ? "text-orange-500" : "text-muted-foreground"
@@ -311,232 +323,43 @@ export default function CadastroPage() {
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
-              {/* Basic Info Section */}
-              <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-                <CardHeader className="cursor-pointer" onClick={() => toggleSection("basic")}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-5 w-5 text-orange-500" />
-                      <CardTitle className="text-lg">Informações Básicas</CardTitle>
-                    </div>
-                    {expandedSections.basic ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                </CardHeader>
-                {expandedSections.basic && (
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Altura (m)</Label>
-                        <Input type="number" step="0.01" placeholder="1.70" value={state.anamnese.altura || ""} onChange={(e) => updateAnamnese("altura", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Peso (kg)</Label>
-                        <Input type="number" step="0.1" placeholder="70.0" value={state.anamnese.pesoAtual || ""} onChange={(e) => updateAnamnese("pesoAtual", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Objetivo</Label>
-                      <Select value={state.anamnese.objetivo || ""} onValueChange={(value) => updateAnamnese("objetivo", value)}>
-                        <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione seu objetivo" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
-                          <SelectItem value="Emagrecimento">Emagrecimento</SelectItem>
-                          <SelectItem value="Condicionamento">Condicionamento</SelectItem>
-                          <SelectItem value="Saúde">Saúde</SelectItem>
-                          <SelectItem value="Reabilitação">Reabilitação</SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Pratica alguma atividade física regularmente?</Label>
-                      <Select value={state.anamnese.praticaAtividade || ""} onValueChange={(value) => updateAnamnese("praticaAtividade", value)}>
-                        <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Sim">Sim</SelectItem>
-                          <SelectItem value="Não">Não</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {state.anamnese.praticaAtividade === "Sim" && (
-                      <div className="space-y-2">
-                        <Label>Qual atividade?</Label>
-                        <Input value={state.anamnese.praticaAtividadeQual || ""} onChange={(e) => updateAnamnese("praticaAtividadeQual", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    )}
-                    {state.anamnese.praticaAtividade === "Não" && (
-                      <div className="space-y-2">
-                        <Label>Há quanto tempo está sem atividade física?</Label>
-                        <Input value={state.anamnese.tempoSedentario || ""} onChange={(e) => updateAnamnese("tempoSedentario", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
+              <AnamneseBasicSection
+                formData={state.anamnese}
+                expandedSections={expandedSections}
+                isWoman={isWoman}
+                onToggleSection={toggleSection}
+                onUpdateField={updateAnamnese}
+              />
 
-              {/* Medical History Section */}
-              <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-                <CardHeader className="cursor-pointer" onClick={() => toggleSection("medical")}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-5 w-5 text-orange-500" />
-                      <CardTitle className="text-lg">Histórico Médico</CardTitle>
-                    </div>
-                    {expandedSections.medical ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                </CardHeader>
-                {expandedSections.medical && (
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Possui alguma condição médica?</Label>
-                      <Select value={state.anamnese.condicaoMedica || ""} onValueChange={(value) => updateAnamnese("condicaoMedica", value)}>
-                        <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                      </Select>
-                    </div>
-                    {state.anamnese.condicaoMedica === "Sim" && (
-                      <div className="space-y-2">
-                        <Label>Qual?</Label>
-                        <Input value={state.anamnese.condicaoMedicaQual || ""} onChange={(e) => updateAnamnese("condicaoMedicaQual", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label>Teve ou tem alguma lesão?</Label>
-                      <Select value={state.anamnese.lesao || ""} onValueChange={(value) => updateAnamnese("lesao", value)}>
-                        <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                      </Select>
-                    </div>
-                    {state.anamnese.lesao === "Sim" && (
-                      <div className="space-y-2">
-                        <Label>Qual?</Label>
-                        <Input value={state.anamnese.lesaoQual || ""} onChange={(e) => updateAnamnese("lesaoQual", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label>Toma algum medicamento controlado?</Label>
-                      <Select value={state.anamnese.medicamentoControlado || ""} onValueChange={(value) => updateAnamnese("medicamentoControlado", value)}>
-                        <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                      </Select>
-                    </div>
-                    {state.anamnese.medicamentoControlado === "Sim" && (
-                      <div className="space-y-2">
-                        <Label>Qual?</Label>
-                        <Input value={state.anamnese.medicamentoControladoQual || ""} onChange={(e) => updateAnamnese("medicamentoControladoQual", e.target.value)} className="h-12 border-orange-500/20" />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Colesterol elevado</Label>
-                        <Select value={state.anamnese.colesterolElevado || ""} onValueChange={(value) => updateAnamnese("colesterolElevado", value)}>
-                          <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Diabetes</Label>
-                        <Select value={state.anamnese.diabetes || ""} onValueChange={(value) => updateAnamnese("diabetes", value)}>
-                          <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Doenças cardíacas</Label>
-                        <Select value={state.anamnese.doencasCardiacas || ""} onValueChange={(value) => updateAnamnese("doencasCardiacas", value)}>
-                          <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Taquicardia</Label>
-                        <Select value={state.anamnese.taquicardia || ""} onValueChange={(value) => updateAnamnese("taquicardia", value)}>
-                          <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {isWoman && (
-                      <div className="space-y-2 p-4 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
-                        <Label>Ciclo menstrual e desconfortos</Label>
-                        <Textarea placeholder="Seu ciclo é de quantos dias? Sente desconforto em algum período?" value={state.anamnese.cicloMenstrual || ""} onChange={(e) => updateAnamnese("cicloMenstrual", e.target.value)} className="min-h-[80px] border-orange-500/20" />
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
+              <AnamneseMedicalSection
+                formData={state.anamnese}
+                expandedSections={expandedSections}
+                isWoman={isWoman}
+                onToggleSection={toggleSection}
+                onUpdateField={updateAnamnese}
+              />
 
-              {/* PAR-Q Section */}
-              <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-                <CardHeader className="cursor-pointer" onClick={() => toggleSection("parq")}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-5 w-5 text-red-500" />
-                      <div>
-                        <CardTitle className="text-lg">PAR-Q</CardTitle>
-                        <CardDescription className="text-xs">Prontidão para Atividade Física</CardDescription>
-                      </div>
-                    </div>
-                    {expandedSections.parq ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                </CardHeader>
-                {expandedSections.parq && (
-                  <CardContent className="space-y-4">
-                    {[
-                      { field: "parq1", question: "Algum médico disse que você possui problema no coração?" },
-                      { field: "parq2", question: "Sente dor no peito durante atividade física?" },
-                      { field: "parq3", question: "Sentiu dor no peito no último mês?" },
-                      { field: "parq4", question: "Tende a perder consciência ou cair por tontura?" },
-                      { field: "parq5", question: "Tem problema ósseo ou muscular que pode ser agravado?" },
-                      { field: "parq6", question: "Médico recomendou medicamento para pressão/coração?" },
-                      { field: "parq7", question: "Conhece outra razão que impeça atividade física?" },
-                    ].map(({ field, question }, index) => (
-                      <div key={field} className="space-y-2">
-                        <Label className="text-sm">{index + 1}. {question}</Label>
-                        <Select value={state.anamnese[field as keyof AnamneseFormData] || ""} onValueChange={(value) => updateAnamnese(field as keyof AnamneseFormData, value)}>
-                          <SelectTrigger className="h-12 border-orange-500/20"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent><SelectItem value="Sim">Sim</SelectItem><SelectItem value="Não">Não</SelectItem></SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </CardContent>
-                )}
-              </Card>
+              <AnamneseParqSection
+                formData={state.anamnese}
+                expandedSections={expandedSections}
+                isWoman={isWoman}
+                onToggleSection={toggleSection}
+                onUpdateField={updateAnamnese}
+              />
 
-              {/* Experience Section */}
-              <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-                <CardHeader className="cursor-pointer" onClick={() => toggleSection("experience")}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-5 w-5 text-orange-500" />
-                      <CardTitle className="text-lg">Experiência</CardTitle>
-                    </div>
-                    {expandedSections.experience ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                </CardHeader>
-                {expandedSections.experience && (
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Experiência com musculação</Label>
-                      <Textarea placeholder="Iniciante, intermediário ou avançado?" value={state.anamnese.experienciaMusculacao || ""} onChange={(e) => updateAnamnese("experienciaMusculacao", e.target.value)} className="min-h-[80px] border-orange-500/20" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Como conheceu o Gabi Studio?</Label>
-                      <Input value={state.anamnese.ondeConheceu || ""} onChange={(e) => updateAnamnese("ondeConheceu", e.target.value)} className="h-12 border-orange-500/20" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>O que espera do nosso trabalho?</Label>
-                      <Textarea value={state.anamnese.expectativas || ""} onChange={(e) => updateAnamnese("expectativas", e.target.value)} className="min-h-[80px] border-orange-500/20" />
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
+              <AnamneseExperienceSection
+                formData={state.anamnese}
+                expandedSections={expandedSections}
+                isWoman={isWoman}
+                onToggleSection={toggleSection}
+                onUpdateField={updateAnamnese}
+              />
 
               {/* Navigation buttons */}
               <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-background to-transparent md:relative md:p-0 md:bg-none">
                 <div className="flex gap-3">
                   <Button type="button" variant="outline" onClick={() => goToStep(2)} className="h-14 px-6 border-orange-500/30 hover:bg-orange-500/10">
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="size-5" />
                   </Button>
                   <Button
                     type="submit"
@@ -545,13 +368,13 @@ export default function CadastroPage() {
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Finalizando...
+                        <Loader2 className="size-5 animate-spin" />
+                        Finalizando…
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         Concluir Cadastro
-                        <ArrowRight className="h-5 w-5" />
+                        <ArrowRight className="size-5" />
                       </span>
                     )}
                   </Button>
@@ -575,13 +398,13 @@ export default function CadastroPage() {
               {/* Progress indicator */}
               <div className="flex items-center justify-center gap-3 mb-3">
                 {stepLabels.map((label, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                  <div key={label} className="flex items-center gap-1.5">
+                    <div className={`size-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                       i + 1 <= state.step
                         ? "bg-orange-500 text-white"
                         : "bg-muted text-muted-foreground"
                     }`}>
-                      {i + 1 < state.step ? <Check className="h-4 w-4" /> : i + 1}
+                      {i + 1 < state.step ? <Check className="size-4" /> : i + 1}
                     </div>
                     <span className={`text-xs font-medium ${
                       i + 1 === state.step ? "text-orange-500" : "text-muted-foreground"
@@ -608,7 +431,7 @@ export default function CadastroPage() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-orange-500" />
+                      <span className="size-1 rounded-full bg-orange-500" />
                       Email
                     </Label>
                     <Input
@@ -625,7 +448,7 @@ export default function CadastroPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-orange-500" />
+                      <span className="size-1 rounded-full bg-orange-500" />
                       Senha
                     </Label>
                     <div className="relative">
@@ -640,14 +463,14 @@ export default function CadastroPage() {
                         className="h-12 pr-10 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
                       />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
                     {state.password.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        {passwordRules.map((rule, index) => (
-                          <div key={index} className="flex items-center gap-2 text-xs">
-                            {rule.valid ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-500" />}
+                        {passwordRules.map((rule) => (
+                          <div key={rule.label} className="flex items-center gap-2 text-xs">
+                            {rule.valid ? <Check className="size-3 text-green-500" /> : <X className="size-3 text-red-500" />}
                             <span className={rule.valid ? "text-green-500" : "text-muted-foreground"}>{rule.label}</span>
                           </div>
                         ))}
@@ -657,7 +480,7 @@ export default function CadastroPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="confirmPassword" className="text-sm font-medium flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-orange-500" />
+                      <span className="size-1 rounded-full bg-orange-500" />
                       Confirmar Senha
                     </Label>
                     <div className="relative">
@@ -672,15 +495,15 @@ export default function CadastroPage() {
                         className="h-12 pr-10 border-orange-500/20 focus:border-orange-500 focus:ring-orange-500/20 bg-background/50"
                       />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
                     {state.confirmPassword.length > 0 && (
                       <div className="flex items-center gap-2 text-xs mt-1">
                         {passwordsMatch ? (
-                          <><Check className="h-3 w-3 text-green-500" /><span className="text-green-500">Senhas coincidem</span></>
+                          <><Check className="size-3 text-green-500" /><span className="text-green-500">Senhas coincidem</span></>
                         ) : (
-                          <><X className="h-3 w-3 text-red-500" /><span className="text-red-500">Senhas não coincidem</span></>
+                          <><X className="size-3 text-red-500" /><span className="text-red-500">Senhas não coincidem</span></>
                         )}
                       </div>
                     )}
@@ -694,7 +517,7 @@ export default function CadastroPage() {
                   >
                     <span className="flex items-center gap-2">
                       Continuar
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="size-4" />
                     </span>
                   </Button>
                 </div>
@@ -703,7 +526,7 @@ export default function CadastroPage() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="nome" className="text-sm font-medium flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-orange-500" />
+                      <span className="size-1 rounded-full bg-orange-500" />
                       Nome completo *
                     </Label>
                     <Input
@@ -722,7 +545,7 @@ export default function CadastroPage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="cpf" className="text-sm font-medium flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                        <span className="size-1 rounded-full bg-muted-foreground" />
                         CPF
                       </Label>
                       <Input
@@ -739,7 +562,7 @@ export default function CadastroPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="rg" className="text-sm font-medium flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                        <span className="size-1 rounded-full bg-muted-foreground" />
                         RG
                       </Label>
                       <Input
@@ -756,7 +579,7 @@ export default function CadastroPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="telefone" className="text-sm font-medium flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                      <span className="size-1 rounded-full bg-muted-foreground" />
                       Telefone
                     </Label>
                     <Input
@@ -775,7 +598,7 @@ export default function CadastroPage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5 min-w-0">
                       <Label htmlFor="dataNascimento" className="text-sm font-medium flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                        <span className="size-1 rounded-full bg-muted-foreground" />
                         Data de nascimento
                       </Label>
                       <Input
@@ -789,7 +612,7 @@ export default function CadastroPage() {
                     </div>
                     <div className="space-y-1.5 min-w-0">
                       <Label htmlFor="sexo" className="text-sm font-medium flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                        <span className="size-1 rounded-full bg-muted-foreground" />
                         Sexo
                       </Label>
                       <Select value={state.sexo} onValueChange={(value) => updateState({ sexo: value })} disabled={isLoading}>
@@ -806,7 +629,7 @@ export default function CadastroPage() {
 
                   <div className="flex gap-3 mt-2">
                     <Button type="button" variant="outline" onClick={() => goToStep(1)} className="h-12 px-4 border-orange-500/30 hover:bg-orange-500/10">
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="size-4" />
                     </Button>
                     <Button
                       type="button"
@@ -815,7 +638,7 @@ export default function CadastroPage() {
                     >
                       <span className="flex items-center gap-2">
                         Continuar
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="size-4" />
                       </span>
                     </Button>
                   </div>
@@ -837,7 +660,7 @@ export default function CadastroPage() {
                       </Link>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      &copy; {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+                      &copy; {COPYRIGHT_YEAR} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
                     </p>
                   </div>
                 </>

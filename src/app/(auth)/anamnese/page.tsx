@@ -5,24 +5,30 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowRight, ClipboardList, Heart, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { ArrowRight, Loader2 } from "lucide-react"
 import Image from "next/image"
-import { readResponseErrorMessage } from "@/lib/http"
+import { fetchWithTimeout, readResponseErrorMessage } from "@/lib/http"
 import type { AnamneseFormData } from '@/lib/anamnese'
+import {
+  AnamneseBasicSection,
+  AnamneseExperienceSection,
+  AnamneseMedicalSection,
+  AnamneseParqSection,
+  type AnamneseSectionKey,
+} from "@/components/anamnese/anamnese-form-sections"
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
 
 function AnamneseContent() {
+  return useAnamneseContent()
+}
+
+function useAnamneseContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
   const [token, setToken] = useState<string | null>(null)
-  const [tokenChecked, setTokenChecked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseFormData>({})
@@ -35,50 +41,42 @@ function AnamneseContent() {
     experience: false,
   })
   const [submissionSuccessful, setSubmissionSuccessful] = useState(false)
-  const router = useRouter()
+  const { push, replace } = useRouter()
 
   useEffect(() => {
-    const schedule = (fn: () => void) => {
-      setTimeout(fn, 0)
-    }
+    let nextToken: string | null = null
+    let shouldReplaceUrl = false
 
     if (status === "authenticated") {
-      schedule(() => {
-        setToken(null)
-        setTokenChecked(true)
-      })
-      return
-    }
-
-    if (typeof window !== "undefined") {
+      nextToken = null
+    } else if (typeof window !== "undefined") {
       const hash = window.location.hash
       if (hash) {
         const params = new URLSearchParams(hash.replace(/^#/, ""))
         const tokenFromHash = params.get("token")
         if (tokenFromHash) {
-          schedule(() => {
-            setToken(tokenFromHash)
-            setTokenChecked(true)
-          })
+          nextToken = tokenFromHash
           window.history.replaceState(null, "", window.location.pathname)
-          return
         }
       }
     }
 
-    if (tokenFromUrl) {
-      schedule(() => {
-        setToken(tokenFromUrl)
-        setTokenChecked(true)
-      })
-      router.replace("/anamnese")
-      return
+    if (!nextToken && tokenFromUrl) {
+      nextToken = tokenFromUrl
+      shouldReplaceUrl = true
     }
 
-    schedule(() => {
-      setTokenChecked(true)
-    })
-  }, [status, tokenFromUrl, router])
+    // Token is resolved from window.location.hash and history side-effects, which
+    // are not derivable during render, so it must be synced into state here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToken(nextToken)
+    if (shouldReplaceUrl) {
+      replace("/anamnese")
+    }
+    if (status === "unauthenticated" && !nextToken) {
+      push("/login")
+    }
+  }, [status, tokenFromUrl, replace, push])
 
   // Load user data on mount
   useEffect(() => {
@@ -91,7 +89,7 @@ function AnamneseContent() {
       try {
         setTokenError(null)
         const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
-        const response = await fetch(endpoint, {
+        const response = await fetchWithTimeout(endpoint, {
           headers: token ? { "X-Anamnese-Token": token } : undefined,
           credentials: "include",
         })
@@ -121,7 +119,7 @@ function AnamneseContent() {
           }
           if (response.status === 404) {
             // Profile not found - redirect to complete profile first (no toast needed, the redirect is self-explanatory)
-            router.push("/completar-perfil")
+            push("/completar-perfil")
             // Don't set loadingData to false - keep loading state during redirect
             return
           }
@@ -146,23 +144,13 @@ function AnamneseContent() {
     return () => {
       isMounted = false
     }
-  }, [status, router, token, submissionSuccessful])
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (status === "loading") {
-      return
-    }
-    if (status === "unauthenticated" && tokenChecked && !token) {
-      router.push("/login")
-    }
-  }, [status, router, token, tokenChecked])
+  }, [status, push, token, submissionSuccessful])
 
   const updateField = (field: keyof AnamneseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
+  const toggleSection = (section: AnamneseSectionKey) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
@@ -174,7 +162,7 @@ function AnamneseContent() {
 
     try {
       const endpoint = token ? "/api/anamnese-token" : "/api/minha-anamnese"
-      const response = await fetch(endpoint, {
+      const response = await fetchWithTimeout(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -201,7 +189,7 @@ function AnamneseContent() {
           // Ignore storage errors (private mode / blocked storage)
         }
       }
-      router.replace("/inicio")
+      replace("/inicio")
     } catch (error) {
       toast.error("Ocorreu um erro ao salvar")
       console.error(error)
@@ -210,483 +198,55 @@ function AnamneseContent() {
   }
 
   if (status === "loading" || loadingData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-      </div>
-    )
+    return <AnamneseLoadingScreen />
   }
 
   if (tokenError) {
-    return (
-      <div className="min-h-screen p-4 relative overflow-hidden bg-background">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-          <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-        </div>
-        <div className="max-w-md mx-auto relative z-10 pt-24">
-          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95 text-center">
-            <CardHeader>
-              <CardTitle>Link inválido</CardTitle>
-              <CardDescription>{tokenError}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Solicite um novo link para responder sua anamnese.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <AnamneseTokenError message={tokenError} />
   }
 
   return (
     <div className="min-h-screen p-4 relative overflow-hidden bg-background">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-      </div>
+      <AnamneseBackground />
 
       {/* Theme toggle */}
       <div className="max-w-2xl mx-auto relative z-10 space-y-6 pb-20">
-        {/* Header */}
-        <div className="text-center pt-6 pb-4">
-          <Image
-            src="/logo.png"
-            alt="Gabi Studio"
-            width={120}
-            height={120}
-            className="object-contain mx-auto mb-4"
-            priority
-          />
-
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">4</div>
-            <span className="text-xs text-orange-500 font-medium">Anamnese</span>
-          </div>
-
-          <h1 className="text-2xl font-bold text-foreground">Anamnese</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Última etapa: conte-nos sobre sua saúde
-          </p>
-        </div>
+        <AnamneseHeader />
 
         <form onSubmit={onSubmit} className="space-y-4">
-          {/* Basic Info Section */}
-          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => toggleSection("basic")}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5 text-orange-500" />
-                  <CardTitle className="text-lg">Informações Básicas</CardTitle>
-                </div>
-                {expandedSections.basic ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-            </CardHeader>
-            {expandedSections.basic && (
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Altura (m)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="1.70"
-                      value={formData.altura || ""}
-                      onChange={(e) => updateField("altura", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Peso (kg)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="70.0"
-                      value={formData.pesoAtual || ""}
-                      onChange={(e) => updateField("pesoAtual", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                </div>
+          <AnamneseBasicSection
+            formData={formData}
+            expandedSections={expandedSections}
+            isWoman={isWoman}
+            onToggleSection={toggleSection}
+            onUpdateField={updateField}
+          />
 
-                <div className="space-y-2">
-                  <Label>Objetivo</Label>
-                  <Select
-                    value={formData.objetivo || ""}
-                    onValueChange={(value) => updateField("objetivo", value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-500/20">
-                      <SelectValue placeholder="Selecione seu objetivo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
-                      <SelectItem value="Emagrecimento">Emagrecimento</SelectItem>
-                      <SelectItem value="Condicionamento">Condicionamento</SelectItem>
-                      <SelectItem value="Saúde">Saúde</SelectItem>
-                      <SelectItem value="Reabilitação">Reabilitação</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <AnamneseMedicalSection
+            formData={formData}
+            expandedSections={expandedSections}
+            isWoman={isWoman}
+            onToggleSection={toggleSection}
+            onUpdateField={updateField}
+          />
 
-                <div className="space-y-2">
-                  <Label>Pratica alguma atividade física regularmente?</Label>
-                  <Select
-                    value={formData.praticaAtividade || ""}
-                    onValueChange={(value) => updateField("praticaAtividade", value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-500/20">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sim">Sim</SelectItem>
-                      <SelectItem value="Não">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <AnamneseParqSection
+            formData={formData}
+            expandedSections={expandedSections}
+            isWoman={isWoman}
+            onToggleSection={toggleSection}
+            onUpdateField={updateField}
+          />
 
-                {formData.praticaAtividade === "Sim" && (
-                  <div className="space-y-2">
-                    <Label>Qual atividade?</Label>
-                    <Input
-                      value={formData.praticaAtividadeQual || ""}
-                      onChange={(e) => updateField("praticaAtividadeQual", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                )}
+          <AnamneseExperienceSection
+            formData={formData}
+            expandedSections={expandedSections}
+            isWoman={isWoman}
+            onToggleSection={toggleSection}
+            onUpdateField={updateField}
+          />
 
-                {formData.praticaAtividade === "Não" && (
-                  <div className="space-y-2">
-                    <Label>Há quanto tempo está sem atividade física?</Label>
-                    <Input
-                      value={formData.tempoSedentario || ""}
-                      onChange={(e) => updateField("tempoSedentario", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Medical History Section */}
-          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => toggleSection("medical")}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-orange-500" />
-                  <CardTitle className="text-lg">Histórico Médico</CardTitle>
-                </div>
-                {expandedSections.medical ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-            </CardHeader>
-            {expandedSections.medical && (
-              <CardContent className="space-y-4">
-                {/* Condition */}
-                <div className="space-y-2">
-                  <Label>Possui alguma condição médica?</Label>
-                  <Select
-                    value={formData.condicaoMedica || ""}
-                    onValueChange={(value) => updateField("condicaoMedica", value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-500/20">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sim">Sim</SelectItem>
-                      <SelectItem value="Não">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.condicaoMedica === "Sim" && (
-                  <div className="space-y-2">
-                    <Label>Qual?</Label>
-                    <Input
-                      value={formData.condicaoMedicaQual || ""}
-                      onChange={(e) => updateField("condicaoMedicaQual", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                )}
-
-                {/* Injury */}
-                <div className="space-y-2">
-                  <Label>Teve ou tem alguma lesão?</Label>
-                  <Select
-                    value={formData.lesao || ""}
-                    onValueChange={(value) => updateField("lesao", value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-500/20">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sim">Sim</SelectItem>
-                      <SelectItem value="Não">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.lesao === "Sim" && (
-                  <div className="space-y-2">
-                    <Label>Qual?</Label>
-                    <Input
-                      value={formData.lesaoQual || ""}
-                      onChange={(e) => updateField("lesaoQual", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                )}
-
-                {/* Medication */}
-                <div className="space-y-2">
-                  <Label>Toma algum medicamento controlado?</Label>
-                  <Select
-                    value={formData.medicamentoControlado || ""}
-                    onValueChange={(value) => updateField("medicamentoControlado", value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-500/20">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sim">Sim</SelectItem>
-                      <SelectItem value="Não">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.medicamentoControlado === "Sim" && (
-                  <div className="space-y-2">
-                    <Label>Qual?</Label>
-                    <Input
-                      value={formData.medicamentoControladoQual || ""}
-                      onChange={(e) => updateField("medicamentoControladoQual", e.target.value)}
-                      className="h-12 border-orange-500/20"
-                    />
-                  </div>
-                )}
-
-                {/* Health conditions grid */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Colesterol elevado</Label>
-                    <Select
-                      value={formData.colesterolElevado || ""}
-                      onValueChange={(value) => updateField("colesterolElevado", value)}
-                    >
-                      <SelectTrigger className="h-12 border-orange-500/20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Diabetes</Label>
-                    <Select
-                      value={formData.diabetes || ""}
-                      onValueChange={(value) => updateField("diabetes", value)}
-                    >
-                      <SelectTrigger className="h-12 border-orange-500/20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Doenças cardíacas</Label>
-                    <Select
-                      value={formData.doencasCardiacas || ""}
-                      onValueChange={(value) => updateField("doencasCardiacas", value)}
-                    >
-                      <SelectTrigger className="h-12 border-orange-500/20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Taquicardia</Label>
-                    <Select
-                      value={formData.taquicardia || ""}
-                      onValueChange={(value) => updateField("taquicardia", value)}
-                    >
-                      <SelectTrigger className="h-12 border-orange-500/20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Women-specific */}
-                {isWoman && (
-                  <div className="space-y-2 p-4 bg-pink-50 dark:bg-pink-950/30 rounded-lg">
-                    <Label>Ciclo menstrual e desconfortos</Label>
-                    <Textarea
-                      placeholder="Seu ciclo é de quantos dias? Sente desconforto em algum período?"
-                      value={formData.cicloMenstrual || ""}
-                      onChange={(e) => updateField("cicloMenstrual", e.target.value)}
-                      className="min-h-[80px] border-orange-500/20"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            )}
-          </Card>
-
-          {/* PAR-Q Section */}
-          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => toggleSection("parq")}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-500" />
-                  <div>
-                    <CardTitle className="text-lg">PAR-Q</CardTitle>
-                    <CardDescription className="text-xs">Prontidão para Atividade Física</CardDescription>
-                  </div>
-                </div>
-                {expandedSections.parq ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-            </CardHeader>
-            {expandedSections.parq && (
-              <CardContent className="space-y-4">
-                {[
-                  { field: "parq1", question: "Algum médico disse que você possui problema no coração?" },
-                  { field: "parq2", question: "Sente dor no peito durante atividade física?" },
-                  { field: "parq3", question: "Sentiu dor no peito no último mês?" },
-                  { field: "parq4", question: "Tende a perder consciência ou cair por tontura?" },
-                  { field: "parq5", question: "Tem problema ósseo ou muscular que pode ser agravado?" },
-                  { field: "parq6", question: "Médico recomendou medicamento para pressão/coração?" },
-                  { field: "parq7", question: "Conhece outra razão que impeça atividade física?" },
-                ].map(({ field, question }, index) => (
-                  <div key={field} className="space-y-2">
-                    <Label className="text-sm">{index + 1}. {question}</Label>
-                    <Select
-                      value={formData[field as keyof AnamneseFormData] || ""}
-                      onValueChange={(value) => updateField(field as keyof AnamneseFormData, value)}
-                    >
-                      <SelectTrigger className="h-12 border-orange-500/20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Experience Section */}
-          <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95">
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => toggleSection("experience")}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5 text-orange-500" />
-                  <CardTitle className="text-lg">Experiência</CardTitle>
-                </div>
-                {expandedSections.experience ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-            </CardHeader>
-            {expandedSections.experience && (
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Experiência com musculação</Label>
-                  <Textarea
-                    placeholder="Iniciante, intermediário ou avançado?"
-                    value={formData.experienciaMusculacao || ""}
-                    onChange={(e) => updateField("experienciaMusculacao", e.target.value)}
-                    className="min-h-[80px] border-orange-500/20"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Como conheceu o Gabi Studio?</Label>
-                  <Input
-                    value={formData.ondeConheceu || ""}
-                    onChange={(e) => updateField("ondeConheceu", e.target.value)}
-                    className="h-12 border-orange-500/20"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>O que espera do nosso trabalho?</Label>
-                  <Textarea
-                    value={formData.expectativas || ""}
-                    onChange={(e) => updateField("expectativas", e.target.value)}
-                    className="min-h-[80px] border-orange-500/20"
-                  />
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Submit Button - Fixed at bottom on mobile */}
-          <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-background to-transparent md:relative md:p-0 md:bg-none">
-            <Button
-              type="submit"
-              className="w-full h-14 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-shadow border-0"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Finalizando...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Concluir Cadastro
-                  <ArrowRight className="h-5 w-5" />
-                </span>
-              )}
-            </Button>
-          </div>
+          <AnamneseSubmitButton isLoading={isLoading} />
         </form>
 
         {/* Divider */}
@@ -699,11 +259,97 @@ function AnamneseContent() {
   )
 }
 
+function AnamneseLoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+    </div>
+  )
+}
+
+function AnamneseTokenError({ message }: { message: string }) {
+  return (
+    <div className="min-h-screen p-4 relative overflow-hidden bg-background">
+      <AnamneseBackground />
+      <div className="max-w-md mx-auto relative z-10 pt-24">
+        <Card className="border-orange-500/20 backdrop-blur-sm bg-card/95 text-center">
+          <CardHeader>
+            <CardTitle>Link inválido</CardTitle>
+            <CardDescription>{message}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Solicite um novo link para responder sua anamnese.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function AnamneseBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+      <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+    </div>
+  )
+}
+
+function AnamneseHeader() {
+  return (
+    <div className="text-center pt-6 pb-4">
+      <Image
+        src="/logo.png"
+        alt="Gabi Studio"
+        width={120}
+        height={120}
+        className="object-contain mx-auto mb-4"
+        priority
+      />
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="size-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">4</div>
+        <span className="text-xs text-orange-500 font-medium">Anamnese</span>
+      </div>
+      <h1 className="text-2xl font-bold text-foreground">Anamnese</h1>
+      <p className="text-muted-foreground text-sm mt-1">
+        Última etapa: conte-nos sobre sua saúde
+      </p>
+    </div>
+  )
+}
+
+function AnamneseSubmitButton({ isLoading }: { isLoading: boolean }) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-background to-transparent md:relative md:p-0 md:bg-none">
+      <Button
+        type="submit"
+        className="w-full h-14 text-base font-semibold bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30 hover:shadow-orange-500/40 transition-shadow border-0"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="size-5 animate-spin" />
+            Finalizando…
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            Concluir Cadastro
+            <ArrowRight className="size-5" />
+          </span>
+        )}
+      </Button>
+    </div>
+  )
+}
+
 export default function AnamnesePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
       <AnamneseContent />

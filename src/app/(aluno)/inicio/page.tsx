@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,11 @@ import {
 } from "@/lib/dates"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Início | Gabi Rego Studio",
+  description: "Resumo da agenda e dos próximos treinos no Gabi Rego Studio.",
+}
 
 export default async function MemberDashboard() {
   const session = await auth()
@@ -127,13 +133,13 @@ export default async function MemberDashboard() {
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Button asChild>
             <Link href="/minha-agenda">
-              <Calendar className="mr-2 h-4 w-4" />
+              <Calendar className="mr-2 size-4" />
               Ver Agenda
             </Link>
           </Button>
           <Button asChild variant="secondary">
             <Link href="/meu-treino">
-              <Dumbbell className="mr-2 h-4 w-4" />
+              <Dumbbell className="mr-2 size-4" />
               Treino
             </Link>
           </Button>
@@ -142,10 +148,10 @@ export default async function MemberDashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Next Class Card */}
-        <Card className="col-span-full md:col-span-1 lg:col-span-2 border-l-4 border-l-primary shadow-sm">
+        <Card className="col-span-full md:col-span-1 lg:col-span-2 shadow-[inset_4px_0_0_hsl(var(--primary))]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
+              <Clock className="size-5 text-primary" />
               Próxima Aula
             </CardTitle>
             <CardDescription>Seu próximo compromisso agendado</CardDescription>
@@ -158,7 +164,7 @@ export default async function MemberDashboard() {
                     {format(nextClassDate ?? nextClass.data, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                   </p>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
+                    <Clock className="size-4" />
                     <span>
                       {nextClass.horario.horaInicio} - {nextClass.horario.horaFim}
                     </span>
@@ -169,9 +175,9 @@ export default async function MemberDashboard() {
                 </Badge>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-8 text-center gap-y-3">
+                <div className="size-12 rounded-full bg-muted flex items-center justify-center">
+                  <Calendar className="size-6 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium">Nenhuma aula agendada</p>
@@ -189,13 +195,13 @@ export default async function MemberDashboard() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="size-5 text-green-500" />
               Frequência Semanal
             </CardTitle>
             <CardDescription>Sua dedicação nesta semana</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-2 space-y-4">
+            <div className="flex flex-col items-center justify-center py-2 gap-y-4">
               <div className="relative flex items-center justify-center">
                 <div className="text-4xl font-bold">
                   {classesAttended}<span className="text-muted-foreground text-xl">/{classesScheduled}</span>
@@ -225,7 +231,7 @@ export default async function MemberDashboard() {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 Meu Treino
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
+                <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
               </CardTitle>
               <CardDescription>Acesse sua ficha atual</CardDescription>
             </CardHeader>
@@ -237,7 +243,7 @@ export default async function MemberDashboard() {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 Histórico
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
+                <ArrowRight className="size-4 opacity-0 -translate-x-2 transition-[opacity,transform] group-hover:opacity-100 group-hover:translate-x-0" />
               </CardTitle>
               <CardDescription>Veja suas aulas passadas</CardDescription>
             </CardHeader>

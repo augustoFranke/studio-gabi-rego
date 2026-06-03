@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ClipboardList, Copy, Heart, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useReducer } from "react"
 import { toast } from "sonner"
-import { readResponseErrorMessage } from "@/lib/http"
+import { fetchWithTimeout, readResponseErrorMessage } from "@/lib/http"
 import type { AnamneseFormData } from '@/lib/anamnese'
 
 interface MemberInfo {
@@ -20,30 +20,76 @@ interface MemberInfo {
   sexo: "Masculino" | "Feminino"
 }
 
+type AnamnesePageState = {
+  loading: boolean
+  saving: boolean
+  copying: boolean
+  memberInfo: MemberInfo | null
+  formData: AnamneseFormData
+}
+
+type AnamnesePageAction =
+  | { type: "loading"; loading: boolean }
+  | { type: "saving"; saving: boolean }
+  | { type: "copying"; copying: boolean }
+  | { type: "loaded"; memberInfo: MemberInfo | null; formData: AnamneseFormData }
+  | { type: "formData"; formData: AnamneseFormData }
+
+const initialAnamnesePageState: AnamnesePageState = {
+  loading: true,
+  saving: false,
+  copying: false,
+  memberInfo: null,
+  formData: {},
+}
+
+function anamnesePageReducer(
+  state: AnamnesePageState,
+  action: AnamnesePageAction
+): AnamnesePageState {
+  switch (action.type) {
+    case "loading":
+      return { ...state, loading: action.loading }
+    case "saving":
+      return { ...state, saving: action.saving }
+    case "copying":
+      return { ...state, copying: action.copying }
+    case "loaded":
+      return {
+        ...state,
+        loading: false,
+        memberInfo: action.memberInfo,
+        formData: action.formData,
+      }
+    case "formData":
+      return { ...state, formData: action.formData }
+  }
+}
+
 export default function AnamnesePage() {
+  return useAdminAnamnesePage()
+}
+
+function useAdminAnamnesePage() {
   const params = useParams()
   const memberId = params.id as string
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [copying, setCopying] = useState(false)
-  const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
-  const [formData, setFormData] = useState<AnamneseFormData>({})
+  const [{ loading, saving, copying, memberInfo, formData }, dispatch] =
+    useReducer(anamnesePageReducer, initialAnamnesePageState)
 
   const loadMemberData = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/membros/${memberId}/anamnese`)
+      dispatch({ type: "loading", loading: true })
+      const response = await fetchWithTimeout(`/api/membros/${memberId}/anamnese`)
       if (response.ok) {
         const data = await response.json()
-        setMemberInfo(data.member)
-        setFormData(data.anamnese || {})
+        dispatch({ type: "loaded", memberInfo: data.member, formData: data.anamnese || {} })
       }
     } catch (error) {
       console.error("Error loading anamnese:", error)
       toast.error("Erro ao carregar dados da anamnese")
     } finally {
-      setLoading(false)
+      dispatch({ type: "loading", loading: false })
     }
   }, [memberId])
 
@@ -55,8 +101,8 @@ export default function AnamnesePage() {
 
   const handleSave = async () => {
     try {
-      setSaving(true)
-      const response = await fetch(`/api/membros/${memberId}/anamnese`, {
+      dispatch({ type: "saving", saving: true })
+      const response = await fetchWithTimeout(`/api/membros/${memberId}/anamnese`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -70,14 +116,14 @@ export default function AnamnesePage() {
       console.error("Error saving:", error)
       toast.error("Erro ao salvar anamnese")
     } finally {
-      setSaving(false)
+      dispatch({ type: "saving", saving: false })
     }
   }
 
   const handleCopyLink = async () => {
     try {
-      setCopying(true)
-      const response = await fetch(`/api/membros/${memberId}/anamnese-link`, { method: "POST" })
+      dispatch({ type: "copying", copying: true })
+      const response = await fetchWithTimeout(`/api/membros/${memberId}/anamnese-link`, { method: "POST" })
       if (!response.ok) {
         toast.error(await readResponseErrorMessage(response, "Erro ao gerar link"))
         return
@@ -95,12 +141,12 @@ export default function AnamnesePage() {
       console.error("Error copying link:", error)
       toast.error("Erro ao copiar link")
     } finally {
-      setCopying(false)
+      dispatch({ type: "copying", copying: false })
     }
   }
 
   const updateField = (field: keyof AnamneseFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    dispatch({ type: "formData", formData: { ...formData, [field]: value } })
   }
 
   const isWoman = memberInfo?.sexo === "Feminino"
@@ -108,7 +154,7 @@ export default function AnamnesePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -120,7 +166,7 @@ export default function AnamnesePage() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/alunos/${memberId}`}>
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Link>
           </Button>
           <div>
@@ -133,15 +179,15 @@ export default function AnamnesePage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleCopyLink} disabled={copying}>
             {copying ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <Copy className="mr-2 h-4 w-4" />
+              <Copy className="mr-2 size-4" />
             )}
             Copiar link
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : null}
             Salvar
           </Button>
@@ -152,7 +198,7 @@ export default function AnamnesePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
+            <ClipboardList className="size-5" />
             Anamnese
           </CardTitle>
           <CardDescription>
@@ -560,7 +606,7 @@ export default function AnamnesePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
+            <Heart className="size-5" />
             PAR-Q
           </CardTitle>
           <CardDescription>
@@ -691,7 +737,7 @@ export default function AnamnesePage() {
         </Button>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 size-4 animate-spin" />
           ) : null}
           Salvar Anamnese
         </Button>

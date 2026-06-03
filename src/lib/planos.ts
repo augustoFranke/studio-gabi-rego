@@ -9,8 +9,8 @@ export function groupPlansByCategory<T extends PlanoNome>(planos: T[]) {
 
   for (const plano of planos) {
     const nome = plano.nome.toLowerCase()
-    const isGabi = nome.includes('gabi')
-    const isEstagiario = nome.includes('estagiário') || nome.includes('estagiarios')
+    const isGabi = /gabi/.test(nome)
+    const isEstagiario = /estagiário|estagiarios/.test(nome)
 
     if (isGabi) {
       planosGabi.push(plano)

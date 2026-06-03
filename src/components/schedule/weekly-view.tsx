@@ -77,7 +77,8 @@ const WeeklyViewBase = function WeeklyView({
                 const dateKey = formatDateISO(day)
                 const dayCount = agendamentosByDate.get(dateKey)?.length || 0
                 return (
-                  <button
+                <button
+                  type="button"
                     key={day.toISOString()}
                     onClick={() => handleDayHeaderClick(day)}
                     className={cn(
@@ -97,7 +98,7 @@ const WeeklyViewBase = function WeeklyView({
                       className={cn(
                         'text-sm font-medium',
                         isTodayDate &&
-                        'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center mx-auto'
+                        'bg-primary text-primary-foreground rounded-full size-7 flex items-center justify-center mx-auto'
                       )}
                     >
                       {formatDayMonth(day).split('/')[0]}

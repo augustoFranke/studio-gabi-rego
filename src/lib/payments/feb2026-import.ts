@@ -225,13 +225,13 @@ export function buildImportKey(month: string, normalizedName: string, amount: nu
 }
 
 export function findBestMatch(rawName: string, candidates: MatchCandidate[]): MatchResult {
-  const scored = candidates
-    .map((candidate) => ({
-      candidate,
-      score: computeScore(rawName, candidate.nome),
-    }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
+  const scored = candidates.reduce<Array<{ candidate: MatchCandidate; score: number }>>((acc, candidate) => {
+    const score = computeScore(rawName, candidate.nome)
+    if (score > 0) {
+      acc.push({ candidate, score })
+    }
+    return acc
+  }, []).sort((a, b) => b.score - a.score)
 
   const best = scored[0]
   const second = scored[1]
@@ -348,14 +348,18 @@ async function loadCandidates(prisma: PrismaClient | Prisma.TransactionClient): 
     },
   })
 
-  return membros
-    .filter((membro) => (membro.usuario.nome ?? '').trim().length > 0)
-    .map((membro) => ({
-      membroId: membro.id,
-      nome: (membro.usuario.nome ?? '').trim(),
-      normalizedNome: normalizeForMatching(membro.usuario.nome ?? ''),
-      planoId: membro.planoId,
-    }))
+  return membros.reduce<MatchCandidate[]>((acc, membro) => {
+    const nome = (membro.usuario.nome ?? '').trim()
+    if (nome.length > 0) {
+      acc.push({
+        membroId: membro.id,
+        nome,
+        normalizedNome: normalizeForMatching(membro.usuario.nome ?? ''),
+        planoId: membro.planoId,
+      })
+    }
+    return acc
+  }, [])
 }
 
 async function findDefaultPlanId(prisma: PrismaClient | Prisma.TransactionClient): Promise<string> {
@@ -742,29 +746,30 @@ export async function rollbackPaymentImportByBatchId(prisma: PrismaClient, batch
   return prisma.$transaction(async (tx) => {
     const deleted = await tx.pagamento.deleteMany({ where: { importRunId: run.id } })
 
-    await tx.pagamentoImportRun.update({
-      where: { id: run.id },
-      data: { status: RUN_STATUS.ROLLED_BACK },
-    })
-
-    await tx.pagamentoImportRun.create({
-      data: {
-        batchId: rollbackBatchId,
-        sourceFilename: run.sourceFilename,
-        sourceBasename: run.sourceBasename,
-        competenciaMes: run.competenciaMes,
-        status: RUN_STATUS.ROLLED_BACK,
-        dryRun: false,
-        rollbackOfRunId: run.id,
-        totalRowsSeen: run.totalRowsSeen,
-        rowsWithNumericPago: run.rowsWithNumericPago,
-        inserted: 0,
-        skipped: run.skipped,
-        matched: run.matched,
-        ambiguous: run.ambiguous,
-        unmatched: run.unmatched,
-      },
-    })
+    await Promise.all([
+      tx.pagamentoImportRun.update({
+        where: { id: run.id },
+        data: { status: RUN_STATUS.ROLLED_BACK },
+      }),
+      tx.pagamentoImportRun.create({
+        data: {
+          batchId: rollbackBatchId,
+          sourceFilename: run.sourceFilename,
+          sourceBasename: run.sourceBasename,
+          competenciaMes: run.competenciaMes,
+          status: RUN_STATUS.ROLLED_BACK,
+          dryRun: false,
+          rollbackOfRunId: run.id,
+          totalRowsSeen: run.totalRowsSeen,
+          rowsWithNumericPago: run.rowsWithNumericPago,
+          inserted: 0,
+          skipped: run.skipped,
+          matched: run.matched,
+          ambiguous: run.ambiguous,
+          unmatched: run.unmatched,
+        },
+      }),
+    ])
 
     return {
       originalBatchId: run.batchId,

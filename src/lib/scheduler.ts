@@ -48,15 +48,14 @@ async function processNotifications<T>({
     return summary
   }
 
-  for (const item of items) {
+  const results = await Promise.all(items.map(async (item) => {
     const existingNotificacao = await findExistingNotification({
       dedupeKey: dedupeKey(item),
       legacyWhere: legacyWhere(item),
     })
 
     if (isNotificationDelivered(existingNotificacao)) {
-      summary.skipped += 1
-      continue
+      return { sent: 0, skipped: 1, failed: 0 }
     }
 
     const notificacao = await createOrRefreshNotification({
@@ -69,11 +68,17 @@ async function processNotifications<T>({
       if (sendEmail) await sendEmail(item)
       if (sendWhatsapp) await sendWhatsapp(item)
       await markNotificationDelivered(notificacao)
-      summary.sent += 1
+      return { sent: 1, skipped: 0, failed: 0 }
     } catch (error) {
       await markNotificationFailed(notificacao, error)
-      summary.failed += 1
+      return { sent: 0, skipped: 0, failed: 1 }
     }
+  }))
+
+  for (const result of results) {
+    summary.sent += result.sent
+    summary.skipped += result.skipped
+    summary.failed += result.failed
   }
 
   return summary
@@ -187,9 +192,8 @@ export async function sincronizarAgendamentosRecorrentes() {
 }
 
 export async function executarTodasTarefas() {
-  const pagamentosAtualizados = await atualizarPagamentosAtrasados()
-
-  const [cobrancas, aniversarios, recorrencias] = await Promise.all([
+  const [pagamentosAtualizados, cobrancas, aniversarios, recorrencias] = await Promise.all([
+    atualizarPagamentosAtrasados(),
     runCobrancaWhatsappT1(),
     processarAniversarios(),
     sincronizarAgendamentosRecorrentes(),

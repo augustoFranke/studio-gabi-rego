@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react"
+import { useEffect, useState, useCallback, useEffectEvent, useMemo, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -61,6 +61,7 @@ import type { Prisma } from '@prisma/client'
 import { groupPlansByCategory } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
 import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
+import { fetchWithTimeout } from "@/lib/http"
 
 type FinanceiroStats = {
   totalPlanos: number
@@ -105,13 +106,15 @@ type Membro = Omit<
   precoCustomizado?: string | number | null
 }
 
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+})
+
 // Helper functions
 function formatCurrency(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value) : value
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num)
+  return currencyFormatter.format(num)
 }
 
 function formatDate(date: string): string {
@@ -129,10 +132,10 @@ function getNextBillingDate(date: Date): string {
 
 function getStatusBadge(status: Pagamento["status"]) {
   const variants: Record<Pagamento["status"], { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
-    PAGO: { variant: "default", icon: <Check className="h-3 w-3" />, label: "Pago" },
-    PENDENTE: { variant: "secondary", icon: <Clock className="h-3 w-3" />, label: "Pendente" },
-    ATRASADO: { variant: "destructive", icon: <AlertCircle className="h-3 w-3" />, label: "Atrasado" },
-    CANCELADO: { variant: "outline", icon: <XCircle className="h-3 w-3" />, label: "Cancelado" },
+    PAGO: { variant: "default", icon: <Check className="size-3" />, label: "Pago" },
+    PENDENTE: { variant: "secondary", icon: <Clock className="size-3" />, label: "Pendente" },
+    ATRASADO: { variant: "destructive", icon: <AlertCircle className="size-3" />, label: "Atrasado" },
+    CANCELADO: { variant: "outline", icon: <XCircle className="size-3" />, label: "Cancelado" },
   }
   const { variant, icon, label } = variants[status]
   return (
@@ -144,6 +147,10 @@ function getStatusBadge(status: Pagamento["status"]) {
 }
 
 export default function FinanceiroPage() {
+  return useFinanceiroPage()
+}
+
+function useFinanceiroPage() {
   const [planos, setPlanos] = useState<Plano[]>([])
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
   const [membros, setMembros] = useState<Membro[]>([])
@@ -272,16 +279,15 @@ export default function FinanceiroPage() {
         sort: "vencimento_desc",
       })
 
-      const res = await fetch(`/api/pagamentos?${params.toString()}`)
+      if (requestId !== pagamentoDueDateRequestId.current) {
+        return null
+      }
+      const res = await fetchWithTimeout(`/api/pagamentos?${params.toString()}`)
       if (!res.ok) {
         return null
       }
 
       const response = await res.json()
-      if (requestId !== pagamentoDueDateRequestId.current) {
-        return null
-      }
-
       const latestPagamento = response.data?.[0]
       if (!latestPagamento?.dataVencimento) {
         return null
@@ -305,7 +311,7 @@ export default function FinanceiroPage() {
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/financeiro/stats")
+      const res = await fetchWithTimeout("/api/financeiro/stats")
       if (res.ok) {
         const data = await res.json()
         setStats(data)
@@ -328,10 +334,10 @@ export default function FinanceiroPage() {
       if (status && status !== 'all') params.set('status', status)
       if (sort) params.set('sort', sort)
 
-      const res = await fetch(`/api/pagamentos?${params.toString()}`)
       if (requestId !== pagamentosRequestId.current) {
         return
       }
+      const res = await fetchWithTimeout(`/api/pagamentos?${params.toString()}`)
       if (res.ok) {
         const response = await res.json()
         setPagamentos(response.data)
@@ -354,8 +360,8 @@ export default function FinanceiroPage() {
   const fetchBootstrapData = useCallback(async () => {
     try {
       const [planosRes, membrosRes] = await Promise.all([
-        fetch("/api/planos?includeInactive=true"),
-        fetch("/api/membros"),
+        fetchWithTimeout("/api/planos?includeInactive=true"),
+        fetchWithTimeout("/api/membros"),
       ])
 
       if (planosRes.ok) {
@@ -382,17 +388,15 @@ export default function FinanceiroPage() {
     fetchStats()
   }, [fetchStats])
 
-  // Debounce search to avoid API call on every keystroke
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchPagamento), 350)
-    return () => clearTimeout(timer)
-  }, [searchPagamento])
+  const fetchPagamentosEvent = useEffectEvent(fetchPagamentos)
 
   // Refetch when search or filter changes
   useEffect(() => {
-    fetchPagamentos(1, debouncedSearch, filterStatus, sortPagamento)
-  }, [debouncedSearch, filterStatus, sortPagamento, fetchPagamentos])
+    const timer = setTimeout(() => {
+      fetchPagamentosEvent(1, searchPagamento, filterStatus, sortPagamento)
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [filterStatus, searchPagamento, sortPagamento])
 
   // Plano handlers
   const handleOpenPlanoDialog = (plano?: Plano) => {
@@ -456,7 +460,7 @@ export default function FinanceiroPage() {
       const url = editingPlano ? `/api/planos/${editingPlano.id}` : "/api/planos"
       const method = editingPlano ? "PUT" : "POST"
 
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -490,7 +494,7 @@ export default function FinanceiroPage() {
     }
 
     try {
-      const res = await fetch(`/api/planos/${plano.id}`, { method: "DELETE" })
+      const res = await fetchWithTimeout(`/api/planos/${plano.id}`, { method: "DELETE" })
       const data = await res.json()
 
       if (res.ok) {
@@ -507,7 +511,7 @@ export default function FinanceiroPage() {
 
   const handleTogglePlanoAtivo = async (plano: Plano) => {
     try {
-      const res = await fetch(`/api/planos/${plano.id}`, {
+      const res = await fetchWithTimeout(`/api/planos/${plano.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ativo: !plano.ativo }),
@@ -610,7 +614,7 @@ export default function FinanceiroPage() {
         observacao: pagamentoForm.observacao || null,
       }
 
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -634,7 +638,7 @@ export default function FinanceiroPage() {
 
   const handleUpdatePagamentoStatus = async (pagamento: Pagamento, newStatus: Pagamento["status"]) => {
     try {
-      const res = await fetch(`/api/pagamentos/${pagamento.id}`, {
+      const res = await fetchWithTimeout(`/api/pagamentos/${pagamento.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -663,7 +667,7 @@ export default function FinanceiroPage() {
 
     setDeletingPagamento(true)
     try {
-      const res = await fetch(`/api/pagamentos/${pagamentoToDelete.id}`, { method: "DELETE" })
+      const res = await fetchWithTimeout(`/api/pagamentos/${pagamentoToDelete.id}`, { method: "DELETE" })
       const data = await res.json()
 
       if (res.ok) {
@@ -687,8 +691,8 @@ export default function FinanceiroPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando dados...</p>
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando dados…</p>
         </div>
       </div>
     )
@@ -708,10 +712,10 @@ export default function FinanceiroPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <CreditCard className="h-4 w-4 text-primary" />
+            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+              <CreditCard className="size-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
@@ -719,10 +723,10 @@ export default function FinanceiroPage() {
           </CardContent>
         </Card>
         <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Clock className="h-4 w-4 text-primary" />
+            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+              <Clock className="size-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
@@ -730,10 +734,10 @@ export default function FinanceiroPage() {
           </CardContent>
         </Card>
         <Card className="group hover:shadow-md hover:shadow-destructive/5 transition-shadow border-destructive/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Atrasados</CardTitle>
-            <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-colors">
-              <AlertCircle className="h-4 w-4 text-destructive" />
+            <div className="size-9 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-colors">
+              <AlertCircle className="size-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
@@ -741,10 +745,10 @@ export default function FinanceiroPage() {
           </CardContent>
         </Card>
         <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Wallet className="h-4 w-4 text-primary" />
+            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+              <Wallet className="size-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
@@ -769,8 +773,8 @@ export default function FinanceiroPage() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-primary" />
+                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <DollarSign className="size-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle>Pagamentos</CardTitle>
@@ -782,7 +786,7 @@ export default function FinanceiroPage() {
                 <Dialog open={pagamentoDialogOpen} onOpenChange={setPagamentoDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={() => handleOpenPagamentoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
-                      <Plus className="mr-2 h-4 w-4" />
+                      <Plus className="mr-2 size-4" />
                       Novo Pagamento
                     </Button>
                   </DialogTrigger>
@@ -881,7 +885,7 @@ export default function FinanceiroPage() {
 
                             return (
                               <span className="flex items-center gap-2">
-                                <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                                <span className={`size-1.5 rounded-full ${dotClass}`} />
                                 {option.label}
                               </span>
                             )
@@ -984,7 +988,7 @@ export default function FinanceiroPage() {
                         Cancelar
                       </Button>
                       <Button onClick={handleSavePagamento} disabled={submitting} className="shadow-md shadow-primary/25">
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
                         {editingPagamento ? "Salvar" : "Criar"}
                       </Button>
                     </DialogFooter>
@@ -1025,8 +1029,8 @@ export default function FinanceiroPage() {
                       >
                         {deletingPagamento ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Excluindo...
+                            <Loader2 className="mr-2 size-4 animate-spin" />
+                            Excluindo…
                           </>
                         ) : (
                           "Excluir permanentemente"
@@ -1041,7 +1045,7 @@ export default function FinanceiroPage() {
               {/* Filters */}
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar por nome..."
                     value={searchPagamento}
@@ -1075,8 +1079,8 @@ export default function FinanceiroPage() {
 
               {pagamentos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <DollarSign className="h-6 w-6 text-muted-foreground" />
+                  <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <DollarSign className="size-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Nenhum pagamento encontrado.
@@ -1103,7 +1107,7 @@ export default function FinanceiroPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="flex items-center w-fit border-primary/30 text-primary">
-                              <CreditCard className="mr-1 h-3 w-3" />
+                              <CreditCard className="mr-1 size-3" />
                               {pagamento.plano.nome}
                             </Badge>
                           </TableCell>
@@ -1120,7 +1124,7 @@ export default function FinanceiroPage() {
                                   title="Marcar como pago"
                                   className="hover:bg-primary/10 hover:text-primary"
                                 >
-                                  <Check className="h-4 w-4 text-primary" />
+                                  <Check className="size-4 text-primary" />
                                 </Button>
                               )}
                               <Button
@@ -1129,7 +1133,7 @@ export default function FinanceiroPage() {
                                 onClick={() => handleOpenPagamentoDialog(pagamento)}
                                 className="hover:bg-primary/10 hover:text-primary"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="size-4" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1137,7 +1141,7 @@ export default function FinanceiroPage() {
                                 onClick={() => handleDeletePagamento(pagamento)}
                                 className="hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="size-4 text-destructive" />
                               </Button>
                             </div>
                           </TableCell>
@@ -1154,42 +1158,42 @@ export default function FinanceiroPage() {
                   <div className="flex-1 text-sm text-muted-foreground">
                     Página {currentPage} de {totalPages}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-x-2">
                     <Button
                       variant="outline"
-                      className="h-8 w-8 p-0 lg:flex"
+                      className="size-8 p-0 lg:flex"
                       onClick={() => fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Primeira página</span>
-                      <ChevronsLeft className="h-4 w-4" />
+                      <ChevronsLeft className="size-4" />
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-8 w-8 p-0"
+                      className="size-8 p-0"
                       onClick={() => fetchPagamentos(currentPage - 1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === 1 || loadingPagamentos}
                     >
                       <span className="sr-only">Página anterior</span>
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="size-4" />
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-8 w-8 p-0"
+                      className="size-8 p-0"
                       onClick={() => fetchPagamentos(currentPage + 1, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Próxima página</span>
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="size-4" />
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-8 w-8 p-0 lg:flex"
+                      className="size-8 p-0 lg:flex"
                       onClick={() => fetchPagamentos(totalPages, searchPagamento, filterStatus, sortPagamento)}
                       disabled={currentPage === totalPages || loadingPagamentos}
                     >
                       <span className="sr-only">Última página</span>
-                      <ChevronsRight className="h-4 w-4" />
+                      <ChevronsRight className="size-4" />
                     </Button>
                   </div>
                 </div>
@@ -1204,8 +1208,8 @@ export default function FinanceiroPage() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-primary" />
+                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <CreditCard className="size-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle>Planos</CardTitle>
@@ -1217,7 +1221,7 @@ export default function FinanceiroPage() {
                 <Dialog open={planoDialogOpen} onOpenChange={setPlanoDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={() => handleOpenPlanoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
-                      <Plus className="mr-2 h-4 w-4" />
+                      <Plus className="mr-2 size-4" />
                       Novo Plano
                     </Button>
                   </DialogTrigger>
@@ -1350,7 +1354,7 @@ export default function FinanceiroPage() {
                         Cancelar
                       </Button>
                       <Button onClick={handleSavePlano} disabled={submitting} className="shadow-md shadow-primary/25">
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
                         {editingPlano ? "Salvar" : "Criar"}
                       </Button>
                     </DialogFooter>
@@ -1361,8 +1365,8 @@ export default function FinanceiroPage() {
             <CardContent>
               {planos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <CreditCard className="h-6 w-6 text-muted-foreground" />
+                  <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <CreditCard className="size-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Nenhum plano cadastrado. Clique em &quot;Novo Plano&quot; para começar.
@@ -1373,7 +1377,7 @@ export default function FinanceiroPage() {
                   {groupedTodosPlanos.planosGabi.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/30">
+                              <div className="size-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/30">
                                 <span className="text-white text-sm font-bold">G</span>
                               </div>
                               <div>
@@ -1414,11 +1418,11 @@ export default function FinanceiroPage() {
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
-                                          <Calendar className="h-4 w-4 text-amber-500" />
+                                          <Calendar className="size-4 text-amber-500" />
                                           {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <Users className="h-4 w-4 text-amber-500" />
+                                          <Users className="size-4 text-amber-500" />
                                           {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
@@ -1429,7 +1433,7 @@ export default function FinanceiroPage() {
                                           className="flex-1 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-950/50"
                                           onClick={() => handleOpenPlanoDialog(plano)}
                                         >
-                                          <Pencil className="mr-2 h-4 w-4" />
+                                          <Pencil className="mr-2 size-4" />
                                           Editar
                                         </Button>
                                         <Button
@@ -1446,7 +1450,7 @@ export default function FinanceiroPage() {
                                           onClick={() => handleDeletePlano(plano)}
                                           className="hover:bg-destructive/10"
                                         >
-                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                          <Trash2 className="size-4 text-destructive" />
                                         </Button>
                                       </div>
                                     </div>
@@ -1460,7 +1464,7 @@ export default function FinanceiroPage() {
                     {groupedTodosPlanos.planosEstagiarios.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-blue-500/30">
+                              <div className="size-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-blue-500/30">
                                 <span className="text-white text-sm font-bold">E</span>
                               </div>
                               <div>
@@ -1501,11 +1505,11 @@ export default function FinanceiroPage() {
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
-                                          <Calendar className="h-4 w-4 text-sky-500" />
+                                          <Calendar className="size-4 text-sky-500" />
                                           {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <Users className="h-4 w-4 text-sky-500" />
+                                          <Users className="size-4 text-sky-500" />
                                           {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
@@ -1516,7 +1520,7 @@ export default function FinanceiroPage() {
                                           className="flex-1 hover:bg-sky-100 hover:text-sky-700 hover:border-sky-300 dark:hover:bg-sky-950/50"
                                           onClick={() => handleOpenPlanoDialog(plano)}
                                         >
-                                          <Pencil className="mr-2 h-4 w-4" />
+                                          <Pencil className="mr-2 size-4" />
                                           Editar
                                         </Button>
                                         <Button
@@ -1533,7 +1537,7 @@ export default function FinanceiroPage() {
                                           onClick={() => handleDeletePlano(plano)}
                                           className="hover:bg-destructive/10"
                                         >
-                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                          <Trash2 className="size-4 text-destructive" />
                                         </Button>
                                       </div>
                                     </div>
@@ -1547,7 +1551,7 @@ export default function FinanceiroPage() {
                   {groupedTodosPlanos.planosOutros.length > 0 && (
                           <div>
                             <div className="flex items-center gap-3 mb-4">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30">
+                              <div className="size-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30">
                                 <span className="text-white text-sm font-bold">+</span>
                               </div>
                               <div>
@@ -1588,11 +1592,11 @@ export default function FinanceiroPage() {
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
-                                          <Calendar className="h-4 w-4 text-violet-500" />
+                                          <Calendar className="size-4 text-violet-500" />
                                           {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <Users className="h-4 w-4 text-violet-500" />
+                                          <Users className="size-4 text-violet-500" />
                                           {plano._count?.membros || 0} alunos
                                         </div>
                                       </div>
@@ -1603,7 +1607,7 @@ export default function FinanceiroPage() {
                                           className="flex-1 hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300 dark:hover:bg-violet-950/50"
                                           onClick={() => handleOpenPlanoDialog(plano)}
                                         >
-                                          <Pencil className="mr-2 h-4 w-4" />
+                                          <Pencil className="mr-2 size-4" />
                                           Editar
                                         </Button>
                                         <Button
@@ -1620,7 +1624,7 @@ export default function FinanceiroPage() {
                                           onClick={() => handleDeletePlano(plano)}
                                           className="hover:bg-destructive/10"
                                         >
-                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                          <Trash2 className="size-4 text-destructive" />
                                         </Button>
                                       </div>
                                     </div>

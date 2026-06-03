@@ -9,7 +9,7 @@ export default function NovoMembroPage() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/alunos">
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
           </Link>
         </Button>
         <div>

@@ -4,6 +4,7 @@ import {
   PROVIDER_SEND_OK,
   PROVIDER_SEND_FAILED,
 } from '@/lib/observability/events'
+import { fetchWithTimeout } from '@/lib/http'
 
 const PROVIDER = 'evolution'
 
@@ -63,7 +64,7 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
   const baseUrl = url.replace(/\/$/, '')
 
   try {
-    const response = await fetch(`${baseUrl}/message/sendText/${instance}`, {
+    const response = await fetchWithTimeout(`${baseUrl}/message/sendText/${instance}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,6 +75,7 @@ export async function sendWhatsappText({ to, text }: SendWhatsappTextParams) {
         number: to,
         text,
       }),
+      timeoutMs: 10_000,
     })
 
     if (!response.ok) {
