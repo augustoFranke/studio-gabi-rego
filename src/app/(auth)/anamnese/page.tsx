@@ -28,10 +28,7 @@ function useAnamneseContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
   const tokenFromUrl = searchParams.get("token")
-  const [{ token, tokenChecked }, setTokenState] = useState<{ token: string | null; tokenChecked: boolean }>({
-    token: null,
-    tokenChecked: false,
-  })
+  const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [formData, setFormData] = useState<AnamneseFormData>({})
@@ -69,7 +66,10 @@ function useAnamneseContent() {
       shouldReplaceUrl = true
     }
 
-    setTokenState({ token: nextToken, tokenChecked: true })
+    // Token is resolved from window.location.hash and history side-effects, which
+    // are not derivable during render, so it must be synced into state here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToken(nextToken)
     if (shouldReplaceUrl) {
       replace("/anamnese")
     }
@@ -114,7 +114,7 @@ function useAnamneseContent() {
               setTokenError(errorMessage)
               setLoadingData(false)
             }
-            setTokenState({ token: null, tokenChecked: true })
+            setToken(null)
             return
           }
           if (response.status === 404) {
@@ -182,7 +182,7 @@ function useAnamneseContent() {
       toast.success(token ? "Anamnese enviada com sucesso!" : "Cadastro concluído!")
       setIsLoading(false)
       if (token) {
-        setTokenState({ token: null, tokenChecked: true })
+        setToken(null)
         try {
           localStorage.removeItem(PROFILE_TOKEN_STORAGE_KEY)
         } catch {
