@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -36,6 +37,16 @@ const AgendamentoModal = dynamic(
   () => import('@/components/schedule/agendamento-modal').then((mod) => mod.AgendamentoModal),
   { ssr: false }
 )
+
+interface AgendaStatsProps {
+  stats: {
+    totalAgendamentos: number
+    uniqueMembros: number
+    totalHours: number
+    avgPerDay: number
+  }
+  isLoading: boolean
+}
 
 export default function AgendaPage() {
   const {
@@ -114,75 +125,14 @@ export default function AgendaPage() {
         </p>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Aulas</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : stats.totalAgendamentos}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              no periodo selecionado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Membros Ativos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : stats.uniqueMembros}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              com aulas agendadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Horarios</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : stats.totalHours}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              diferentes utilizados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Media por Dia</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Skeleton className="h-8 w-16" /> : stats.avgPerDay}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              aulas por dia
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <AgendaStats stats={stats} isLoading={isLoading} />
 
       {/* Schedule header with navigation and view switcher */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-primary" />
+            <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Calendar className="size-5 text-primary" />
             </div>
             <div>
               <CardTitle>Calendario de Aulas</CardTitle>
@@ -337,5 +287,45 @@ export default function AgendaPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function AgendaStats({ stats, isLoading }: AgendaStatsProps) {
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      <AgendaStatCard title="Total de Aulas" value={stats.totalAgendamentos} description="no periodo selecionado" isLoading={isLoading} icon={<Calendar className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Membros Ativos" value={stats.uniqueMembros} description="com aulas agendadas" isLoading={isLoading} icon={<Users className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Horarios" value={stats.totalHours} description="diferentes utilizados" isLoading={isLoading} icon={<Clock className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Media por Dia" value={stats.avgPerDay} description="aulas por dia" isLoading={isLoading} icon={<TrendingUp className="size-4 text-muted-foreground" />} />
+    </div>
+  )
+}
+
+function AgendaStatCard({
+  title,
+  value,
+  description,
+  isLoading,
+  icon,
+}: {
+  title: string
+  value: number
+  description: string
+  isLoading: boolean
+  icon: ReactNode
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">
+          {isLoading ? <Skeleton className="h-8 w-16" /> : value}
+        </div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
   )
 }

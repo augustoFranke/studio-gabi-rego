@@ -26,6 +26,8 @@ import { formatDateBR, formatHour, parseDateFromAPI, HOURS } from '@/lib/schedul
 import { sortByTextPtBr } from '@/lib/select-options'
 import type { Agendamento, Membro } from '@/types/schedule'
 
+const EMPTY_MEMBROS: Membro[] = []
+
 interface AgendamentoModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -50,7 +52,7 @@ export function AgendamentoModal({
   open,
   onOpenChange,
   agendamento,
-  membros = [],
+  membros = EMPTY_MEMBROS,
   selectedDate,
   selectedHour,
   mode,
@@ -112,7 +114,7 @@ export function AgendamentoModal({
         <div className="space-y-4">
           {/* Member info */}
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-            <Avatar className="h-10 w-10">
+            <Avatar className="size-10">
               <AvatarImage src={agendamento.membro.fotoUrl || undefined} />
               <AvatarFallback>
                 {getInitials(agendamento.membro.usuario.nome)}
@@ -170,7 +172,7 @@ export function AgendamentoModal({
             disabled={isLoading}
             className="w-full sm:w-auto"
           >
-            <Trash2 className="h-4 w-4 mr-1" />
+            <Trash2 className="size-4 mr-1" />
             Remover
           </Button>
           <div className="flex gap-2 w-full sm:w-auto">
@@ -189,7 +191,7 @@ export function AgendamentoModal({
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {isLoading && <Loader2 className="size-4 mr-1 animate-spin" />}
               Salvar
             </Button>
           </div>
@@ -275,7 +277,7 @@ export function AgendamentoModal({
             onClick={handleSave}
             disabled={isLoading || !selectedMembro || !selectedHourValue}
           >
-            {isLoading && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            {isLoading && <Loader2 className="size-4 mr-1 animate-spin" />}
             Agendar
           </Button>
         </DialogFooter>

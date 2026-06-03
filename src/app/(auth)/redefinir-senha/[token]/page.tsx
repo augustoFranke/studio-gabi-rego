@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useReducer, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -11,22 +11,78 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { AlertCircle, CheckCircle2, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import Image from "next/image"
+import { fetchWithTimeout } from "@/lib/http"
 
 interface PageProps {
   params: Promise<{ token: string }>
 }
 
+type TokenStatus = "validating" | "valid" | "invalid"
+
+type ResetPasswordState = {
+  isLoading: boolean
+  tokenStatus: TokenStatus
+  isSuccess: boolean
+  showPassword: boolean
+  showConfirmPassword: boolean
+  password: string
+  confirmPassword: string
+}
+
+type ResetPasswordAction =
+  | { type: "tokenStatus"; tokenStatus: TokenStatus }
+  | { type: "loading"; isLoading: boolean }
+  | { type: "success" }
+  | { type: "togglePassword" }
+  | { type: "toggleConfirmPassword" }
+  | { type: "password"; password: string }
+  | { type: "confirmPassword"; confirmPassword: string }
+
+const initialResetPasswordState: ResetPasswordState = {
+  isLoading: false,
+  tokenStatus: "validating",
+  isSuccess: false,
+  showPassword: false,
+  showConfirmPassword: false,
+  password: "",
+  confirmPassword: "",
+}
+
+function resetPasswordReducer(
+  state: ResetPasswordState,
+  action: ResetPasswordAction
+): ResetPasswordState {
+  switch (action.type) {
+    case "tokenStatus":
+      return { ...state, tokenStatus: action.tokenStatus }
+    case "loading":
+      return { ...state, isLoading: action.isLoading }
+    case "success":
+      return { ...state, isSuccess: true }
+    case "togglePassword":
+      return { ...state, showPassword: !state.showPassword }
+    case "toggleConfirmPassword":
+      return { ...state, showConfirmPassword: !state.showConfirmPassword }
+    case "password":
+      return { ...state, password: action.password }
+    case "confirmPassword":
+      return { ...state, confirmPassword: action.confirmPassword }
+  }
+}
+
 export default function RedefinirSenhaPage({ params }: PageProps) {
   const { token } = use(params)
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isValidating, setIsValidating] = useState(true)
-  const [isValid, setIsValid] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const { push } = useRouter()
+  const [state, dispatch] = useReducer(resetPasswordReducer, initialResetPasswordState)
+  const {
+    isLoading,
+    tokenStatus,
+    isSuccess,
+    showPassword,
+    showConfirmPassword,
+    password,
+    confirmPassword,
+  } = state
 
   // Password validation
   const hasMinLength = password.length >= 8
@@ -37,13 +93,11 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
   useEffect(() => {
     async function validateToken() {
       try {
-        const response = await fetch(`/api/auth/validar-token-reset?token=${token}`)
+        const response = await fetchWithTimeout(`/api/auth/validar-token-reset?token=${token}`)
         const data = await response.json()
-        setIsValid(data.valid === true)
+        dispatch({ type: "tokenStatus", tokenStatus: data.valid === true ? "valid" : "invalid" })
       } catch {
-        setIsValid(false)
-      } finally {
-        setIsValidating(false)
+        dispatch({ type: "tokenStatus", tokenStatus: "invalid" })
       }
     }
     validateToken()
@@ -62,10 +116,10 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
       return
     }
 
-    setIsLoading(true)
+    dispatch({ type: "loading", isLoading: true })
 
     try {
-      const response = await fetch("/api/auth/redefinir-senha", {
+      const response = await fetchWithTimeout("/api/auth/redefinir-senha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, senha: password }),
@@ -78,29 +132,29 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
         return
       }
 
-      setIsSuccess(true)
+      dispatch({ type: "success" })
       toast.success("Senha redefinida com sucesso!")
     } catch {
       toast.error("Erro ao redefinir senha. Tente novamente.")
     } finally {
-      setIsLoading(false)
+      dispatch({ type: "loading", isLoading: false })
     }
   }
 
   // Loading state
-  if (isValidating) {
+  if (tokenStatus === "validating") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-950 via-background to-orange-900/20">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Validando link...</p>
+          <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Validando link…</p>
         </div>
       </div>
     )
   }
 
   // Invalid token
-  if (!isValid) {
+  if (tokenStatus !== "valid") {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
         <div className="absolute top-4 right-4 z-20">
@@ -111,8 +165,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-red-500 to-red-400 rounded-t-xl" />
 
           <CardHeader className="text-center pb-4 pt-6">
-            <div className="mx-auto w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-              <AlertCircle className="w-8 h-8 text-red-500" />
+            <div className="mx-auto size-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+              <AlertCircle className="size-8 text-red-500" />
             </div>
             <CardTitle className="text-xl font-semibold text-red-500">Link Inválido ou Expirado</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
@@ -122,7 +176,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           <CardContent className="pt-0 pb-6">
             <Link href="/login">
               <Button className="w-full h-10 bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30">
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="size-4 mr-2" />
                 Voltar para o Login
               </Button>
             </Link>
@@ -144,8 +198,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-600 via-green-500 to-green-400 rounded-t-xl" />
 
           <CardHeader className="text-center pb-4 pt-6">
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-8 h-8 text-green-500" />
+            <div className="mx-auto size-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
+              <CheckCircle2 className="size-8 text-green-500" />
             </div>
             <CardTitle className="text-xl font-semibold text-green-500">Senha Redefinida!</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
@@ -154,7 +208,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           </CardHeader>
           <CardContent className="pt-0 pb-6">
             <Button
-              onClick={() => router.push("/login")}
+              onClick={() => push("/login")}
               className="w-full h-10 bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 shadow-lg shadow-orange-600/30"
             >
               Ir para o Login
@@ -170,8 +224,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-orange-900/20 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
       </div>
@@ -194,8 +248,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
               priority
             />
           </div>
-          <div className="mx-auto w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-            <Lock className="w-6 h-6 text-orange-500" />
+          <div className="mx-auto size-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+            <Lock className="size-6 text-orange-500" />
           </div>
           <CardTitle className="text-xl font-semibold">Redefinir Senha</CardTitle>
           <CardDescription className="text-muted-foreground mt-1">
@@ -207,7 +261,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Nova Senha
               </Label>
               <div className="relative">
@@ -215,7 +269,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => dispatch({ type: "password", password: e.target.value })}
                   placeholder="Digite sua nova senha"
                   required
                   disabled={isLoading}
@@ -223,17 +277,17 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => dispatch({ type: "togglePassword" })}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="confirmPassword" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Confirmar Senha
               </Label>
               <div className="relative">
@@ -241,7 +295,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => dispatch({ type: "confirmPassword", confirmPassword: e.target.value })}
                   placeholder="Confirme sua nova senha"
                   required
                   disabled={isLoading}
@@ -249,10 +303,10 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onClick={() => dispatch({ type: "toggleConfirmPassword" })}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
             </div>
@@ -261,19 +315,19 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
             <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground mb-2">Requisitos da senha:</p>
               <div className={`flex items-center gap-2 text-xs ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${hasMinLength ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
+                <div className={`size-1.5 rounded-full ${hasMinLength ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                 Mínimo 8 caracteres
               </div>
               <div className={`flex items-center gap-2 text-xs ${hasUppercase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${hasUppercase ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
+                <div className={`size-1.5 rounded-full ${hasUppercase ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                 Uma letra maiúscula
               </div>
               <div className={`flex items-center gap-2 text-xs ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${hasNumber ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
+                <div className={`size-1.5 rounded-full ${hasNumber ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                 Um número
               </div>
               <div className={`flex items-center gap-2 text-xs ${passwordsMatch ? 'text-green-500' : 'text-muted-foreground'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${passwordsMatch ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
+                <div className={`size-1.5 rounded-full ${passwordsMatch ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                 Senhas coincidem
               </div>
             </div>
@@ -285,8 +339,8 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Redefinindo...
+                  <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Redefinindo…
                 </span>
               ) : (
                 "Redefinir Senha"
@@ -296,13 +350,13 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
 
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50" />
+            <div className="size-1.5 rounded-full bg-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 
           <div className="text-center">
             <Link href="/login" className="text-sm text-orange-500 hover:text-orange-400 font-medium transition-colors inline-flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="size-4" />
               Voltar para o Login
             </Link>
           </div>

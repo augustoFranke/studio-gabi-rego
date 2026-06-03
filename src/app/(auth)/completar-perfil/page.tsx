@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
-import { readResponseErrorMessage } from "@/lib/http"
+import { fetchWithTimeout, readResponseErrorMessage } from "@/lib/http"
 
 const PROFILE_TOKEN_STORAGE_KEY = "onboarding_profile_token"
 
@@ -60,8 +60,8 @@ function clearStoredToken() {
 function CompletarPerfilContent() {
   const { status } = useSession()
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const [profileToken, setProfileToken] = useState<string | null>(null)
+  const { replace } = useRouter()
+  const profileTokenRef = useRef<string | null>(null)
   const [ready, setReady] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -79,19 +79,19 @@ function CompletarPerfilContent() {
     }
 
     if (status === "authenticated") {
-      setProfileToken(null)
+      profileTokenRef.current = null
       setReady(true)
       return
     }
 
     if (!token) {
-      router.replace("/cadastro")
+      replace("/cadastro")
       return
     }
 
-    setProfileToken(token)
+    profileTokenRef.current = token
     setReady(true)
-  }, [searchParams, router, status])
+  }, [searchParams, replace, status])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -103,11 +103,11 @@ function CompletarPerfilContent() {
       const cpf = formState.cpf.replace(/\D/g, "")
       const telefone = formState.telefone.replace(/\D/g, "")
 
-      const response = await fetch("/api/perfil", {
+      const response = await fetchWithTimeout("/api/perfil", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(profileToken ? { token: profileToken } : {}),
+          ...(profileTokenRef.current ? { token: profileTokenRef.current } : {}),
           nome: formState.nome,
           cpf: cpf || null,
           rg: formState.rg.trim() || null,
@@ -125,11 +125,11 @@ function CompletarPerfilContent() {
       setMessage("Perfil salvo com sucesso. Você será redirecionado.")
       clearStoredToken()
       if (data.anamneseToken) {
-        router.replace(`/anamnese?token=${encodeURIComponent(data.anamneseToken)}`)
+        replace(`/anamnese?token=${encodeURIComponent(data.anamneseToken)}`)
         return
       }
 
-      router.replace("/anamnese")
+      replace("/anamnese")
     } catch (error) {
       const text = error instanceof Error ? error.message : "Erro ao salvar perfil"
       toast.error(text)
@@ -142,7 +142,7 @@ function CompletarPerfilContent() {
   if (status === "loading" || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -150,8 +150,8 @@ function CompletarPerfilContent() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-stone-50 via-background to-stone-200/60 dark:from-orange-950/50 dark:via-background dark:to-orange-900/10">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
       </div>
 
       <Card className="w-full max-w-xl relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 backdrop-blur-sm bg-card/95">
@@ -248,7 +248,7 @@ function CompletarPerfilContent() {
             <div className="flex items-center justify-between gap-3 pt-2">
               <p className="text-sm text-muted-foreground">{message}</p>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Salvando..." : "Continuar"}
+                {submitting ? "Salvando…" : "Continuar"}
               </Button>
             </div>
           </form>
@@ -263,7 +263,7 @@ export default function CompletarPerfilPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+          <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
         </div>
       }
     >

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { Mail, RefreshCw, ArrowLeft } from "lucide-react"
 import Image from "next/image"
+import { fetchWithTimeout } from "@/lib/http"
 
 function VerificarEmailContent() {
   const searchParams = useSearchParams()
@@ -18,7 +19,7 @@ function VerificarEmailContent() {
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      const timer = setTimeout(() => setCountdown((current) => current - 1), 1000)
       return () => clearTimeout(timer)
     }
   }, [countdown])
@@ -28,7 +29,7 @@ function VerificarEmailContent() {
 
     setIsResending(true)
     try {
-      const response = await fetch("/api/auth/reenviar-verificacao", {
+      const response = await fetchWithTimeout("/api/auth/reenviar-verificacao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -53,8 +54,8 @@ function VerificarEmailContent() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/30 to-transparent" />
       </div>
@@ -80,8 +81,8 @@ function VerificarEmailContent() {
           </div>
 
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center">
-              <Mail className="h-10 w-10 text-orange-500" />
+            <div className="size-20 rounded-full bg-orange-500/10 flex items-center justify-center">
+              <Mail className="size-10 text-orange-500" />
             </div>
           </div>
 
@@ -113,14 +114,14 @@ function VerificarEmailContent() {
           >
             {isResending ? (
               <span className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Reenviando...
+                <RefreshCw className="size-4 animate-spin" />
+                Reenviando…
               </span>
             ) : countdown > 0 ? (
               <span>Reenviar em {countdown}s</span>
             ) : (
               <span className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="size-4" />
                 Reenviar email
               </span>
             )}
@@ -137,7 +138,7 @@ function VerificarEmailContent() {
               href="/cadastro"
               className="text-sm text-muted-foreground hover:text-orange-500 transition-colors inline-flex items-center gap-1"
             >
-              <ArrowLeft className="h-3 w-3" />
+              <ArrowLeft className="size-3" />
               Voltar para o cadastro
             </Link>
           </div>
@@ -151,7 +152,7 @@ export default function VerificarEmailPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
       <VerificarEmailContent />

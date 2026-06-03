@@ -28,7 +28,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
   const [isPending, startTransition] = useTransition()
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const isActive = status === 'ATIVO'
-  const router = useRouter()
+  const { refresh } = useRouter()
 
   const handleSelect = (e: Event) => {
     if (isActive) {
@@ -44,7 +44,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       const result = await toggleMembroStatus(id, status)
       if (result.success) {
         toast.success("Aluno ativado")
-        router.refresh()
+        refresh()
       } else {
         toast.error(result.message || "Erro ao alterar status")
       }
@@ -57,7 +57,7 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       if (result.success) {
         toast.success("Aluno excluído permanentemente")
         setShowConfirmDialog(false)
-        router.refresh()
+        refresh()
       } else {
         toast.error(result.message || "Erro ao excluir aluno")
       }
@@ -69,12 +69,12 @@ export function MemberStatusToggle({ id, status, nome }: MemberActionsProps) {
       <DropdownMenuItem onSelect={handleSelect} disabled={isPending}>
         {isActive ? (
           <>
-            <Trash2 className="mr-2 h-4 w-4" />
+            <Trash2 className="mr-2 size-4" />
             Excluir
           </>
         ) : (
           <>
-            <ShieldCheck className="mr-2 h-4 w-4" />
+            <ShieldCheck className="mr-2 size-4" />
             Ativar
           </>
         )}
@@ -122,7 +122,7 @@ export function MemberDeactivateItem({
   disabled?: boolean
 }) {
   const [isPending, startTransition] = useTransition()
-  const router = useRouter()
+  const { refresh } = useRouter()
 
   const handleDeactivate = (event: Event) => {
     if (disabled || isPending) {
@@ -140,7 +140,7 @@ export function MemberDeactivateItem({
       const result = await deactivateMembro(id)
       if (result.success) {
         toast.success("Aluno desativado")
-        router.refresh()
+        refresh()
       } else {
         toast.error(result.message || "Erro ao desativar aluno")
       }
@@ -149,7 +149,7 @@ export function MemberDeactivateItem({
 
   return (
     <DropdownMenuItem onSelect={handleDeactivate} disabled={disabled || isPending}>
-      <UserMinus className="mr-2 h-4 w-4" />
+      <UserMinus className="mr-2 size-4" />
       {isPending ? "Desativando..." : "Desativar"}
     </DropdownMenuItem>
   )

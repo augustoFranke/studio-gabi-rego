@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Image from "next/image"
 
+const COPYRIGHT_YEAR = 2026
+
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const searchParams = useSearchParams()
@@ -62,9 +64,9 @@ function LoginContent() {
       {/* Animated background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Large orange glow - top right */}
-        <div className="absolute -top-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
+        <div className="absolute -top-1/3 -right-1/4 size-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />
         {/* Deep orange glow - bottom left */}
-        <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
+        <div className="absolute -bottom-1/4 -left-1/4 size-[500px] rounded-full bg-gradient-to-tr from-orange-600/25 to-amber-500/10 blur-3xl" />
         {/* Center accent */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-orange-500/5 blur-3xl" />
 
@@ -74,10 +76,10 @@ function LoginContent() {
       </div>
 
       {/* Floating decorative elements */}
-      <div className="absolute top-20 left-10 w-2 h-2 rounded-full bg-orange-500/60 animate-pulse" />
-      <div className="absolute top-40 right-20 w-3 h-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
-      <div className="absolute bottom-32 left-20 w-2 h-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
-      <div className="absolute bottom-20 right-32 w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
+      <div className="absolute top-20 left-10 size-2 rounded-full bg-orange-500/60 animate-pulse" />
+      <div className="absolute top-40 right-20 size-3 rounded-full bg-orange-400/40 animate-pulse delay-300" />
+      <div className="absolute bottom-32 left-20 size-2 rounded-full bg-orange-600/50 animate-pulse delay-700" />
+      <div className="absolute bottom-20 right-32 size-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500" />
 
       <Card className="w-full max-w-md relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
         {/* Orange accent line at top of card */}
@@ -102,7 +104,7 @@ function LoginContent() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Email
               </Label>
               <Input
@@ -117,7 +119,7 @@ function LoginContent() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />
+                <span className="size-1 rounded-full bg-orange-500" />
                 Senha
               </Label>
               <Input
@@ -137,8 +139,8 @@ function LoginContent() {
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Entrando...
+                  <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Entrando…
                 </span>
               ) : (
                 "Entrar"
@@ -149,7 +151,7 @@ function LoginContent() {
           {/* Decorative divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50" />
+            <div className="size-1.5 rounded-full bg-orange-500/50" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
 
@@ -161,7 +163,7 @@ function LoginContent() {
               </Link>
             </p>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+              © {COPYRIGHT_YEAR} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
             </p>
           </div>
         </CardContent>
@@ -174,7 +176,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     }>
       <LoginContent />
