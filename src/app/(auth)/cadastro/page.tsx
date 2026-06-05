@@ -285,7 +285,7 @@ function useCadastroPage() {
           <div className="space-y-6 pb-20">
             <div className="text-center pt-2 pb-4">
               <Image
-                src="/logo.png"
+                src="/logo-and-title.png"
                 alt="Gabi Studio"
                 width={120}
                 height={120}
@@ -392,7 +392,7 @@ function useCadastroPage() {
 
             <CardHeader className="text-center pb-4 pt-6">
               <div className="flex justify-center mb-4">
-                <Image src="/logo.png" alt="Gabi Studio" width={180} height={180} className="object-contain" priority />
+                <Image src="/logo-and-title.png" alt="Gabi Studio" width={180} height={180} className="object-contain" priority />
               </div>
 
               {/* Progress indicator */}

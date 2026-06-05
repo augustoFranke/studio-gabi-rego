@@ -2,10 +2,6 @@ export function AuthThemeBackdrop() {
   return (
     <>
       <div aria-hidden className="absolute inset-0 bg-[#f6f4ef] dark:hidden" />
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-9 rounded-b-[18px] bg-black shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:hidden"
-      />
 
       <div aria-hidden className="absolute inset-0 hidden overflow-hidden pointer-events-none dark:block">
         <div className="absolute -top-1/3 -right-1/4 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-orange-500/30 to-orange-600/10 blur-3xl animate-pulse" />

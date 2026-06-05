@@ -27,8 +27,6 @@ describe('provider observability', () => {
     'AUTH_SECRET',
     'CRON_SECRET',
     'DATABASE_URL',
-    'UPSTASH_REDIS_REST_URL',
-    'UPSTASH_REDIS_REST_TOKEN',
   ] as const
 
   beforeEach(() => {

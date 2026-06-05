@@ -4,16 +4,13 @@ import {
   PROVIDER_SEND_OK,
   PROVIDER_SEND_FAILED,
 } from '@/lib/observability/events'
-import {
-  getEvolutionConfig,
-  getWhatsappCountryCodeConfig,
-} from '@/lib/runtime-config'
+import { getEvolutionConfig } from '@/lib/runtime-config'
 import { fetchWithTimeout } from '@/lib/http'
 
 const PROVIDER = 'evolution'
 
 function getCountryCode(defaultCode = '55') {
-  return getWhatsappCountryCodeConfig(defaultCode)
+  return process.env.WHATSAPP_COUNTRY_CODE || defaultCode
 }
 
 export function isEvolutionConfigured(): boolean {

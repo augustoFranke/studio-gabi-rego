@@ -164,7 +164,7 @@ export const emailTemplates = {
               <!-- Logo Section -->
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo-and-title.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <!-- Main Card -->
@@ -288,7 +288,7 @@ export const emailTemplates = {
               <!-- Logo Section -->
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo-and-title.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <!-- Main Card -->
@@ -410,7 +410,7 @@ export const emailTemplates = {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px;">
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
-                  <img src="https://studiogabirego.com/logo.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
+                  <img src="https://studiogabirego.com/logo-and-title.png" alt="Studio Gabi Rego" width="120" style="display: block; border: 0; max-width: 120px; height: auto;">
                 </td>
               </tr>
               <tr>

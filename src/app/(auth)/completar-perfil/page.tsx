@@ -156,7 +156,7 @@ function CompletarPerfilContent() {
         <CardHeader className="text-center pb-4 pt-6">
           <div className="flex justify-center mb-4">
             <Image
-              src="/logo.png"
+              src="/logo-and-title.png"
               alt="Gabi Studio"
               width={140}
               height={140}
