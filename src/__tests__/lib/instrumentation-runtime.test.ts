@@ -66,9 +66,6 @@ describe('instrumentation runtime validation', () => {
   it('logs degraded startup when optional integrations are missing', async () => {
     setMinimalValidEnv()
     delete process.env.RESEND_API_KEY
-    delete process.env.EVOLUTION_API_URL
-    delete process.env.EVOLUTION_API_KEY
-    delete process.env.EVOLUTION_INSTANCE
 
     const { register } = await import('@/instrumentation')
 
@@ -76,7 +73,6 @@ describe('instrumentation runtime validation', () => {
     expect(logWarnMock).toHaveBeenCalledWith(RUNTIME_CONFIG_DEGRADED, {
       warnings: expect.arrayContaining([
         'RESEND_API_KEY not set — email delivery is disabled',
-        'Evolution API not fully configured — WhatsApp delivery is disabled',
       ]),
     })
     expect(registerShutdownHandlersMock).toHaveBeenCalledTimes(1)
@@ -85,11 +81,6 @@ describe('instrumentation runtime validation', () => {
   it('logs healthy startup when required and optional config are all present', async () => {
     setMinimalValidEnv()
     process.env.RESEND_API_KEY = 're_test'
-    process.env.EVOLUTION_API_URL = 'https://evolution.test'
-    process.env.EVOLUTION_API_KEY = 'evolution-key'
-    process.env.EVOLUTION_INSTANCE = 'studio'
-    process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.test'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'upstash-token'
 
     const { register } = await import('@/instrumentation')
 

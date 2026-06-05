@@ -302,7 +302,7 @@ function AnamneseHeader() {
   return (
     <div className="text-center pt-6 pb-4">
       <Image
-        src="/logo.png"
+        src="/logo-and-title.png"
         alt="Gabi Studio"
         width={120}
         height={120}

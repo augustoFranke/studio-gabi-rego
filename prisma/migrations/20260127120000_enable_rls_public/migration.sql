@@ -5,7 +5,7 @@
 -- migrations and server-side access keep working. In Supabase, `postgres` and
 -- `service_role` bypass RLS, but we still add a policy defensively.
 --
--- The `service_role` role does not exist in local Docker/Postgres by default,
+-- The `service_role` role does not exist in local Postgres by default,
 -- so we check for it before including it in policies.
 
 -- 1) Enable RLS on all flagged tables

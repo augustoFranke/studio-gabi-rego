@@ -11,8 +11,8 @@
  * causes `validateRuntimeConfig()` to return errors.
  *
  * **Optional / provider** — the app can start and serve core routes without
- * these. Missing provider credentials degrade the relevant integration (email,
- * WhatsApp, rate limiting) but do not block startup.
+ * these. Missing provider credentials degrade the relevant integration but do
+ * not block startup.
  *
  * ## Usage
  *
@@ -56,18 +56,7 @@ const optionalSchema = z.object({
   // --- Provider: Resend (Email) ---
   RESEND_API_KEY: z.string().optional(),
 
-  // --- Provider: Evolution (WhatsApp) ---
-  EVOLUTION_API_URL: z.string().optional(),
-  EVOLUTION_API_KEY: z.string().optional(),
-  EVOLUTION_INSTANCE: z.string().optional(),
-  WHATSAPP_COUNTRY_CODE: z.string().default('55'),
-
-  // --- Provider: Upstash (Rate Limiting) ---
-  UPSTASH_REDIS_REST_URL: z.string().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
-
   // --- Deployment ---
-  DEPLOYMENT_TARGET: z.string().optional(),
   VERCEL: z.string().optional(),
   VERCEL_URL: z.string().optional(),
   CORS_ALLOWED_ORIGIN: z.string().optional(),
@@ -129,20 +118,6 @@ export function validateRuntimeConfig(): ConfigValidationResult {
     warnings.push('RESEND_API_KEY not set — email delivery is disabled')
   }
 
-  if (!config.EVOLUTION_API_URL || !config.EVOLUTION_API_KEY || !config.EVOLUTION_INSTANCE) {
-    warnings.push('Evolution API not fully configured — WhatsApp delivery is disabled')
-  }
-
-  if (!config.UPSTASH_REDIS_REST_URL || !config.UPSTASH_REDIS_REST_TOKEN) {
-    if (config.NODE_ENV === 'production') {
-      warnings.push(
-        'Upstash not configured in production — rate limiting will deny requests (fail-closed)',
-      )
-    } else {
-      warnings.push('Upstash not configured — rate limiting disabled (fail-open in dev)')
-    }
-  }
-
   return { ok: true, config, errors: [], warnings }
 }
 
@@ -155,12 +130,9 @@ export interface ReadinessSummary {
   auth: boolean
   cron: boolean
   email: boolean
-  whatsapp: boolean
-  rateLimit: boolean
 }
 
 export const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
-export const DEFAULT_WHATSAPP_COUNTRY_CODE = '55'
 export const DEFAULT_APP_BASE_URL = 'https://studiogabirego.com'
 
 function normalizeBaseUrl(value?: string | null) {
@@ -186,22 +158,11 @@ export function getRequiredCronSecretConfig(): string | undefined {
   return process.env.CRON_SECRET || undefined
 }
 
-export function getWhatsappCountryCodeConfig(defaultCode = DEFAULT_WHATSAPP_COUNTRY_CODE): string {
-  return process.env.WHATSAPP_COUNTRY_CODE || defaultCode
-}
-
 export function getEvolutionConfig() {
   return {
     url: process.env.EVOLUTION_API_URL,
     key: process.env.EVOLUTION_API_KEY,
     instance: process.env.EVOLUTION_INSTANCE,
-  }
-}
-
-export function getRateLimitConfig() {
-  return {
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
   }
 }
 
@@ -248,13 +209,5 @@ export function getConfigReadiness(): ReadinessSummary {
     auth: Boolean(process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET),
     cron: Boolean(process.env.CRON_SECRET),
     email: Boolean(process.env.RESEND_API_KEY),
-    whatsapp: Boolean(
-      process.env.EVOLUTION_API_URL &&
-      process.env.EVOLUTION_API_KEY &&
-      process.env.EVOLUTION_INSTANCE,
-    ),
-    rateLimit: Boolean(
-      process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-    ),
   }
 }

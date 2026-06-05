@@ -14,13 +14,6 @@ describe('Runtime Config', () => {
     'NEXTAUTH_URL',
     'NEXT_PUBLIC_APP_URL',
     'RESEND_API_KEY',
-    'EVOLUTION_API_URL',
-    'EVOLUTION_API_KEY',
-    'EVOLUTION_INSTANCE',
-    'WHATSAPP_COUNTRY_CODE',
-    'UPSTASH_REDIS_REST_URL',
-    'UPSTASH_REDIS_REST_TOKEN',
-    'DEPLOYMENT_TARGET',
     'VERCEL',
     'VERCEL_URL',
     'CORS_ALLOWED_ORIGIN',
@@ -119,16 +112,6 @@ describe('Runtime Config', () => {
     expect(result.warnings).toContain('RESEND_API_KEY not set — email delivery is disabled')
   })
 
-  it('warns when Evolution is not fully configured', async () => {
-    setMinimalValidEnv()
-    delete process.env.EVOLUTION_API_URL
-    const { validateRuntimeConfig } = await importModule()
-    const result = validateRuntimeConfig()
-
-    expect(result.ok).toBe(true)
-    expect(result.warnings.join(' ')).toContain('Evolution API not fully configured')
-  })
-
   it('defaults APP_TIMEZONE to America/Sao_Paulo', async () => {
     setMinimalValidEnv()
     delete process.env.APP_TIMEZONE
@@ -142,9 +125,6 @@ describe('Runtime Config', () => {
   it('getConfigReadiness returns correct summary', async () => {
     setMinimalValidEnv()
     process.env.RESEND_API_KEY = 're_test'
-    process.env.EVOLUTION_API_URL = 'https://test.com'
-    process.env.EVOLUTION_API_KEY = 'test-key'
-    process.env.EVOLUTION_INSTANCE = 'studio'
     const { getConfigReadiness } = await importModule()
     const readiness = getConfigReadiness()
 
@@ -152,7 +132,5 @@ describe('Runtime Config', () => {
     expect(readiness.auth).toBe(true)
     expect(readiness.cron).toBe(true)
     expect(readiness.email).toBe(true)
-    expect(readiness.whatsapp).toBe(true)
-    expect(readiness.rateLimit).toBe(false) // Upstash not set
   })
 })

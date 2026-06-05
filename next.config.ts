@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 // Force restart to reload Prisma Client schema
 
-const isDocker = process.env.DEPLOYMENT_TARGET === "docker";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL
   || process.env.NEXTAUTH_URL
   || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://studiogabirego.com");
@@ -24,17 +23,6 @@ const contentSecurityPolicyReportOnly = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  // Use standalone output only for Docker deployment
-  // Vercel handles this automatically
-  ...(isDocker && { output: "standalone" }),
-
-  // Image optimization
-  // - Vercel: enabled (handled by Vercel)
-  // - Docker: disabled (no image optimization service)
-  images: {
-    unoptimized: isDocker,
-  },
-
   // Keep pdfkit external so its standard font data can be resolved at runtime.
   serverExternalPackages: ["pdfkit"],
 

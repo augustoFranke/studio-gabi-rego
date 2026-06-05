@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (secrets - never commit)
 .env*
+env.txt
 
 # Keep example/template files (safe to commit)
 !.env.example
@@ -84,8 +85,6 @@ utility/csv/
 /skills/
 /utility/
 /scripts/
-/docker/
-/docker-compose.yml
 /.husky/
 /RUNBOOK.md
 /README.md
