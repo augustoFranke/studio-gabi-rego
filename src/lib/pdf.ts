@@ -28,9 +28,6 @@ const FONT_REGULAR_FALLBACK = 'Helvetica'
 const FONT_BOLD_FALLBACK = 'Helvetica-Bold'
 const SCRIPT_FONT_NAME = 'FreeStyleScript'
 
-const EXTRA_ROWS = 3
-
-
 function getLogoPath(): string | null {
   const logoPath = path.join(/* turbopackIgnore: true */ process.cwd(), 'public', 'logo-black.png')
   if (fs.existsSync(logoPath)) {
@@ -116,8 +113,11 @@ function createTableDrawer(options: {
     const { title, exercises } = params
     let cursorY = params.cursorY
 
-    // Check for page break
-    if (cursorY + 3 * CM > PAGE_HEIGHT - MARGIN_BOTTOM) {
+    // Break to the next page if the title + table won't fit, so the title only
+    // appears once on the page that holds its table. Skip if already at page top
+    // (table taller than a full page just overflows).
+    const blockHeight = 1 * CM + (exercises.length + 1) * rowHeight
+    if (cursorY + blockHeight > PAGE_HEIGHT - MARGIN_BOTTOM && cursorY > MARGIN_TOP) {
       doc.addPage()
       cursorY = MARGIN_TOP
     }
@@ -126,18 +126,6 @@ function createTableDrawer(options: {
     doc.font(fontBold).fontSize(18)
     doc.text(title, MARGIN_LEFT, cursorY)
     cursorY += 1 * CM
-
-    // Check space for whole table or at least header + 1 row
-    const totalTableHeight = (exercises.length + EXTRA_ROWS + 1) * rowHeight
-    if (cursorY + totalTableHeight > PAGE_HEIGHT - MARGIN_BOTTOM) {
-      if (cursorY > MARGIN_TOP + 5 * CM) {
-        doc.addPage()
-        cursorY = MARGIN_TOP
-        doc.font(fontBold).fontSize(18)
-        doc.text(`${title} (cont.)`, MARGIN_LEFT, cursorY)
-        cursorY += 1 * CM
-      }
-    }
 
     // Header
     drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', 'OBSERVAÇÕES'], true)
@@ -153,12 +141,6 @@ function createTableDrawer(options: {
       ])
       cursorY += rowHeight
     })
-
-    // Extra Rows
-    for (let i = 0; i < EXTRA_ROWS; i++) {
-      drawRow(cursorY, ['', '', '', ''])
-      cursorY += rowHeight
-    }
 
     cursorY += 1 * CM // Spacing after table
 
