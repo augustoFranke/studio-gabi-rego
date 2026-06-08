@@ -84,8 +84,8 @@ describe('Treinos PDF by ID API', () => {
       membroId: 'm-1',
       membro: { usuario: { nome: 'Aluno' } },
       exercicios: [
-        { sessao: 'B', nome: 'Remada', series: '3', repeticoes: '12' },
-        { sessao: 'A', nome: 'Supino', series: '4', repeticoes: '10' },
+        { sessao: 'B', nome: 'Remada', series: '3', repeticoes: '12', observacoes: null },
+        { sessao: 'A', nome: 'Supino', series: '4', repeticoes: '10', observacoes: 'Cadência controlada' },
       ],
       observacoes: 'Obs',
       data: '01/2026',
@@ -102,11 +102,11 @@ describe('Treinos PDF by ID API', () => {
         sessions: [
           {
             name: 'A',
-            exercises: [{ name: 'Supino', sets: '4', reps: '10' }],
+            exercises: [{ name: 'Supino', sets: '4', reps: '10', observacoes: 'Cadência controlada' }],
           },
           {
             name: 'B',
-            exercises: [{ name: 'Remada', sets: '3', reps: '12' }],
+            exercises: [{ name: 'Remada', sets: '3', reps: '12', observacoes: undefined }],
           },
         ],
       })

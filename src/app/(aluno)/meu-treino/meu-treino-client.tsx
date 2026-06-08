@@ -178,6 +178,11 @@ export default function MeuTreinoPage() {
                           <p>Repetições: {exercicio.repeticoes}</p>
                           <p>Descanso: {exercicio.descanso || '-'}</p>
                         </div>
+                        {exercicio.observacoes && (
+                          <p className="text-sm text-muted-foreground">
+                            Observações: {exercicio.observacoes}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </TabsContent>

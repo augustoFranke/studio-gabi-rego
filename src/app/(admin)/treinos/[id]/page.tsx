@@ -57,6 +57,7 @@ async function getTreino(id: string): Promise<TreinoDetalhe | null> {
           grupoMuscular: true,
           series: true,
           repeticoes: true,
+          observacoes: true,
         },
         orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
       },
@@ -186,9 +187,10 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
               <div className="space-y-4">
                 {/* Table Header */}
                 <div className="hidden md:grid grid-cols-12 gap-4 px-1 text-sm font-medium text-muted-foreground border-b pb-2">
-                  <div className="col-span-6">Exercício</div>
-                  <div className="col-span-3 text-center">Séries</div>
-                  <div className="col-span-3 text-center">Repetições</div>
+                  <div className="col-span-5">Exercício</div>
+                  <div className="col-span-2 text-center">Séries</div>
+                  <div className="col-span-2 text-center">Repetições</div>
+                  <div className="col-span-3">Observações</div>
                 </div>
 
                 {/* Exercises */}
@@ -197,7 +199,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
                     key={exercicio.id}
                     className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-card md:bg-transparent p-3 md:p-2 rounded-lg border md:border-0 shadow-sm md:shadow-none hover:bg-muted/50 transition-colors"
                   >
-                    <div className="col-span-1 md:col-span-6 w-full flex items-center gap-3">
+                    <div className="col-span-1 md:col-span-5 w-full flex items-center gap-3">
                       <span className="hidden md:flex items-center justify-center size-6 rounded-full bg-muted text-muted-foreground text-xs font-medium">
                         {index + 1}
                       </span>
@@ -209,14 +211,19 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
                       </div>
                     </div>
 
-                    <div className="col-span-1 md:col-span-3 flex md:block">
+                    <div className="col-span-1 md:col-span-2 flex md:block">
                       <span className="md:hidden text-xs text-muted-foreground mr-2">Séries:</span>
                       <p className="text-center font-medium">{exercicio.series}</p>
                     </div>
 
-                    <div className="col-span-1 md:col-span-3 flex md:block">
+                    <div className="col-span-1 md:col-span-2 flex md:block">
                       <span className="md:hidden text-xs text-muted-foreground mr-2">Reps:</span>
                       <p className="text-center font-medium">{exercicio.repeticoes}</p>
+                    </div>
+
+                    <div className="col-span-1 md:col-span-3 flex md:block">
+                      <span className="md:hidden text-xs text-muted-foreground mr-2">Observações:</span>
+                      <p className="text-sm text-muted-foreground">{exercicio.observacoes || '-'}</p>
                     </div>
                   </div>
                 ))}

@@ -37,6 +37,7 @@ const fichaSelect = {
       nome: true,
       series: true,
       repeticoes: true,
+      observacoes: true,
     },
     orderBy: [{ sessao: 'asc' }, { ordem: 'asc' }],
   },

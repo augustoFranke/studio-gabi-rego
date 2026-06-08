@@ -101,8 +101,8 @@ describe('treino editor helpers', () => {
 
     const result = createEditorSessionsFromExercises(
       [
-        { id: 'e-2', sessao: 'B - Inferiores', nome: 'Agachamento', series: '4', repeticoes: '8' },
-        { id: 'e-1', sessao: 'A', nome: 'Supino', series: '3', repeticoes: '10' },
+        { id: 'e-2', sessao: 'B - Inferiores', nome: 'Agachamento', series: '4', repeticoes: '8', observacoes: 'Sem dor' },
+        { id: 'e-1', sessao: 'A', nome: 'Supino', series: '3', repeticoes: '10', observacoes: null },
       ],
       nextId
     )
@@ -112,13 +112,13 @@ describe('treino editor helpers', () => {
         id: 'session-1',
         name: 'A',
         description: '',
-        exercises: [{ id: 'e-1', name: 'Supino', sets: '3', reps: '10' }],
+        exercises: [{ id: 'e-1', name: 'Supino', sets: '3', reps: '10', notes: '' }],
       },
       {
         id: 'session-2',
         name: 'B',
         description: 'Inferiores',
-        exercises: [{ id: 'e-2', name: 'Agachamento', sets: '4', reps: '8' }],
+        exercises: [{ id: 'e-2', name: 'Agachamento', sets: '4', reps: '8', notes: 'Sem dor' }],
       },
     ])
   })
@@ -137,9 +137,9 @@ describe('treino editor helpers', () => {
         name: 'A',
         description: '',
         exercises: [
-          { id: 'e-1', name: ' Supino ', sets: '', reps: '' },
-          { id: 'e-2', name: 'Agachamento', sets: '', reps: '' },
-          { id: 'e-3', name: ' ', sets: '', reps: '' },
+          { id: 'e-1', name: ' Supino ', sets: '', reps: '', notes: '' },
+          { id: 'e-2', name: 'Agachamento', sets: '', reps: '', notes: '' },
+          { id: 'e-3', name: ' ', sets: '', reps: '', notes: '' },
         ],
       },
     ])
@@ -153,11 +153,11 @@ describe('treino editor helpers', () => {
 
     const exercise = addExercise()
 
-    expect(exercise).toEqual({ id: 'uuid-2', name: '', sets: '', reps: '' })
+    expect(exercise).toEqual({ id: 'uuid-2', name: '', sets: '', reps: '', notes: '' })
   })
 
   it('updateExercise updates the selected field', () => {
-    const exercise = { id: 'e-1', name: 'Supino', sets: '3', reps: '10' }
+    const exercise = { id: 'e-1', name: 'Supino', sets: '3', reps: '10', notes: '' }
 
     const updated = updateExercise(exercise, 'sets', '4')
 
@@ -167,8 +167,8 @@ describe('treino editor helpers', () => {
 
   it('removeExercise filters by id', () => {
     const exercises = [
-      { id: 'e-1', name: '', sets: '', reps: '' },
-      { id: 'e-2', name: '', sets: '', reps: '' },
+      { id: 'e-1', name: '', sets: '', reps: '', notes: '' },
+      { id: 'e-2', name: '', sets: '', reps: '', notes: '' },
     ]
 
     const result = removeExercise(exercises, 'e-1')

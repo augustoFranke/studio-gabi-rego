@@ -58,11 +58,20 @@ function createTableDrawer(options: {
   fontBold: string
 }) {
   const { doc, fontRegular, fontBold } = options
+
+  // Measure header text widths to make columns exactly the size of their titles (plus 4pt padding)
+  doc.font(fontBold).fontSize(10)
+  const seriesWidth = doc.widthOfString('SÉRIES') + 4
+  const repsWidth = doc.widthOfString('REPETIÇÕES') + 4
+
+  const exerciseWidth = TABLE_WIDTH * 0.25
+  const observacoesWidth = TABLE_WIDTH - exerciseWidth - seriesWidth - repsWidth
+
   const colWidths = [
-    TABLE_WIDTH * 0.45, // Exercise
-    TABLE_WIDTH * 0.12, // Sets
-    TABLE_WIDTH * 0.13, // Reps
-    TABLE_WIDTH * 0.30, // Notes
+    exerciseWidth,     // Exercise
+    seriesWidth,       // Sets
+    repsWidth,         // Reps
+    observacoesWidth,  // Notes (Observações)
   ]
   const rowHeight = 0.5 * CM
 
@@ -131,7 +140,7 @@ function createTableDrawer(options: {
     }
 
     // Header
-    drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', ''], true)
+    drawRow(cursorY, ['EXERCÍCIOS', 'SÉRIES', 'REPETIÇÕES', 'OBSERVAÇÕES'], true)
     cursorY += rowHeight
 
     // Rows

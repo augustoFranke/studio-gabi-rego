@@ -39,13 +39,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     }
 
     try {
-      const sessionsByName = ficha.exercicios.reduce<Record<string, Array<{ name: string; sets: string; reps: string }>>>((acc, ex) => {
+      const sessionsByName = ficha.exercicios.reduce<Record<string, Array<{ name: string; sets: string; reps: string; observacoes?: string }>>>((acc, ex) => {
         const sessionName = ex.sessao || 'A'
         acc[sessionName] ??= []
         acc[sessionName].push({
           name: ex.nome,
           sets: ex.series,
           reps: ex.repeticoes,
+          observacoes: ex.observacoes ?? undefined,
         })
         return acc
       }, {})
