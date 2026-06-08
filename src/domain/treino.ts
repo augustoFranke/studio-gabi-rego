@@ -60,6 +60,7 @@ export type TreinoEditorExercise = {
   name: string
   sets: string
   reps: string
+  notes: string
 }
 
 export type TreinoEditorSession = {

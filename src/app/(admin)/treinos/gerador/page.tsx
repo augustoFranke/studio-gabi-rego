@@ -214,8 +214,8 @@ function useTrainingPlanGeneratorPage() {
 
     // Get data for API calls
     const getTrainingData = () => {
-        const validSessions = sessions.reduce<Array<{ name: string; exercises: Array<{ name: string; sets: string; reps: string }> }>>((acc, s) => {
-            const exercises = s.exercises.reduce<Array<{ name: string; sets: string; reps: string }>>((exerciseAcc, e) => {
+        const validSessions = sessions.reduce<Array<{ name: string; exercises: Array<{ name: string; sets: string; reps: string; observacoes?: string }> }>>((acc, s) => {
+            const exercises = s.exercises.reduce<Array<{ name: string; sets: string; reps: string; observacoes?: string }>>((exerciseAcc, e) => {
                 if (!e.name.trim()) {
                     return exerciseAcc;
                 }
@@ -224,6 +224,7 @@ function useTrainingPlanGeneratorPage() {
                     name: e.name,
                     sets: e.sets,
                     reps: e.reps,
+                    observacoes: e.notes.trim() || undefined,
                 });
 
                 return exerciseAcc;
@@ -303,6 +304,7 @@ function useTrainingPlanGeneratorPage() {
                 nome: string;
                 series: string;
                 repeticoes: string;
+                observacoes?: string;
             }> = [];
 
             sessions.forEach(s => {
@@ -314,6 +316,7 @@ function useTrainingPlanGeneratorPage() {
                             nome: e.name,
                             series: e.sets || '3',
                             repeticoes: e.reps || '10',
+                            observacoes: e.notes.trim() || undefined,
                         });
                     }
                 });
@@ -669,6 +672,16 @@ function useTrainingPlanGeneratorPage() {
                                                 >
                                                     <Trash2 className="size-4" />
                                                 </Button>
+                                            </div>
+
+                                            <div className="col-span-1 md:col-span-12 w-full">
+                                                <Label className="mb-1.5 block text-xs text-muted-foreground">Observações</Label>
+                                                <Input
+                                                    placeholder="Observações específicas deste exercício..."
+                                                    value={exercise.notes}
+                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'notes', e.target.value)}
+                                                    maxLength={60}
+                                                />
                                             </div>
                                         </div>
                                     ))}

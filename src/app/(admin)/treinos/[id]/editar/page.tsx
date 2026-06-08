@@ -251,6 +251,7 @@ function useEditarTreinoPage(params: PageProps["params"]) {
                 nome: string;
                 series: string;
                 repeticoes: string;
+                observacoes?: string;
             }> = [];
 
             sessions.forEach(s => {
@@ -262,6 +263,7 @@ function useEditarTreinoPage(params: PageProps["params"]) {
                             nome: e.name,
                             series: e.sets || '3',
                             repeticoes: e.reps || '10',
+                            observacoes: e.notes.trim() || undefined,
                         });
                     }
                 });
@@ -563,6 +565,16 @@ function useEditarTreinoPage(params: PageProps["params"]) {
                                                 >
                                                     <Trash2 className="size-4" />
                                                 </Button>
+                                            </div>
+
+                                            <div className="col-span-1 md:col-span-12 w-full">
+                                                <Label className="mb-1.5 block text-xs text-muted-foreground">Observações</Label>
+                                                <Input
+                                                    placeholder="Observações específicas deste exercício..."
+                                                    value={exercise.notes}
+                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'notes', e.target.value)}
+                                                    maxLength={60}
+                                                />
                                             </div>
                                         </div>
                                     ))}

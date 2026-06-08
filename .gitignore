@@ -84,7 +84,8 @@ utility/csv/
 /.planning/
 /skills/
 /utility/
-/scripts/
+/scripts/*
+!/scripts/seed-dev-data.ts
 /.husky/
 /RUNBOOK.md
 /README.md

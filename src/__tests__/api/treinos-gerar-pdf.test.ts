@@ -58,7 +58,7 @@ describe('Treinos PDF API - POST /api/treinos/gerar-pdf', () => {
         aluno: 'José da Silva',
         date: '01/2026',
         sessions: [
-          { name: 'A', exercises: [{ name: 'Supino', sets: 3, reps: 10 }] },
+          { name: 'A', exercises: [{ name: 'Supino', sets: 3, reps: 10, observacoes: 'Cadência controlada' }] },
         ],
       })
     )
@@ -71,7 +71,7 @@ describe('Treinos PDF API - POST /api/treinos/gerar-pdf', () => {
         sessions: [
           {
             name: 'A',
-            exercises: [{ name: 'Supino', sets: '3', reps: '10' }],
+            exercises: [{ name: 'Supino', sets: '3', reps: '10', observacoes: 'Cadência controlada' }],
           },
         ],
       })

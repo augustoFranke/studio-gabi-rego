@@ -119,7 +119,7 @@ describe('Treinos API - /api/treinos/[id]', () => {
         method: 'PUT',
         body: JSON.stringify({
           exercicios: [
-            { sessao: 'C', nome: 'Supino', series: 5 },
+            { sessao: 'C', nome: 'Supino', series: 5, observacoes: 'Manter escápulas retraídas' },
             {},
           ],
         }),
@@ -138,6 +138,7 @@ describe('Treinos API - /api/treinos/[id]', () => {
       nome: 'Supino',
       series: '5',
       repeticoes: '10',
+      observacoes: 'Manter escápulas retraídas',
       ordem: 0,
     })
     expect(createManyArg.data[1]).toMatchObject({

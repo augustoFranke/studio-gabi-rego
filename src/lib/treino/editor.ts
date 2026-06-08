@@ -12,7 +12,7 @@ export type {
 
 export const EXERCISE_HISTORY_KEY = 'gabi-studio-exercise-history'
 
-export type ExerciseField = 'name' | 'sets' | 'reps'
+export type ExerciseField = 'name' | 'sets' | 'reps' | 'notes'
 
 type ReadStorage = Pick<Storage, 'getItem'>
 type WriteStorage = Pick<Storage, 'setItem'>
@@ -69,7 +69,7 @@ export function getFullSessionName(session: Pick<TreinoEditorSession, 'name' | '
 }
 
 export function createEditorSessionsFromExercises(
-  exercises: Array<Pick<TreinoExercise | TreinoTemplateExercise, 'id' | 'sessao' | 'nome' | 'series' | 'repeticoes'>>,
+  exercises: Array<Pick<TreinoExercise | TreinoTemplateExercise, 'id' | 'sessao' | 'nome' | 'series' | 'repeticoes' | 'observacoes'>>,
   createId: () => string = () => crypto.randomUUID()
 ): TreinoEditorSession[] {
   const sessionsMap = new Map<string, TreinoEditorExercise[]>()
@@ -80,6 +80,7 @@ export function createEditorSessionsFromExercises(
       name: exercise.nome,
       sets: exercise.series,
       reps: exercise.repeticoes,
+      notes: exercise.observacoes || '',
     })
     sessionsMap.set(exercise.sessao, sessionExercises)
   }
@@ -125,7 +126,7 @@ export function mergeExerciseHistory(
 }
 
 export function addExercise(): TreinoEditorExercise {
-  return { id: crypto.randomUUID(), name: '', sets: '', reps: '' }
+  return { id: crypto.randomUUID(), name: '', sets: '', reps: '', notes: '' }
 }
 
 export function updateExercise(

@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
             name: ex.name,
             sets: String(ex.sets),
             reps: String(ex.reps),
+            observacoes: ex.observacoes,
           })),
         })),
       })

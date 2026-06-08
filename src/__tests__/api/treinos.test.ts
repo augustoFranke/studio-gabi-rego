@@ -104,7 +104,7 @@ describe('Treinos API - /api/treinos', () => {
           membroId: 'm-1',
           nome: 'Treino A',
           exercicios: [
-            { sessao: 'B', nome: 'Agachamento', series: 4, repeticoes: '12' },
+            { sessao: 'B', nome: 'Agachamento', series: 4, repeticoes: '12', observacoes: 'Subir carga aos poucos' },
             { nome: undefined },
           ],
         }),
@@ -128,6 +128,7 @@ describe('Treinos API - /api/treinos', () => {
       nome: 'Agachamento',
       series: '4',
       repeticoes: '12',
+      observacoes: 'Subir carga aos poucos',
       ordem: 0,
     })
     expect(exerciciosCreate?.[1]).toMatchObject({
