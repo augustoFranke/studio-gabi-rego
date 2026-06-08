@@ -680,7 +680,7 @@ function useTrainingPlanGeneratorPage() {
                                                     placeholder="Observações específicas deste exercício..."
                                                     value={exercise.notes}
                                                     onChange={(e) => updateExercise(session.id, exercise.id, 'notes', e.target.value)}
-                                                    maxLength={60}
+                                                    maxLength={45}
                                                 />
                                             </div>
                                         </div>
