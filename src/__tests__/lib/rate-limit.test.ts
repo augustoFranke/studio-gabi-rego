@@ -14,21 +14,34 @@ afterEach(() => {
 })
 
 describe("rateLimitByIp", () => {
-  it("allows requests in production after removing the external limiter", async () => {
+  it("allows requests below the configured bucket limit", async () => {
     process.env.NODE_ENV = "production"
 
     const { rateLimitByIp } = await import("@/lib/rate-limit")
-    const response = await rateLimitByIp(new Request("http://localhost"), "auth:test")
+    const response = await rateLimitByIp(
+      new Request("http://localhost", { headers: { "x-forwarded-for": "192.0.2.10" } }),
+      "auth:test",
+      { maxRequests: 2 }
+    )
 
     expect(response).toEqual({ success: true })
   })
 
-  it("allows requests in development", async () => {
+  it("blocks requests over the configured bucket limit", async () => {
     process.env.NODE_ENV = "development"
 
     const { rateLimitByIp } = await import("@/lib/rate-limit")
-    const response = await rateLimitByIp(new Request("http://localhost"), "auth:test")
+    const request = new Request("http://localhost", {
+      headers: { "x-forwarded-for": "192.0.2.11" },
+    })
 
-    expect(response).toEqual({ success: true })
+    await rateLimitByIp(request, "auth:test", { maxRequests: 1, windowMs: 60_000 })
+    const response = await rateLimitByIp(request, "auth:test", {
+      maxRequests: 1,
+      windowMs: 60_000,
+    })
+
+    expect(response.success).toBe(false)
+    expect(response).toEqual({ success: false, retryAfter: expect.any(Number) })
   })
 })

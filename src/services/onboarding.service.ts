@@ -197,54 +197,33 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
   const { token: verificationToken, expiresAt: tokenExpiry } = createTimedToken()
   const verificationTokenHash = await hashTimedToken(verificationToken)
 
-  if (hasFullPayload && fullNome && input.anamnese) {
+  if (existingUser) {
+    await prisma.usuario.update({
+      where: { id: existingUser.id },
+      data: {
+        tokenVerificacao: verificationTokenHash,
+        tokenVerificacaoExpira: tokenExpiry,
+      },
+    })
+  } else if (hasFullPayload && fullNome && input.anamnese) {
     await prisma.$transaction(async (tx) => {
-      let userId: string
-
-      if (existingUser) {
-        await tx.usuario.update({
-          where: { id: existingUser.id },
-          data: {
-            nome: fullNome,
-            senha: hashedPassword,
-            senhaDefinida: true,
-            tokenVerificacao: verificationTokenHash,
-            tokenVerificacaoExpira: tokenExpiry,
-            etapaOnboarding: 1,
-            onboardingCompleto: false,
-          },
-        })
-        userId = existingUser.id
-      } else {
-        const user = await tx.usuario.create({
-          data: {
-            email: normalizedEmail,
-            nome: fullNome,
-            senha: hashedPassword,
-            senhaDefinida: true,
-            role: "MEMBRO",
-            tokenVerificacao: verificationTokenHash,
-            tokenVerificacaoExpira: tokenExpiry,
-            etapaOnboarding: 1,
-            onboardingCompleto: false,
-          },
-        })
-        userId = user.id
-      }
-
-      const existingMembro = await tx.membro.findUnique({
-        where: { usuarioId: userId },
+      const user = await tx.usuario.create({
+        data: {
+          email: normalizedEmail,
+          nome: fullNome,
+          senha: hashedPassword,
+          senhaDefinida: true,
+          role: "MEMBRO",
+          tokenVerificacao: verificationTokenHash,
+          tokenVerificacaoExpira: tokenExpiry,
+          etapaOnboarding: 1,
+          onboardingCompleto: false,
+        },
       })
-
-      if (existingMembro) {
-        await tx.membro.delete({
-          where: { id: existingMembro.id },
-        })
-      }
 
       const membro = await tx.membro.create({
         data: {
-          usuarioId: userId,
+          usuarioId: user.id,
           cpf: normalizedMemberProfile.cpf,
           rg: normalizedMemberProfile.rg ?? null,
           telefone: normalizedMemberProfile.telefone,
@@ -260,18 +239,6 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
           ...input.anamnese,
         },
       })
-    })
-  } else if (existingUser) {
-    await prisma.usuario.update({
-      where: { id: existingUser.id },
-      data: {
-        senha: hashedPassword,
-        senhaDefinida: true,
-        tokenVerificacao: verificationTokenHash,
-        tokenVerificacaoExpira: tokenExpiry,
-        etapaOnboarding: 1,
-        onboardingCompleto: false,
-      },
     })
   } else {
     await prisma.usuario.create({

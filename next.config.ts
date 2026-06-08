@@ -9,7 +9,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL
 const corsAllowedOrigin = process.env.CORS_ALLOWED_ORIGIN
   || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : appUrl);
 
-const contentSecurityPolicyReportOnly = [
+const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
           ...(process.env.NODE_ENV === "production"
             ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" }]
             : []),

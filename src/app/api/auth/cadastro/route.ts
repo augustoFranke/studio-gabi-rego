@@ -26,7 +26,10 @@ const signupSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const rateLimit = await rateLimitByIp(request, "auth:signup")
+    const rateLimit = await rateLimitByIp(request, "auth:signup", {
+      maxRequests: 3,
+      windowMs: 60_000,
+    })
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: "Muitas tentativas. Tente novamente em instantes." },

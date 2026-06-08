@@ -14,7 +14,10 @@ const resetRequestSchema = z.object({
 export async function POST(request: Request) {
   return withApiAuth(async () => {
     try {
-      const rateLimit = await rateLimitByIp(request, "auth:admin-reset")
+      const rateLimit = await rateLimitByIp(request, "auth:admin-reset", {
+        maxRequests: 5,
+        windowMs: 60_000,
+      })
       if (!rateLimit.success) {
         return NextResponse.json(
           { error: "Muitas tentativas. Tente novamente em instantes." },
