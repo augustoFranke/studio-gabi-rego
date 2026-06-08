@@ -64,8 +64,8 @@ function createTableDrawer(options: {
   const seriesWidth = doc.widthOfString('SÉRIES') + 4
   const repsWidth = doc.widthOfString('REPETIÇÕES') + 4
 
-  const exerciseWidth = TABLE_WIDTH * 0.25
-  const observacoesWidth = TABLE_WIDTH - exerciseWidth - seriesWidth - repsWidth
+  const exerciseWidth = (TABLE_WIDTH - seriesWidth - repsWidth) / 2
+  const observacoesWidth = exerciseWidth
 
   const colWidths = [
     exerciseWidth,     // Exercise
