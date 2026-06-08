@@ -171,7 +171,7 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(prismaMock.usuario.create).toHaveBeenCalled()
   })
 
-  it('updates unverified existing user and returns success', async () => {
+  it('refreshes verification for an unverified existing user without overwriting credentials', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
       nome: 'Aluno',
@@ -186,12 +186,13 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(res.status).toBe(200)
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
       where: { id: 'u-1' },
-      data: expect.objectContaining({
-        senha: 'hashed_Senha123',
+      data: {
         tokenVerificacao: expect.any(String),
         tokenVerificacaoExpira: expect.any(Date),
-      }),
+      },
     })
+    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty('senha')
+    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty('senhaDefinida')
     expect(json.success).toBe(true)
   })
 

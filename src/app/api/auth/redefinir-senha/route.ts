@@ -7,7 +7,10 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const rateLimit = await rateLimitByIp(request, "auth:reset-password")
+    const rateLimit = await rateLimitByIp(request, "auth:reset-password", {
+      maxRequests: 20,
+      windowMs: 60_000,
+    })
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: "Muitas tentativas. Tente novamente em instantes." },

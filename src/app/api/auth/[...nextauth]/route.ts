@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
   const url = new URL(request.url)
 
   if (url.pathname.includes("/callback/credentials")) {
-    const rateLimit = await rateLimitByIp(request, "auth:login")
+    const rateLimit = await rateLimitByIp(request, "auth:login", {
+      maxRequests: 5,
+      windowMs: 60_000,
+    })
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: "Muitas tentativas. Tente novamente em instantes." },
