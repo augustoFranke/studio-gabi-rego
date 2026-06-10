@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { ensureOwnerOrAdmin, validateRequest, withApiAuth } from '@/lib/api'
 import { StatusPagamento } from '@prisma/client'
 import { z } from 'zod'
@@ -80,36 +79,6 @@ export async function PUT(
         dataPagamento,
         comprovante,
       })
-
-      const shouldSyncNextPendingBillingDate =
-        pagamento.status === 'PAGO'
-        && pagamento.membroId
-        && (status === 'PAGO' || dataVencimento !== undefined)
-
-      if (shouldSyncNextPendingBillingDate) {
-        const billingDayOfMonth = pagamento.dataVencimento.getDate()
-
-        const nextPendente = await prisma.pagamento.findFirst({
-          where: {
-            id: { not: id },
-            membroId: pagamento.membroId,
-            status: 'PENDENTE',
-            dataVencimento: { gt: pagamento.dataVencimento },
-          },
-          orderBy: { dataVencimento: 'asc' },
-        })
-
-        if (nextPendente) {
-          const nextDate = new Date(nextPendente.dataVencimento)
-          const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate()
-          nextDate.setDate(Math.min(billingDayOfMonth, maxDay))
-
-          await prisma.pagamento.update({
-            where: { id: nextPendente.id },
-            data: { dataVencimento: nextDate },
-          })
-        }
-      }
 
       return NextResponse.json(pagamento)
     } catch (error) {

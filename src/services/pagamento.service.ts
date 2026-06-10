@@ -178,10 +178,35 @@ export async function updatePagamentoById(
     updateData.dataPagamento = data.dataPagamento ? new Date(data.dataPagamento) : null
   }
 
-  return prisma.pagamento.update({
-    where: { id },
-    data: updateData,
-    include: pagamentoInclude,
+  return prisma.$transaction(async (tx) => {
+    const pagamento = await tx.pagamento.update({ where: { id }, data: updateData, include: pagamentoInclude })
+
+    const shouldSyncNextPendingBillingDate =
+      pagamento.status === 'PAGO'
+      && pagamento.membroId
+      && (data.status === 'PAGO' || data.dataVencimento !== undefined)
+
+    if (shouldSyncNextPendingBillingDate) {
+      const billingDayOfMonth = pagamento.dataVencimento.getDate()
+      const nextPendente = await tx.pagamento.findFirst({
+        where: {
+          id: { not: id },
+          membroId: pagamento.membroId,
+          status: 'PENDENTE',
+          dataVencimento: { gt: pagamento.dataVencimento },
+        },
+        orderBy: { dataVencimento: 'asc' },
+      })
+
+      if (nextPendente) {
+        const nextDate = new Date(nextPendente.dataVencimento)
+        const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate()
+        nextDate.setDate(Math.min(billingDayOfMonth, maxDay))
+        await tx.pagamento.update({ where: { id: nextPendente.id }, data: { dataVencimento: nextDate } })
+      }
+    }
+
+    return pagamento
   })
 }
 
