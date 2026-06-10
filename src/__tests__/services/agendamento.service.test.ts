@@ -3,13 +3,19 @@ import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import { prisma } from '@/lib/prisma'
 import { MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/prisma', () => {
+  const prismaMock = {
     horarioFixo: { findMany: vi.fn() },
     horarioDisponivel: { findMany: vi.fn(), createMany: vi.fn() },
     agendamento: { findMany: vi.fn(), createMany: vi.fn() },
-  },
-}))
+  }
+  return {
+    prisma: {
+      ...prismaMock,
+      $transaction: vi.fn(async (fn: (tx: typeof prismaMock) => Promise<unknown>) => fn(prismaMock)),
+    },
+  }
+})
 
 describe('agendamento.service syncAgendamentosRecorrentes', () => {
   beforeEach(() => {
