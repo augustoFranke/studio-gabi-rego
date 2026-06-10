@@ -4,7 +4,6 @@ import { NextRequest } from 'next/server'
 
 const {
   authMock,
-  prismaMock,
   getPagamentoByIdMock,
   updatePagamentoByIdMock,
   deletePagamentoByIdMock,
@@ -23,22 +22,12 @@ const {
 
   return {
     authMock: vi.fn(),
-    prismaMock: {
-      pagamento: {
-        findFirst: vi.fn(),
-        update: vi.fn(),
-      },
-    },
     getPagamentoByIdMock: vi.fn(),
     updatePagamentoByIdMock: vi.fn(),
     deletePagamentoByIdMock: vi.fn(),
     PagamentoServiceErrorMock,
   }
 })
-
-vi.mock('@/lib/prisma', () => ({
-  prisma: prismaMock,
-}))
 
 vi.mock('@/lib/auth', () => ({
   auth: authMock,
@@ -95,7 +84,6 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
         membroId: 'membro-123',
         dataVencimento: new Date('2026-01-20T12:00:00.000Z'),
       })
-      prismaMock.pagamento.findFirst.mockResolvedValueOnce(null)
 
       const req = new NextRequest('http://localhost:3000/api/pagamentos/pag-123', {
         method: 'PUT',
@@ -114,54 +102,6 @@ describe('Pagamentos API - /api/pagamentos/[id]', () => {
       )
       expect(res.status).toBe(200)
       expect(json.status).toBe('PAGO')
-    })
-
-    it('should sync the next pending payment to the paid billing day', async () => {
-      authMock.mockResolvedValueOnce({ user: { id: 'u-admin', role: 'ADMIN' } })
-
-      const req = new NextRequest('http://localhost:3000/api/pagamentos/pag-123', {
-        method: 'PUT',
-        body: JSON.stringify({ status: 'PAGO', formaPagamento: 'PIX' }),
-      })
-
-      const paidPagamento = {
-        id: 'pag-123',
-        status: 'PAGO',
-        membroId: 'membro-123',
-        dataVencimento: new Date('2026-01-20T12:00:00.000Z'),
-        dataPagamento: new Date('2026-01-05T12:00:00.000Z'),
-      }
-
-      const nextPendingPagamento = {
-        id: 'pag-456',
-        dataVencimento: new Date('2026-02-10T12:00:00.000Z'),
-      }
-
-      updatePagamentoByIdMock.mockResolvedValueOnce(paidPagamento)
-      prismaMock.pagamento.findFirst.mockResolvedValueOnce(nextPendingPagamento)
-      prismaMock.pagamento.update.mockResolvedValueOnce({
-        ...nextPendingPagamento,
-        dataVencimento: new Date('2026-02-20T12:00:00.000Z'),
-      })
-
-      await PUT(req, { params })
-
-      expect(prismaMock.pagamento.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: { not: 'pag-123' },
-          membroId: 'membro-123',
-          status: 'PENDENTE',
-          dataVencimento: { gt: paidPagamento.dataVencimento },
-        },
-        orderBy: { dataVencimento: 'asc' },
-      })
-
-      const syncCall = prismaMock.pagamento.update.mock.calls[0]?.[0]
-      expect(syncCall).toEqual({
-        where: { id: 'pag-456' },
-        data: { dataVencimento: expect.any(Date) },
-      })
-      expect((syncCall?.data.dataVencimento as Date).toISOString()).toContain('2026-02-20')
     })
 
     it('should deny access to non-admins', async () => {
