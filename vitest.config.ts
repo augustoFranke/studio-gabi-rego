@@ -10,7 +10,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['src/lib/pdf.ts'],
+      include: [
+        'src/lib/**/*.ts',
+        'src/services/**/*.ts',
+        'src/app/api/**/*.ts',
+        'src/app/actions/**/*.ts',
+        'src/schemas/**/*.ts',
+        'src/domain/**/*.ts',
+        'src/features/**/*.ts',
+      ],
+      exclude: [
+        'src/**/*.{test,spec}.{ts,tsx}',
+        'src/__tests__/**',
+        'src/lib/fonts/**',
+        'src/assets/**',
+      ],
     },
   },
   resolve: {
