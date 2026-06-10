@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && (if [ \"$RUN_MIGRATIONS\" = \"1\" ]; then if [ \"$VERCEL\" = \"1\" ]; then prisma migrate resolve --applied 20250309120000_init || true; fi; prisma migrate deploy; fi) && npm run test:run && next build",
+    "db:generate": "prisma generate",
     "db:migrate:deploy": "prisma migrate deploy",
     "deploy:check": "./ops/check-deployment.sh"
   },
