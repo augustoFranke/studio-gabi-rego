@@ -56,6 +56,10 @@ const optionalSchema = z.object({
   // --- Provider: Resend (Email) ---
   RESEND_API_KEY: z.string().optional(),
 
+  // --- Provider: Upstash Redis (rate limiting) ---
+  UPSTASH_REDIS_REST_URL: z.string().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
   // --- Deployment ---
   VERCEL: z.string().optional(),
   VERCEL_URL: z.string().optional(),
@@ -118,6 +122,12 @@ export function validateRuntimeConfig(): ConfigValidationResult {
     warnings.push('RESEND_API_KEY not set — email delivery is disabled')
   }
 
+  if (!config.UPSTASH_REDIS_REST_URL || !config.UPSTASH_REDIS_REST_TOKEN) {
+    warnings.push(
+      'UPSTASH_REDIS_REST_URL/TOKEN not set — rate limiting falls back to per-instance memory (ineffective on serverless)',
+    )
+  }
+
   return { ok: true, config, errors: [], warnings }
 }
 
@@ -163,6 +173,13 @@ export function getEvolutionConfig() {
     url: process.env.EVOLUTION_API_URL,
     key: process.env.EVOLUTION_API_KEY,
     instance: process.env.EVOLUTION_INSTANCE,
+  }
+}
+
+export function getRateLimitRedisConfig() {
+  return {
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
   }
 }
 

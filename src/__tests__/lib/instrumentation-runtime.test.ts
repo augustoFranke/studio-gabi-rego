@@ -81,6 +81,8 @@ describe('instrumentation runtime validation', () => {
   it('logs healthy startup when required and optional config are all present', async () => {
     setMinimalValidEnv()
     process.env.RESEND_API_KEY = 're_test'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
     const { register } = await import('@/instrumentation')
 

@@ -62,6 +62,12 @@ export const RUNTIME_CONFIG_INVALID = 'runtime_config_invalid' as const
 export const RUNTIME_CONFIG_DEGRADED = 'runtime_config_degraded' as const
 
 // ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
+export const RATE_LIMIT_BACKEND_ERROR = 'rate_limit_backend_error' as const
+
+// ---------------------------------------------------------------------------
 // Aggregate type
 // ---------------------------------------------------------------------------
 
@@ -87,3 +93,4 @@ export type OperationalEvent =
   | typeof RUNTIME_CONFIG_VALID
   | typeof RUNTIME_CONFIG_INVALID
   | typeof RUNTIME_CONFIG_DEGRADED
+  | typeof RATE_LIMIT_BACKEND_ERROR
