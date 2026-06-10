@@ -4,7 +4,7 @@ import {
   OnboardingServiceError,
   saveAnamneseByToken,
 } from "@/services/onboarding.service"
-import { rateLimitByKey } from "@/lib/rate-limit"
+import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 
 const TOKEN_COOKIE_NAME = "anamnese_token"
 const isProduction = process.env.NODE_ENV === "production"
@@ -54,6 +54,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Token não fornecido" }, { status: 400 })
     }
 
+    const ipLimit = await rateLimitByIp(request, "onboarding:anamnese-token:ip", {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     const rateLimit = await rateLimitByKey(request, "onboarding:anamnese-token:get", token)
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -96,6 +107,17 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json({ error: "Token não fornecido" }, { status: 400 })
+    }
+
+    const ipLimit = await rateLimitByIp(request, "onboarding:anamnese-token:ip", {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
     }
 
     const rateLimit = await rateLimitByKey(request, "onboarding:anamnese-token:post", token)
