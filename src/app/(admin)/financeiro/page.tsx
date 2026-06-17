@@ -62,6 +62,7 @@ import { groupPlansByCategory } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
 import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 import { fetchWithTimeout } from "@/lib/http"
+import { formatCurrency } from "@/lib/currency"
 
 type FinanceiroStats = {
   totalPlanos: number
@@ -106,16 +107,7 @@ type Membro = Omit<
   precoCustomizado?: string | number | null
 }
 
-const currencyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-})
-
 // Helper functions
-function formatCurrency(value: string | number): string {
-  const num = typeof value === "string" ? parseFloat(value) : value
-  return currencyFormatter.format(num)
-}
 
 function formatDate(date: string): string {
   return formatDateBR(parseDateFromAPI(date))
