@@ -1,52 +1,15 @@
 "use client"
 
 import { useEffect, useState, useCallback, useEffectEvent, useMemo, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { type SearchableSelectOption } from "@/components/ui/searchable-select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  SearchableSelect,
-  type SearchableSelectOption,
-} from "@/components/ui/searchable-select"
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Plus,
-  DollarSign,
   CreditCard,
   Clock,
   AlertCircle,
   Loader2,
-  Search,
   Wallet,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from "lucide-react"
 import { toast } from "sonner"
 import { groupPlansByCategory } from "@/lib/planos"
@@ -55,9 +18,8 @@ import { formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 import { fetchWithTimeout } from "@/lib/http"
 import { formatCurrency } from "@/lib/currency"
 import type { FinanceiroStats, Plano, Pagamento, Membro } from "./_components/types"
-import { PLAN_THEMES } from "./_components/plano-themes"
-import { PlanoSection } from "./_components/plano-card"
-import { PagamentoRow } from "./_components/pagamento-row"
+import { PagamentosTab } from "./_components/pagamentos-tab"
+import { PlanosTab } from "./_components/planos-tab"
 
 // Helper functions
 
@@ -692,593 +654,65 @@ function useFinanceiroPage() {
         </TabsList>
 
         {/* Pagamentos Tab */}
-        <TabsContent value="pagamentos" className="space-y-4">
-          <Card className="border-primary/10">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <DollarSign className="size-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle>Pagamentos</CardTitle>
-                    <CardDescription>
-                      Controle de pagamentos dos alunos
-                    </CardDescription>
-                  </div>
-                </div>
-                <Dialog open={pagamentoDialogOpen} onOpenChange={setPagamentoDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => handleOpenPagamentoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
-                      <Plus className="mr-2 size-4" />
-                      Novo Pagamento
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingPagamento ? "Editar Pagamento" : "Novo Pagamento"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingPagamento
-                          ? "Atualize as informações do pagamento"
-                          : "Registre um novo pagamento para um aluno"}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="membro" className={pagamentoErrors.membroId ? "text-destructive" : ""}>
-                          Aluno
-                        </Label>
-                        <SearchableSelect
-                          value={pagamentoForm.membroId}
-                          onValueChange={(value) => {
-                            const defaults = getMemberPlanDefaults(value)
-                            setPagamentoForm((current) => ({
-                              ...current,
-                              membroId: value,
-                              planoId: defaults.planoId,
-                              valor: defaults.valor,
-                            }))
-                            if (pagamentoErrors.membroId) {
-                              setPagamentoErrors({ ...pagamentoErrors, membroId: "" })
-                            }
-                            if (pagamentoErrors.planoId || pagamentoErrors.valor) {
-                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
-                            }
-
-                            void getMemberNextBillingDate(value).then((nextBillingDate) => {
-                              if (!nextBillingDate) {
-                                return
-                              }
-
-                              setPagamentoForm((current) =>
-                                current.membroId === value
-                                  ? { ...current, dataVencimento: nextBillingDate }
-                                  : current
-                              )
-                            })
-                          }}
-                          options={pagamentoMembroOptions}
-                          placeholder="Selecione o aluno"
-                          searchPlaceholder="Buscar aluno..."
-                          emptyMessage="Nenhum aluno encontrado."
-                          disabled={submitting}
-                          className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}
-                        />
-                        {pagamentoErrors.membroId && (
-                          <p className="text-xs text-destructive">{pagamentoErrors.membroId}</p>
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="plano" className={pagamentoErrors.planoId ? "text-destructive" : ""}>
-                          Plano
-                        </Label>
-                        <SearchableSelect
-                          value={pagamentoForm.planoId}
-                          onValueChange={(value) => {
-                            const plano = planos.find((p) => p.id === value)
-                            setPagamentoForm({
-                              ...pagamentoForm,
-                              planoId: value,
-                              valor: plano ? String(plano.valor) : pagamentoForm.valor,
-                            })
-                            if (pagamentoErrors.planoId) {
-                              setPagamentoErrors({ ...pagamentoErrors, planoId: "", valor: "" })
-                            }
-                          }}
-                          options={pagamentoPlanoOptions}
-                          placeholder="Selecione o plano"
-                          searchPlaceholder="Buscar plano..."
-                          emptyMessage="Nenhum plano encontrado."
-                          disabled={submitting}
-                          className={pagamentoErrors.planoId ? "border-destructive" : "border-input/50"}
-                          renderOption={(option) => {
-                            const dotClass =
-                              option.group === "Planos com Gabi"
-                                ? "bg-amber-400"
-                                : option.group === "Planos com Estagiários"
-                                  ? "bg-sky-400"
-                                  : option.group === "Outros Planos"
-                                    ? "bg-violet-400"
-                                    : null
-
-                            if (!dotClass) {
-                              return option.label
-                            }
-
-                            return (
-                              <span className="flex items-center gap-2">
-                                <span className={`size-1.5 rounded-full ${dotClass}`} />
-                                {option.label}
-                              </span>
-                            )
-                          }}
-                        />
-                        {pagamentoErrors.planoId && (
-                          <p className="text-xs text-destructive">{pagamentoErrors.planoId}</p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="valor" className={pagamentoErrors.valor ? "text-destructive" : ""}>
-                            Valor
-                          </Label>
-                          <Input
-                            id="valor"
-                            type="number"
-                            step="0.01"
-                            placeholder="0,00"
-                            value={pagamentoForm.valor}
-                            onChange={(e) => {
-                              setPagamentoForm({ ...pagamentoForm, valor: e.target.value })
-                              if (pagamentoErrors.valor) {
-                                setPagamentoErrors({ ...pagamentoErrors, valor: "" })
-                              }
-                            }}
-                            disabled={submitting}
-                            className={pagamentoErrors.valor ? "border-destructive" : "border-input/50"}
-                          />
-                          {pagamentoErrors.valor && (
-                            <p className="text-xs text-destructive">{pagamentoErrors.valor}</p>
-                          )}
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="dataVencimento" className={pagamentoErrors.dataVencimento ? "text-destructive" : ""}>
-                            Vencimento
-                          </Label>
-                          <Input
-                            id="dataVencimento"
-                            type="date"
-                            value={pagamentoForm.dataVencimento}
-                            onChange={(e) => {
-                              setPagamentoForm({ ...pagamentoForm, dataVencimento: e.target.value })
-                              if (pagamentoErrors.dataVencimento) {
-                                setPagamentoErrors({ ...pagamentoErrors, dataVencimento: "" })
-                              }
-                            }}
-                            disabled={submitting}
-                            className={pagamentoErrors.dataVencimento ? "border-destructive" : "border-input/50"}
-                          />
-                          {pagamentoErrors.dataVencimento && (
-                            <p className="text-xs text-destructive">{pagamentoErrors.dataVencimento}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label
-                          htmlFor="formaPagamento"
-                          className={pagamentoErrors.formaPagamento ? "text-destructive" : ""}
-                        >
-                          Forma de Pagamento
-                        </Label>
-                        <Select
-                          value={pagamentoForm.formaPagamento}
-                          onValueChange={(v) => {
-                            setPagamentoForm({ ...pagamentoForm, formaPagamento: v })
-                            if (pagamentoErrors.formaPagamento) {
-                              setPagamentoErrors({ ...pagamentoErrors, formaPagamento: "" })
-                            }
-                          }}
-                        >
-                          <SelectTrigger className={pagamentoErrors.formaPagamento ? "border-destructive" : "border-input/50"}>
-                            <SelectValue placeholder="Selecione a forma de pagamento" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PIX">PIX</SelectItem>
-                            <SelectItem value="CARTAO_CREDITO">Cartão de Crédito</SelectItem>
-                            <SelectItem value="CARTAO_DEBITO">Cartão de Débito</SelectItem>
-                            <SelectItem value="DINHEIRO">Dinheiro</SelectItem>
-                            <SelectItem value="TRANSFERENCIA">Transferência</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {pagamentoErrors.formaPagamento && (
-                          <p className="text-xs text-destructive">{pagamentoErrors.formaPagamento}</p>
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="observacao">Observação</Label>
-                        <Textarea
-                          id="observacao"
-                          placeholder="Observações sobre o pagamento..."
-                          value={pagamentoForm.observacao}
-                          onChange={(e) => setPagamentoForm({ ...pagamentoForm, observacao: e.target.value })}
-                          className="border-input/50"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setPagamentoDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSavePagamento} disabled={submitting} className="shadow-md shadow-primary/25">
-                        {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-                        {editingPagamento ? "Salvar" : "Criar"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Delete Confirmation Dialog */}
-                <Dialog open={showDeletePagamentoDialog} onOpenChange={setShowDeletePagamentoDialog}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Confirmar exclusão</DialogTitle>
-                      <DialogDescription>
-                        Tem certeza que deseja excluir o pagamento de{" "}
-                        {pagamentoToDelete?.membro?.usuario?.nome
-                          ? <strong>{pagamentoToDelete.membro.usuario.nome}</strong>
-                          : pagamentoToDelete?.payerNome
-                            ? <strong>{pagamentoToDelete.payerNome}</strong>
-                            : "este pagador"}
-                        {" "}no valor de <strong>{pagamentoToDelete ? formatCurrency(pagamentoToDelete.valor) : ""}</strong>?
-                        Esta ação é <strong>permanente</strong> e não poderá ser desfeita.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowDeletePagamentoDialog(false)
-                          setPagamentoToDelete(null)
-                        }}
-                        disabled={deletingPagamento}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={handleConfirmDeletePagamento}
-                        disabled={deletingPagamento}
-                      >
-                        {deletingPagamento ? (
-                          <>
-                            <Loader2 className="mr-2 size-4 animate-spin" />
-                            Excluindo…
-                          </>
-                        ) : (
-                          "Excluir permanentemente"
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome..."
-                    value={searchPagamento}
-                    onChange={(e) => setSearchPagamento(e.target.value)}
-                    className="pl-9 border-input/50 focus:border-primary"
-                  />
-                </div>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[180px] border-input/50">
-                    <SelectValue placeholder="Filtrar status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="PENDENTE">Pendentes</SelectItem>
-                    <SelectItem value="PAGO">Pagos</SelectItem>
-                    <SelectItem value="ATRASADO">Atrasados</SelectItem>
-                    <SelectItem value="CANCELADO">Cancelados</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={sortPagamento} onValueChange={setSortPagamento}>
-                  <SelectTrigger className="w-[200px] border-input/50">
-                    <SelectValue placeholder="Ordenar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vencimento_desc">Vencimento (mais distante)</SelectItem>
-                    <SelectItem value="vencimento_asc">Vencimento (mais próximo)</SelectItem>
-                    <SelectItem value="recent_desc">Mais recentes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {pagamentos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <DollarSign className="size-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum pagamento encontrado.
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-md border border-border/50">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead>Aluno</TableHead>
-                        <TableHead>Plano</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Vencimento</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pagamentos.map((pagamento) => (
-                        <PagamentoRow
-                          key={pagamento.id}
-                          pagamento={pagamento}
-                          onEdit={handleOpenPagamentoDialog}
-                          onUpdateStatus={handleUpdatePagamentoStatus}
-                          onDelete={handleDeletePagamento}
-                        />
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-border/50 px-2">
-                  <div className="flex-1 text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages}
-                  </div>
-                  <div className="flex items-center gap-x-2">
-                    <Button
-                      variant="outline"
-                      className="size-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(1, searchPagamento, filterStatus, sortPagamento)}
-                      disabled={currentPage === 1 || loadingPagamentos}
-                    >
-                      <span className="sr-only">Primeira página</span>
-                      <ChevronsLeft className="size-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="size-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage - 1, searchPagamento, filterStatus, sortPagamento)}
-                      disabled={currentPage === 1 || loadingPagamentos}
-                    >
-                      <span className="sr-only">Página anterior</span>
-                      <ChevronLeft className="size-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="size-8 p-0"
-                      onClick={() => fetchPagamentos(currentPage + 1, searchPagamento, filterStatus, sortPagamento)}
-                      disabled={currentPage === totalPages || loadingPagamentos}
-                    >
-                      <span className="sr-only">Próxima página</span>
-                      <ChevronRight className="size-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="size-8 p-0 lg:flex"
-                      onClick={() => fetchPagamentos(totalPages, searchPagamento, filterStatus, sortPagamento)}
-                      disabled={currentPage === totalPages || loadingPagamentos}
-                    >
-                      <span className="sr-only">Última página</span>
-                      <ChevronsRight className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <PagamentosTab
+          pagamentos={pagamentos}
+          searchPagamento={searchPagamento}
+          setSearchPagamento={setSearchPagamento}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          sortPagamento={sortPagamento}
+          setSortPagamento={setSortPagamento}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          loadingPagamentos={loadingPagamentos}
+          fetchPagamentos={fetchPagamentos}
+          onEditPagamento={handleOpenPagamentoDialog}
+          onUpdatePagamentoStatus={handleUpdatePagamentoStatus}
+          onDeletePagamento={handleDeletePagamento}
+          pagamentoDialogOpen={pagamentoDialogOpen}
+          setPagamentoDialogOpen={setPagamentoDialogOpen}
+          editingPagamento={editingPagamento}
+          pagamentoForm={pagamentoForm}
+          setPagamentoForm={setPagamentoForm}
+          pagamentoErrors={pagamentoErrors}
+          setPagamentoErrors={setPagamentoErrors}
+          submitting={submitting}
+          planos={planos}
+          pagamentoMembroOptions={pagamentoMembroOptions}
+          pagamentoPlanoOptions={pagamentoPlanoOptions}
+          getMemberPlanDefaults={getMemberPlanDefaults}
+          getMemberNextBillingDate={getMemberNextBillingDate}
+          onNewPagamento={() => handleOpenPagamentoDialog()}
+          onSavePagamento={handleSavePagamento}
+          showDeletePagamentoDialog={showDeletePagamentoDialog}
+          setShowDeletePagamentoDialog={setShowDeletePagamentoDialog}
+          pagamentoToDelete={pagamentoToDelete}
+          deletingPagamento={deletingPagamento}
+          onCancelDeletePagamento={() => {
+            setShowDeletePagamentoDialog(false)
+            setPagamentoToDelete(null)
+          }}
+          onConfirmDeletePagamento={handleConfirmDeletePagamento}
+        />
 
         {/* Planos Tab */}
-        <TabsContent value="planos" className="space-y-4">
-          <Card className="border-primary/10">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <CreditCard className="size-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle>Planos</CardTitle>
-                    <CardDescription>
-                      Configure os planos oferecidos pelo estúdio
-                    </CardDescription>
-                  </div>
-                </div>
-                <Dialog open={planoDialogOpen} onOpenChange={setPlanoDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => handleOpenPlanoDialog()} className="shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-shadow">
-                      <Plus className="mr-2 size-4" />
-                      Novo Plano
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingPlano ? "Editar Plano" : "Novo Plano"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingPlano
-                          ? "Atualize as informações do plano"
-                          : "Crie um novo plano para o estúdio"}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="nome" className={planoErrors.nome ? "text-destructive" : ""}>
-                          Nome do Plano
-                        </Label>
-                        <Input
-                          id="nome"
-                          placeholder="Ex: Mensal 3x/semana"
-                          value={planoForm.nome}
-                          onChange={(e) => {
-                            setPlanoForm({ ...planoForm, nome: e.target.value })
-                            if (planoErrors.nome) {
-                              setPlanoErrors({ ...planoErrors, nome: "" })
-                            }
-                          }}
-                          className={planoErrors.nome ? "border-destructive" : "border-input/50"}
-                        />
-                        {planoErrors.nome && (
-                          <p className="text-xs text-destructive">{planoErrors.nome}</p>
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="descricao">Descrição</Label>
-                        <Textarea
-                          id="descricao"
-                          placeholder="Descrição do plano..."
-                          value={planoForm.descricao}
-                          onChange={(e) => setPlanoForm({ ...planoForm, descricao: e.target.value })}
-                          className="border-input/50"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="valor" className={planoErrors.valor ? "text-destructive" : ""}>
-                            Valor (R$)
-                          </Label>
-                          <Input
-                            id="valor"
-                            type="number"
-                            step="0.01"
-                            placeholder="0,00"
-                            value={planoForm.valor}
-                            onChange={(e) => {
-                              setPlanoForm({ ...planoForm, valor: e.target.value })
-                              if (planoErrors.valor) {
-                                setPlanoErrors({ ...planoErrors, valor: "" })
-                              }
-                            }}
-                            className={planoErrors.valor ? "border-destructive" : "border-input/50"}
-                          />
-                          {planoErrors.valor && (
-                            <p className="text-xs text-destructive">{planoErrors.valor}</p>
-                          )}
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="duracaoDias" className={planoErrors.duracaoDias ? "text-destructive" : ""}>
-                            Duração (dias)
-                          </Label>
-                          <Select
-                            value={planoForm.duracaoDias}
-                            onValueChange={(v) => {
-                              setPlanoForm({ ...planoForm, duracaoDias: v })
-                              if (planoErrors.duracaoDias) {
-                                setPlanoErrors({ ...planoErrors, duracaoDias: "" })
-                              }
-                            }}
-                          >
-                            <SelectTrigger className={planoErrors.duracaoDias ? "border-destructive" : "border-input/50"}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="30">Mensal (30 dias)</SelectItem>
-                              <SelectItem value="90">Trimestral (90 dias)</SelectItem>
-                              <SelectItem value="180">Semestral (180 dias)</SelectItem>
-                              <SelectItem value="365">Anual (365 dias)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {planoErrors.duracaoDias && (
-                            <p className="text-xs text-destructive">{planoErrors.duracaoDias}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="aulasSemanais" className={planoErrors.aulasSemanais ? "text-destructive" : ""}>
-                          Aulas por Semana
-                        </Label>
-                        <Select
-                          value={planoForm.aulasSemanais}
-                          onValueChange={(v) => {
-                            setPlanoForm({ ...planoForm, aulasSemanais: v })
-                            if (planoErrors.aulasSemanais) {
-                              setPlanoErrors({ ...planoErrors, aulasSemanais: "" })
-                            }
-                          }}
-                        >
-                          <SelectTrigger className={planoErrors.aulasSemanais ? "border-destructive" : "border-input/50"}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 aula/semana</SelectItem>
-                            <SelectItem value="2">2 aulas/semana</SelectItem>
-                            <SelectItem value="3">3 aulas/semana</SelectItem>
-                            <SelectItem value="4">4 aulas/semana</SelectItem>
-                            <SelectItem value="5">5 aulas/semana</SelectItem>
-                            <SelectItem value="6">6 aulas/semana</SelectItem>
-                            <SelectItem value="7">Ilimitado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {planoErrors.aulasSemanais && (
-                          <p className="text-xs text-destructive">{planoErrors.aulasSemanais}</p>
-                        )}
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setPlanoDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSavePlano} disabled={submitting} className="shadow-md shadow-primary/25">
-                        {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-                        {editingPlano ? "Salvar" : "Criar"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {planos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <CreditCard className="size-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum plano cadastrado. Clique em &quot;Novo Plano&quot; para começar.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {PLAN_THEMES.map((theme) => {
-                    const planosDoGrupo = groupedTodosPlanos[theme.groupKey]
-                    if (planosDoGrupo.length === 0) return null
-                    return (
-                      <PlanoSection
-                        key={theme.key}
-                        theme={theme}
-                        planos={planosDoGrupo}
-                        onEdit={handleOpenPlanoDialog}
-                        onToggleAtivo={handleTogglePlanoAtivo}
-                        onDelete={handleDeletePlano}
-                      />
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <PlanosTab
+          planos={planos}
+          groupedTodosPlanos={groupedTodosPlanos}
+          onEditPlano={handleOpenPlanoDialog}
+          onTogglePlanoAtivo={handleTogglePlanoAtivo}
+          onDeletePlano={handleDeletePlano}
+          planoDialogOpen={planoDialogOpen}
+          setPlanoDialogOpen={setPlanoDialogOpen}
+          editingPlano={editingPlano}
+          planoForm={planoForm}
+          setPlanoForm={setPlanoForm}
+          planoErrors={planoErrors}
+          setPlanoErrors={setPlanoErrors}
+          submitting={submitting}
+          onNewPlano={() => handleOpenPlanoDialog()}
+          onSavePlano={handleSavePlano}
+        />
       </Tabs>
     </div>
   )
