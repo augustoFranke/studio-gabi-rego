@@ -14,15 +14,25 @@ const horarioSchema = z.object({
   vagasTotal: z.number().int().min(1, 'Informe a quantidade de vagas').max(MAX_CAPACITY_PER_SLOT),
 })
 
+const horariosQuerySchema = z.object({
+  diaSemana: z.nativeEnum(DiaSemana).nullish(),
+  ativo: z.enum(['true', 'false']).nullish(),
+})
+
 export async function GET(request: NextRequest) {
   return withApiAuth(async () => {
     const searchParams = request.nextUrl.searchParams
-    const diaSemana = searchParams.get('diaSemana') as DiaSemana | null
-    const ativo = searchParams.get('ativo')
+    const parsed = horariosQuerySchema.safeParse({
+      diaSemana: searchParams.get('diaSemana'),
+      ativo: searchParams.get('ativo'),
+    })
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Parâmetros de busca inválidos' }, { status: 400 })
+    }
 
     const horarios = await listHorarios({
-      diaSemana,
-      ativo: ativo === null ? null : ativo === 'true',
+      diaSemana: parsed.data.diaSemana ?? null,
+      ativo: parsed.data.ativo == null ? null : parsed.data.ativo === 'true',
     })
 
     return NextResponse.json(horarios)
