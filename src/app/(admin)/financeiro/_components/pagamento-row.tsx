@@ -51,7 +51,7 @@ function PagamentoRowComponent({ pagamento, onEdit, onUpdateStatus, onDelete }: 
       <TableCell>{getStatusBadge(pagamento.status)}</TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
-          {pagamento.status === "PENDENTE" && (
+          {(pagamento.status === "PENDENTE" || pagamento.status === "ATRASADO") && (
             <Button
               variant="ghost"
               size="sm"
