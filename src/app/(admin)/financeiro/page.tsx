@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useEffectEvent, useMemo, useRef } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,21 +30,16 @@ import {
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import {
   Plus,
-  Pencil,
-  Trash2,
   DollarSign,
   CreditCard,
-  Check,
   Clock,
   AlertCircle,
-  XCircle,
   Loader2,
   Search,
   Wallet,
@@ -57,18 +51,15 @@ import {
 import { toast } from "sonner"
 import { groupPlansByCategory } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
-import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
+import { formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 import { fetchWithTimeout } from "@/lib/http"
 import { formatCurrency } from "@/lib/currency"
 import type { FinanceiroStats, Plano, Pagamento, Membro } from "./_components/types"
 import { PLAN_THEMES } from "./_components/plano-themes"
 import { PlanoSection } from "./_components/plano-card"
+import { PagamentoRow } from "./_components/pagamento-row"
 
 // Helper functions
-
-function formatDate(date: string): string {
-  return formatDateBR(parseDateFromAPI(date))
-}
 
 function getNextBillingDate(date: Date): string {
   const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1, 12, 0, 0)
@@ -77,22 +68,6 @@ function getNextBillingDate(date: Date): string {
   nextMonth.setDate(Math.min(date.getDate(), maxDay))
 
   return formatDateISO(nextMonth)
-}
-
-function getStatusBadge(status: Pagamento["status"]) {
-  const variants: Record<Pagamento["status"], { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
-    PAGO: { variant: "default", icon: <Check className="size-3" />, label: "Pago" },
-    PENDENTE: { variant: "secondary", icon: <Clock className="size-3" />, label: "Pendente" },
-    ATRASADO: { variant: "destructive", icon: <AlertCircle className="size-3" />, label: "Atrasado" },
-    CANCELADO: { variant: "outline", icon: <XCircle className="size-3" />, label: "Cancelado" },
-  }
-  const { variant, icon, label } = variants[status]
-  return (
-    <Badge variant={variant} className={`gap-1 ${variant === 'default' ? 'bg-primary' : ''}`}>
-      {icon}
-      {label}
-    </Badge>
-  )
 }
 
 export default function FinanceiroPage() {
@@ -480,7 +455,7 @@ function useFinanceiroPage() {
   }
 
   // Pagamento handlers
-  const handleOpenPagamentoDialog = (pagamento?: Pagamento) => {
+  const handleOpenPagamentoDialog = useCallback((pagamento?: Pagamento) => {
     if (pagamento) {
       setEditingPagamento(pagamento)
       setPagamentoForm({
@@ -511,7 +486,7 @@ function useFinanceiroPage() {
     }
     setPagamentoErrors({})
     setPagamentoDialogOpen(true)
-  }
+  }, [])
 
   const validatePagamentoForm = (): boolean => {
     const errors: Record<string, string> = {}
@@ -585,7 +560,7 @@ function useFinanceiroPage() {
     }
   }
 
-  const handleUpdatePagamentoStatus = async (pagamento: Pagamento, newStatus: Pagamento["status"]) => {
+  const handleUpdatePagamentoStatus = useCallback(async (pagamento: Pagamento, newStatus: Pagamento["status"]) => {
     try {
       const res = await fetchWithTimeout(`/api/pagamentos/${pagamento.id}`, {
         method: "PUT",
@@ -604,12 +579,12 @@ function useFinanceiroPage() {
     } catch {
       toast.error("Erro ao atualizar status")
     }
-  }
+  }, [currentPage, searchPagamento, filterStatus, sortPagamento, fetchPagamentos, fetchStats])
 
-  const handleDeletePagamento = (pagamento: Pagamento) => {
+  const handleDeletePagamento = useCallback((pagamento: Pagamento) => {
     setPagamentoToDelete(pagamento)
     setShowDeletePagamentoDialog(true)
-  }
+  }, [])
 
   const handleConfirmDeletePagamento = async () => {
     if (!pagamentoToDelete) return
@@ -1050,51 +1025,13 @@ function useFinanceiroPage() {
                     </TableHeader>
                     <TableBody>
                       {pagamentos.map((pagamento) => (
-                        <TableRow key={pagamento.id} className="hover:bg-primary/5">
-                          <TableCell className="font-medium">
-                            {pagamento.membro?.usuario?.nome || pagamento.payerNome || "Sem vinculo"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="flex items-center w-fit border-primary/30 text-primary">
-                              <CreditCard className="mr-1 size-3" />
-                              {pagamento.plano.nome}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatCurrency(pagamento.valor)}</TableCell>
-                          <TableCell>{formatDate(pagamento.dataVencimento)}</TableCell>
-                          <TableCell>{getStatusBadge(pagamento.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {pagamento.status === "PENDENTE" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleUpdatePagamentoStatus(pagamento, "PAGO")}
-                                  title="Marcar como pago"
-                                  className="hover:bg-primary/10 hover:text-primary"
-                                >
-                                  <Check className="size-4 text-primary" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenPagamentoDialog(pagamento)}
-                                className="hover:bg-primary/10 hover:text-primary"
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePagamento(pagamento)}
-                                className="hover:bg-destructive/10"
-                              >
-                                <Trash2 className="size-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        <PagamentoRow
+                          key={pagamento.id}
+                          pagamento={pagamento}
+                          onEdit={handleOpenPagamentoDialog}
+                          onUpdateStatus={handleUpdatePagamentoStatus}
+                          onDelete={handleDeletePagamento}
+                        />
                       ))}
                     </TableBody>
                   </Table>
