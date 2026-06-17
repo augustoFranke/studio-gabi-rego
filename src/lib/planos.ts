@@ -27,3 +27,10 @@ export function groupPlansByCategory<T extends PlanoNome>(planos: T[]) {
     planosOutros: sortByNomePtBr(planosOutros),
   }
 }
+
+export function formatPlanoDuration(duracaoDias: number): string {
+  if (duracaoDias === 30) return "mês"
+  if (duracaoDias === 90) return "trimestre"
+  if (duracaoDias === 180) return "semestre"
+  return "ano"
+}

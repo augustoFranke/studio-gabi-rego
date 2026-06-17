@@ -58,7 +58,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Prisma } from '@prisma/client'
-import { groupPlansByCategory } from "@/lib/planos"
+import { groupPlansByCategory, formatPlanoDuration } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
 import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 import { fetchWithTimeout } from "@/lib/http"
@@ -1405,7 +1405,7 @@ function useFinanceiroPage() {
                                           {formatCurrency(plano.valor)}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                          /{plano.duracaoDias === 30 ? "mês" : plano.duracaoDias === 90 ? "trimestre" : plano.duracaoDias === 180 ? "semestre" : "ano"}
+                                          /{formatPlanoDuration(plano.duracaoDias)}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -1492,7 +1492,7 @@ function useFinanceiroPage() {
                                           {formatCurrency(plano.valor)}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                          /{plano.duracaoDias === 30 ? "mês" : plano.duracaoDias === 90 ? "trimestre" : plano.duracaoDias === 180 ? "semestre" : "ano"}
+                                          /{formatPlanoDuration(plano.duracaoDias)}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -1579,7 +1579,7 @@ function useFinanceiroPage() {
                                           {formatCurrency(plano.valor)}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                          /{plano.duracaoDias === 30 ? "mês" : plano.duracaoDias === 90 ? "trimestre" : plano.duracaoDias === 180 ? "semestre" : "ano"}
+                                          /{formatPlanoDuration(plano.duracaoDias)}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
