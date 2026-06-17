@@ -8,6 +8,8 @@ import {
   PagamentoServiceError,
   updatePagamentoById,
 } from '@/services/pagamento.service'
+import { logError, safeErrorData } from '@/lib/observability/logger'
+import { PAGAMENTO_DELETE_FAILED, PAGAMENTO_UPDATE_FAILED } from '@/lib/observability/events'
 
 const pagamentoUpdateSchema = z.object({
   membroId: z.string().min(1).optional(),
@@ -86,7 +88,10 @@ export async function PUT(
         return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      console.error('Erro ao atualizar pagamento:', error)
+      logError(PAGAMENTO_UPDATE_FAILED, {
+        message: 'Erro ao atualizar pagamento:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   }, { requiredRole: 'ADMIN' })
@@ -111,7 +116,10 @@ export async function DELETE(
         return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      console.error('Erro ao remover pagamento:', error)
+      logError(PAGAMENTO_DELETE_FAILED, {
+        message: 'Erro ao remover pagamento:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   }, { requiredRole: 'ADMIN' })

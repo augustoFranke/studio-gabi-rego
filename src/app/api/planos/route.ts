@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
 import { z } from 'zod'
 import { createPlano, listPlanos, PlanoServiceError } from '@/services/plano.service'
+import { logError, safeErrorData } from '@/lib/observability/logger'
+import { PLANO_CREATE_FAILED } from '@/lib/observability/events'
 
 const planoSchema = z.object({
   nome: z.string().min(1, 'Informe o nome'),
@@ -44,7 +46,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      console.error('Erro ao criar plano:', error)
+      logError(PLANO_CREATE_FAILED, {
+        message: 'Erro ao criar plano:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   }, { requiredRole: 'ADMIN' })

@@ -5,6 +5,8 @@ import {
   OnboardingServiceError,
   resendVerificationEmail,
 } from "@/services/onboarding.service"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { AUTH_RESEND_VERIFICATION_FAILED } from "@/lib/observability/events"
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +41,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("Erro ao reenviar verificação:", error)
+    logError(AUTH_RESEND_VERIFICATION_FAILED, {
+      message: 'Erro ao reenviar verificação:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao reenviar verificação" },
       { status: 500 }

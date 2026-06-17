@@ -12,6 +12,8 @@ import {
   updatePerfilForUser,
   savePerfilForUser,
 } from "@/services/perfil.service"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { PERFIL_SAVE_FAILED } from "@/lib/observability/events"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -201,7 +203,10 @@ export async function POST(request: Request) {
 
     return response
   } catch (error) {
-    console.error("Erro ao salvar perfil:", error)
+    logError(PERFIL_SAVE_FAILED, {
+      message: 'Erro ao salvar perfil:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao salvar perfil" },
       { status: 500 }

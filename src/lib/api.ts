@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import type { ZodError, ZodSchema } from 'zod'
 import { type AppSession, isAppSession, type UserRole } from '@/lib/auth-session'
-import { AUTH_SESSION_ERROR } from '@/lib/observability/events'
-import { logError } from '@/lib/observability/logger'
+import { API_UNHANDLED_ERROR, AUTH_SESSION_ERROR } from '@/lib/observability/events'
+import { logError, safeErrorData } from '@/lib/observability/logger'
 
 interface ApiOptions {
   requireAuth?: boolean
@@ -54,7 +54,10 @@ export async function withApiAuth(
 
     return await authHandler(session)
   } catch (error) {
-    console.error('API Error:', error)
+    logError(API_UNHANDLED_ERROR, {
+      message: 'API Error:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

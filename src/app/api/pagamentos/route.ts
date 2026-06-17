@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
 import { listPagamentos, createPagamento, PagamentoServiceError } from '@/services/pagamento.service'
 import { pagamentoCreateSchema, pagamentosQuerySchema } from '@/features/finance/contracts'
+import { logError, safeErrorData } from '@/lib/observability/logger'
+import { PAGAMENTO_LIST_FAILED } from '@/lib/observability/events'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async (session) => {
@@ -39,7 +41,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: error.status })
       }
 
-      console.error('Erro ao listar pagamentos:', error)
+      logError(PAGAMENTO_LIST_FAILED, {
+        message: 'Erro ao listar pagamentos:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
   })
