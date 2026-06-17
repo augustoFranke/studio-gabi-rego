@@ -41,9 +41,7 @@ import {
   Pencil,
   Trash2,
   DollarSign,
-  Users,
   CreditCard,
-  Calendar,
   Check,
   Clock,
   AlertCircle,
@@ -57,55 +55,14 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { Prisma } from '@prisma/client'
-import { groupPlansByCategory, formatPlanoDuration } from "@/lib/planos"
+import { groupPlansByCategory } from "@/lib/planos"
 import { sortByTextPtBr } from "@/lib/select-options"
 import { formatDateBR, formatDateISO, parseDateFromAPI } from "@/lib/schedule"
 import { fetchWithTimeout } from "@/lib/http"
 import { formatCurrency } from "@/lib/currency"
-
-type FinanceiroStats = {
-  totalPlanos: number
-  pagamentosPendentes: number
-  pagamentosAtrasados: number
-  receitaMes: number
-}
-
-type Plano = Omit<
-  Prisma.PlanoGetPayload<{
-    include: { _count: { select: { membros: true; pagamentos: true } } }
-  }>,
-  'valor'
-> & {
-  valor: string | number
-}
-
-type Pagamento = Omit<
-  Prisma.PagamentoGetPayload<{
-    include: {
-      membro: { include: { usuario: { select: { nome: true } } } }
-      plano: true
-    }
-  }>,
-  'valor' | 'dataVencimento' | 'dataPagamento'
-> & {
-  valor: string | number
-  dataVencimento: string
-  dataPagamento: string | null
-}
-
-type Membro = Omit<
-  Prisma.MembroGetPayload<{
-    include: {
-      usuario: { select: { id: true; nome: true; email: true } }
-      plano: true
-    }
-  }>,
-  'dataNascimento' | 'precoCustomizado'
-> & {
-  dataNascimento?: string | Date | null
-  precoCustomizado?: string | number | null
-}
+import type { FinanceiroStats, Plano, Pagamento, Membro } from "./_components/types"
+import { PLAN_THEMES } from "./_components/plano-themes"
+import { PlanoSection } from "./_components/plano-card"
 
 // Helper functions
 
@@ -1366,266 +1323,20 @@ function useFinanceiroPage() {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {groupedTodosPlanos.planosGabi.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="size-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/30">
-                                <span className="text-white text-sm font-bold">G</span>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg">Planos com Gabi</h3>
-                                <p className="text-xs text-muted-foreground">Atendimento personalizado pela Gabi</p>
-                              </div>
-                              <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 ml-auto">
-                                {groupedTodosPlanos.planosGabi.length} {groupedTodosPlanos.planosGabi.length === 1 ? 'plano' : 'planos'}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {groupedTodosPlanos.planosGabi.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 dark:border-amber-800/30 hover:shadow-lg hover:shadow-amber-500/10 transition-shadow`}>
-                                  <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                      <div>
-                                        <CardTitle className="text-lg text-amber-900 dark:text-amber-100">{plano.nome}</CardTitle>
-                                        {plano.descricao && (
-                                          <CardDescription className="mt-1">
-                                            {plano.descricao}
-                                          </CardDescription>
-                                        )}
-                                      </div>
-                                      {!plano.ativo && (
-                                        <Badge variant="secondary">Inativo</Badge>
-                                      )}
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                                          {formatCurrency(plano.valor)}
-                                        </span>
-                                        <span className="text-sm text-muted-foreground">
-                                          /{formatPlanoDuration(plano.duracaoDias)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="size-4 text-amber-500" />
-                                          {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Users className="size-4 text-amber-500" />
-                                          {plano._count?.membros || 0} alunos
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2 pt-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="flex-1 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-950/50"
-                                          onClick={() => handleOpenPlanoDialog(plano)}
-                                        >
-                                          <Pencil className="mr-2 size-4" />
-                                          Editar
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleTogglePlanoAtivo(plano)}
-                                          className="hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-950/50"
-                                        >
-                                          {plano.ativo ? "Desativar" : "Ativar"}
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleDeletePlano(plano)}
-                                          className="hover:bg-destructive/10"
-                                        >
-                                          <Trash2 className="size-4 text-destructive" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                    {groupedTodosPlanos.planosEstagiarios.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="size-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-blue-500/30">
-                                <span className="text-white text-sm font-bold">E</span>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg">Planos com Estagiários</h3>
-                                <p className="text-xs text-muted-foreground">Atendimento pela equipe de estagiários</p>
-                              </div>
-                              <Badge className="bg-gradient-to-r from-sky-400 to-blue-500 text-white border-0 ml-auto">
-                                {groupedTodosPlanos.planosEstagiarios.length} {groupedTodosPlanos.planosEstagiarios.length === 1 ? 'plano' : 'planos'}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {groupedTodosPlanos.planosEstagiarios.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 dark:from-sky-950/20 dark:to-blue-950/10 dark:border-sky-800/30 hover:shadow-lg hover:shadow-blue-500/10 transition-shadow`}>
-                                  <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                      <div>
-                                        <CardTitle className="text-lg text-sky-900 dark:text-sky-100">{plano.nome}</CardTitle>
-                                        {plano.descricao && (
-                                          <CardDescription className="mt-1">
-                                            {plano.descricao}
-                                          </CardDescription>
-                                        )}
-                                      </div>
-                                      {!plano.ativo && (
-                                        <Badge variant="secondary">Inativo</Badge>
-                                      )}
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-sky-600 dark:text-sky-400">
-                                          {formatCurrency(plano.valor)}
-                                        </span>
-                                        <span className="text-sm text-muted-foreground">
-                                          /{formatPlanoDuration(plano.duracaoDias)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="size-4 text-sky-500" />
-                                          {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Users className="size-4 text-sky-500" />
-                                          {plano._count?.membros || 0} alunos
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2 pt-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="flex-1 hover:bg-sky-100 hover:text-sky-700 hover:border-sky-300 dark:hover:bg-sky-950/50"
-                                          onClick={() => handleOpenPlanoDialog(plano)}
-                                        >
-                                          <Pencil className="mr-2 size-4" />
-                                          Editar
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleTogglePlanoAtivo(plano)}
-                                          className="hover:bg-sky-100 hover:text-sky-700 hover:border-sky-300 dark:hover:bg-sky-950/50"
-                                        >
-                                          {plano.ativo ? "Desativar" : "Ativar"}
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleDeletePlano(plano)}
-                                          className="hover:bg-destructive/10"
-                                        >
-                                          <Trash2 className="size-4 text-destructive" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                  {groupedTodosPlanos.planosOutros.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="size-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30">
-                                <span className="text-white text-sm font-bold">+</span>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg">Outros Planos</h3>
-                                <p className="text-xs text-muted-foreground">Planos especiais e personalizados</p>
-                              </div>
-                              <Badge className="bg-gradient-to-r from-violet-400 to-purple-500 text-white border-0 ml-auto">
-                                {groupedTodosPlanos.planosOutros.length} {groupedTodosPlanos.planosOutros.length === 1 ? 'plano' : 'planos'}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {groupedTodosPlanos.planosOutros.map((plano) => (
-                                <Card key={plano.id} className={`${!plano.ativo ? "opacity-60" : ""} border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10 dark:border-violet-800/30 hover:shadow-lg hover:shadow-purple-500/10 transition-shadow`}>
-                                  <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                      <div>
-                                        <CardTitle className="text-lg text-violet-900 dark:text-violet-100">{plano.nome}</CardTitle>
-                                        {plano.descricao && (
-                                          <CardDescription className="mt-1">
-                                            {plano.descricao}
-                                          </CardDescription>
-                                        )}
-                                      </div>
-                                      {!plano.ativo && (
-                                        <Badge variant="secondary">Inativo</Badge>
-                                      )}
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                                          {formatCurrency(plano.valor)}
-                                        </span>
-                                        <span className="text-sm text-muted-foreground">
-                                          /{formatPlanoDuration(plano.duracaoDias)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="size-4 text-violet-500" />
-                                          {plano.aulasSemanais === 7 ? "Ilimitado" : `${plano.aulasSemanais}x/semana`}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Users className="size-4 text-violet-500" />
-                                          {plano._count?.membros || 0} alunos
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2 pt-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="flex-1 hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300 dark:hover:bg-violet-950/50"
-                                          onClick={() => handleOpenPlanoDialog(plano)}
-                                        >
-                                          <Pencil className="mr-2 size-4" />
-                                          Editar
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleTogglePlanoAtivo(plano)}
-                                          className="hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300 dark:hover:bg-violet-950/50"
-                                        >
-                                          {plano.ativo ? "Desativar" : "Ativar"}
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleDeletePlano(plano)}
-                                          className="hover:bg-destructive/10"
-                                        >
-                                          <Trash2 className="size-4 text-destructive" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                  {PLAN_THEMES.map((theme) => {
+                    const planosDoGrupo = groupedTodosPlanos[theme.groupKey]
+                    if (planosDoGrupo.length === 0) return null
+                    return (
+                      <PlanoSection
+                        key={theme.key}
+                        theme={theme}
+                        planos={planosDoGrupo}
+                        onEdit={handleOpenPlanoDialog}
+                        onToggleAtivo={handleTogglePlanoAtivo}
+                        onDelete={handleDeletePlano}
+                      />
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
