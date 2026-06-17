@@ -4,7 +4,7 @@ export type FinanceiroStats = {
   totalPlanos: number
   pagamentosPendentes: number
   pagamentosAtrasados: number
-  receitaMes: number
+  receitaMes: string | number
 }
 
 export type Plano = Omit<
@@ -37,8 +37,9 @@ export type Membro = Omit<
       plano: true
     }
   }>,
-  'dataNascimento' | 'precoCustomizado'
+  'dataNascimento' | 'precoCustomizado' | 'plano'
 > & {
   dataNascimento?: string | Date | null
   precoCustomizado?: string | number | null
+  plano: (Omit<Plano, 'valor' | '_count'> & { valor: string | number }) | null
 }
