@@ -40,10 +40,9 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         membro: {
-          include: {
-            usuario: {
-              select: { nome: true },
-            },
+          select: {
+            id: true,
+            usuario: { select: { nome: true } },
           },
         },
       },
