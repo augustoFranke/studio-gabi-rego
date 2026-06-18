@@ -5,6 +5,9 @@ import { getFinanceiroStats } from "@/services/financeiro.service"
 import { FinanceiroClient } from "./financeiro-client"
 import type { Plano, Membro } from "./_components/types"
 
+// Per-request admin data fetched from the DB at render time; never prerender at build.
+export const dynamic = "force-dynamic"
+
 // Runtime shapes for the params used below: listPlanos with includeCounts,
 // and listMembros with no fields filter (the default full include).
 type PlanoRow = Prisma.PlanoGetPayload<{
