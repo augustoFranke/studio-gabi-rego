@@ -5,6 +5,8 @@ import {
   OnboardingServiceError,
   saveMinhaAnamnese,
 } from "@/services/onboarding.service"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { ANAMNESE_FETCH_FAILED, ANAMNESE_SAVE_FAILED } from "@/lib/observability/events"
 
 export async function GET() {
   return withApiAuth(async (session) => {
@@ -18,7 +20,10 @@ export async function GET() {
         )
       }
 
-      console.error("Erro ao buscar anamnese:", error)
+      logError(ANAMNESE_FETCH_FAILED, {
+        message: 'Erro ao buscar anamnese:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json(
         { error: "Erro interno ao buscar anamnese" },
         { status: 500 }
@@ -49,7 +54,10 @@ export async function POST(request: Request) {
         )
       }
 
-      console.error("Erro ao salvar anamnese:", error)
+      logError(ANAMNESE_SAVE_FAILED, {
+        message: 'Erro ao salvar anamnese:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json(
         { error: "Erro interno ao salvar anamnese" },
         { status: 500 }

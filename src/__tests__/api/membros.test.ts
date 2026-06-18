@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { POST } from '@/app/api/membros/route'
+import { NextRequest } from 'next/server'
+import { GET, POST } from '@/app/api/membros/route'
 import { createJsonRequest } from '@/__tests__/test-utils'
 
 const {
   withApiAuthMock,
   validateRequestMock,
   createAdminMembroMock,
+  listMembrosMock,
   MembroServiceErrorMock,
 } = vi.hoisted(() => {
   const { createSessionRef, createValidateRequestMock, mockWithApiAuth } = globalThis.__testUtils
@@ -26,6 +28,7 @@ const {
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
     validateRequestMock: createValidateRequestMock(),
     createAdminMembroMock: vi.fn(),
+    listMembrosMock: vi.fn(),
     MembroServiceErrorMock,
   }
 })
@@ -37,9 +40,48 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/services/membro.service', () => ({
   createAdminMembro: createAdminMembroMock,
-  listMembros: vi.fn(),
+  listMembros: listMembrosMock,
   MembroServiceError: MembroServiceErrorMock,
 }))
+
+describe('Membros API - GET /api/membros', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('GET returns 400 for invalid status', async () => {
+    const req = new NextRequest('http://localhost:3000/api/membros?status=FOO')
+    const res = await GET(req)
+    const json = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(json.error).toBeTruthy()
+  })
+
+  it('GET returns 200 with status=todos (no filter)', async () => {
+    listMembrosMock.mockResolvedValue([])
+
+    const req = new NextRequest('http://localhost:3000/api/membros?status=todos')
+    const res = await GET(req)
+
+    expect(res.status).toBe(200)
+    expect(listMembrosMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: undefined })
+    )
+  })
+
+  it('GET returns 200 with valid status ATIVO', async () => {
+    listMembrosMock.mockResolvedValue([])
+
+    const req = new NextRequest('http://localhost:3000/api/membros?status=ATIVO')
+    const res = await GET(req)
+
+    expect(res.status).toBe(200)
+    expect(listMembrosMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'ATIVO' })
+    )
+  })
+})
 
 describe('Membros API - POST /api/membros', () => {
   beforeEach(() => {

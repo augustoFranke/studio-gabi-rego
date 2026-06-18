@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetcher } from '@/lib/fetcher'
+import { formatCurrency } from '@/lib/currency'
 
 type Pagamento = {
   id: string
@@ -26,14 +27,6 @@ type PagamentosResponse = {
   }
 }
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-function formatCurrency(value: string | number) {
-  return currencyFormatter.format(typeof value === 'string' ? Number(value) : value)
-}
 
 function formatDate(value: string | null) {
   if (!value) {

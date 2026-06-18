@@ -5,6 +5,8 @@ import {
   verifyEmailToken,
 } from "@/services/onboarding.service"
 import { z } from "zod"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { AUTH_VERIFICATION_FAILED } from "@/lib/observability/events"
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1),
@@ -38,7 +40,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("Erro ao verificar email:", error)
+    logError(AUTH_VERIFICATION_FAILED, {
+      message: 'Erro ao verificar email:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao verificar email" },
       { status: 500 }

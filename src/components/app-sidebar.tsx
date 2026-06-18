@@ -155,6 +155,7 @@ export function AppSidebar({
             alt="Studio Gabi Rego"
             width={72}
             height={72}
+            priority
           />
         </div>
       </SidebarHeader>

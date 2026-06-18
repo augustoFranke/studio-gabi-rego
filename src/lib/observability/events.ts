@@ -68,6 +68,31 @@ export const RUNTIME_CONFIG_DEGRADED = 'runtime_config_degraded' as const
 export const RATE_LIMIT_BACKEND_ERROR = 'rate_limit_backend_error' as const
 
 // ---------------------------------------------------------------------------
+// API route errors
+// ---------------------------------------------------------------------------
+
+export const PLANO_CREATE_FAILED = 'plano_create_failed' as const
+export const PLANO_UPDATE_FAILED = 'plano_update_failed' as const
+export const PLANO_DELETE_FAILED = 'plano_delete_failed' as const
+export const PAGAMENTO_LIST_FAILED = 'pagamento_list_failed' as const
+export const PAGAMENTO_UPDATE_FAILED = 'pagamento_update_failed' as const
+export const PAGAMENTO_DELETE_FAILED = 'pagamento_delete_failed' as const
+export const PERFIL_SAVE_FAILED = 'perfil_save_failed' as const
+export const AUTH_RESEND_VERIFICATION_FAILED = 'auth_resend_verification_failed' as const
+export const AUTH_SIGN_UP_FAILED = 'auth_sign_up_failed' as const
+export const AUTH_PASSWORD_RESET_FAILED = 'auth_password_reset_failed' as const
+export const ANAMNESE_TOKEN_FETCH_FAILED = 'anamnese_token_fetch_failed' as const
+export const ANAMNESE_TOKEN_SAVE_FAILED = 'anamnese_token_save_failed' as const
+export const ANAMNESE_FETCH_FAILED = 'anamnese_fetch_failed' as const
+export const ANAMNESE_SAVE_FAILED = 'anamnese_save_failed' as const
+export const HORARIO_CREATE_FAILED = 'horario_create_failed' as const
+export const HORARIO_GET_OR_CREATE_FAILED = 'horario_get_or_create_failed' as const
+export const MEMBRO_UPDATE_FAILED = 'membro_update_failed' as const
+export const MEMBRO_PROFILE_LINK_FAILED = 'membro_profile_link_failed' as const
+export const MEMBRO_ANAMNESE_LINK_FAILED = 'membro_anamnese_link_failed' as const
+export const API_UNHANDLED_ERROR = 'api_unhandled_error' as const
+
+// ---------------------------------------------------------------------------
 // Aggregate type
 // ---------------------------------------------------------------------------
 
@@ -94,3 +119,23 @@ export type OperationalEvent =
   | typeof RUNTIME_CONFIG_INVALID
   | typeof RUNTIME_CONFIG_DEGRADED
   | typeof RATE_LIMIT_BACKEND_ERROR
+  | typeof PLANO_CREATE_FAILED
+  | typeof PLANO_UPDATE_FAILED
+  | typeof PLANO_DELETE_FAILED
+  | typeof PAGAMENTO_LIST_FAILED
+  | typeof PAGAMENTO_UPDATE_FAILED
+  | typeof PAGAMENTO_DELETE_FAILED
+  | typeof PERFIL_SAVE_FAILED
+  | typeof AUTH_RESEND_VERIFICATION_FAILED
+  | typeof AUTH_SIGN_UP_FAILED
+  | typeof AUTH_PASSWORD_RESET_FAILED
+  | typeof ANAMNESE_TOKEN_FETCH_FAILED
+  | typeof ANAMNESE_TOKEN_SAVE_FAILED
+  | typeof ANAMNESE_FETCH_FAILED
+  | typeof ANAMNESE_SAVE_FAILED
+  | typeof HORARIO_CREATE_FAILED
+  | typeof HORARIO_GET_OR_CREATE_FAILED
+  | typeof MEMBRO_UPDATE_FAILED
+  | typeof MEMBRO_PROFILE_LINK_FAILED
+  | typeof MEMBRO_ANAMNESE_LINK_FAILED
+  | typeof API_UNHANDLED_ERROR

@@ -3,15 +3,25 @@ import { withApiAuth, validateRequest } from '@/lib/api'
 import { membroCreateSchema } from '@/schemas/membro.schema'
 import { createAdminMembro, listMembros, MembroServiceError } from '@/services/membro.service'
 import { StatusMembro } from '@prisma/client'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(async () => {
     const searchParams = request.nextUrl.searchParams
-    const status = searchParams.get('status')
+    const statusParam = searchParams.get('status')
     const fields = searchParams.get('fields')
 
+    let status: StatusMembro | undefined
+    if (statusParam && statusParam !== 'todos') {
+      const parsed = z.nativeEnum(StatusMembro).safeParse(statusParam)
+      if (!parsed.success) {
+        return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
+      }
+      status = parsed.data
+    }
+
     const membros = await listMembros({
-      status: status && status !== 'todos' ? (status as StatusMembro) : undefined,
+      status,
       fields: fields === 'compact' || fields === 'financeiro' ? fields : undefined,
     })
 

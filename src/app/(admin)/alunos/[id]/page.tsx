@@ -32,6 +32,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { DiaSemanaLabel, DiaSemanaMap } from "@/lib/schedule"
 import { normalizeEmail } from "@/lib/email"
+import { formatCurrency } from "@/lib/currency"
 
 export const dynamic = "force-dynamic"
 
@@ -41,14 +42,6 @@ interface MembroPageProps {
   }>
 }
 
-const currencyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-})
-
-function formatCurrency(value: number): string {
-  return currencyFormatter.format(value)
-}
 
 function formatCPF(cpf: string): string {
   return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")

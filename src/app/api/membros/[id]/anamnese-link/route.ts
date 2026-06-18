@@ -4,6 +4,8 @@ import {
   createAnamneseLinkForMembro,
   OnboardingServiceError,
 } from "@/services/onboarding.service"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { MEMBRO_ANAMNESE_LINK_FAILED } from "@/lib/observability/events"
 
 interface Params {
   params: Promise<{
@@ -29,7 +31,10 @@ export async function POST(
         )
       }
 
-      console.error("Erro ao gerar link de anamnese:", error)
+      logError(MEMBRO_ANAMNESE_LINK_FAILED, {
+        message: 'Erro ao gerar link de anamnese:',
+        ...safeErrorData(error),
+      })
       return NextResponse.json(
         { error: "Erro interno ao gerar link" },
         { status: 500 }

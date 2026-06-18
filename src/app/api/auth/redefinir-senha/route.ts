@@ -4,6 +4,8 @@ import {
   AccountRecoveryServiceError,
   resetPasswordWithToken,
 } from "@/services/account-recovery.service"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { AUTH_PASSWORD_RESET_FAILED } from "@/lib/observability/events"
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +40,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("Erro ao redefinir senha:", error)
+    logError(AUTH_PASSWORD_RESET_FAILED, {
+      message: 'Erro ao redefinir senha:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao redefinir senha" },
       { status: 500 }

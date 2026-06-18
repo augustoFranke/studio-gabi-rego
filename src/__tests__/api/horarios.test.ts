@@ -52,6 +52,33 @@ describe('Horarios API - /api/horarios', () => {
     )
   })
 
+  it('GET returns 400 for invalid diaSemana', async () => {
+    const req = new NextRequest(
+      'http://localhost:3000/api/horarios?diaSemana=FOO'
+    )
+    const res = await GET(req)
+    const json = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(json.error).toBeTruthy()
+  })
+
+  it('GET returns 200 with valid diaSemana TERCA', async () => {
+    prismaMock.horarioDisponivel.findMany.mockResolvedValue([])
+
+    const req = new NextRequest(
+      'http://localhost:3000/api/horarios?diaSemana=TERCA'
+    )
+    const res = await GET(req)
+
+    expect(res.status).toBe(200)
+    expect(prismaMock.horarioDisponivel.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ diaSemana: 'TERCA' }),
+      })
+    )
+  })
+
   it('POST returns 403 when session is not ADMIN', async () => {
     sessionRef.current = { user: { role: 'MEMBRO' } }
 

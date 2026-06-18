@@ -14,15 +14,10 @@ import {
   getTimeHmInTimeZone,
   getYmdInTimeZone,
 } from "@/lib/dates"
+import { formatCurrency } from '@/lib/currency'
 
 export const dynamic = "force-dynamic"
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 const dayMap: DiaSemana[] = [
   DiaSemana.DOMINGO,

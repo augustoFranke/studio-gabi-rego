@@ -5,6 +5,8 @@ import {
   saveAnamneseByToken,
 } from "@/services/onboarding.service"
 import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { ANAMNESE_TOKEN_FETCH_FAILED, ANAMNESE_TOKEN_SAVE_FAILED } from "@/lib/observability/events"
 
 const TOKEN_COOKIE_NAME = "anamnese_token"
 const isProduction = process.env.NODE_ENV === "production"
@@ -93,7 +95,10 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    console.error("Erro ao buscar anamnese por token:", error)
+    logError(ANAMNESE_TOKEN_FETCH_FAILED, {
+      message: 'Erro ao buscar anamnese por token:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao buscar anamnese" },
       { status: 500 }
@@ -153,7 +158,10 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    console.error("Erro ao salvar anamnese por token:", error)
+    logError(ANAMNESE_TOKEN_SAVE_FAILED, {
+      message: 'Erro ao salvar anamnese por token:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao salvar anamnese" },
       { status: 500 }

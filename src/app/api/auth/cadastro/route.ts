@@ -9,6 +9,8 @@ import {
   registerUser,
 } from "@/services/onboarding.service"
 import { z } from "zod"
+import { logError, safeErrorData } from "@/lib/observability/logger"
+import { AUTH_SIGN_UP_FAILED } from "@/lib/observability/events"
 
 const signupSchema = z.object({
   email: z.string().refine((value) => validarEmail(value), {
@@ -185,7 +187,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("Erro ao criar conta:", error)
+    logError(AUTH_SIGN_UP_FAILED, {
+      message: 'Erro ao criar conta:',
+      ...safeErrorData(error),
+    })
     return NextResponse.json(
       { error: "Erro interno ao criar conta" },
       { status: 500 }
