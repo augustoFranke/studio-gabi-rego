@@ -14,6 +14,7 @@ const { prismaMock, sessionRef, withApiAuthMock, validateRequestMock } = vi.hois
     prismaMock: createPrismaMock({
       plano: ['findUnique', 'update', 'delete'],
       membro: ['count'],
+      pagamento: ['count'],
     }),
     sessionRef,
     withApiAuthMock: mockWithApiAuth(sessionRef).withApiAuth,
@@ -103,6 +104,7 @@ describe('Planos API - /api/planos/[id]', () => {
   it('DELETE deactivates when active members exist', async () => {
     prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
     prismaMock.membro.count.mockResolvedValueOnce(2)
+    prismaMock.pagamento.count.mockResolvedValueOnce(0)
     prismaMock.plano.update.mockResolvedValueOnce({ id: 'p-1', ativo: false })
 
     const res = await DELETE(new NextRequest('http://localhost:3000/api/planos/p-1'), params('p-1'))
@@ -118,6 +120,7 @@ describe('Planos API - /api/planos/[id]', () => {
   it('DELETE removes plan when no active members exist', async () => {
     prismaMock.plano.findUnique.mockResolvedValueOnce({ id: 'p-1' })
     prismaMock.membro.count.mockResolvedValueOnce(0)
+    prismaMock.pagamento.count.mockResolvedValueOnce(0)
     prismaMock.plano.delete.mockResolvedValueOnce({ id: 'p-1' })
 
     const res = await DELETE(new NextRequest('http://localhost:3000/api/planos/p-1'), params('p-1'))

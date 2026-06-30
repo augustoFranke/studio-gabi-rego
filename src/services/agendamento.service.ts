@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { getAppTimezone, getYmdInTimeZone } from '@/lib/dates'
 import { DiaSemana, Prisma, StatusMembro } from '@prisma/client'
-import { MAX_CAPACITY_PER_SLOT, parseLocalDate } from '@/lib/schedule'
+import { DiaSemanaMap, MAX_CAPACITY_PER_SLOT, parseLocalDate } from '@/lib/schedule'
+import { ApiError } from '@/lib/api-error'
 
 export const agendamentoSelect = {
   id: true,
@@ -81,12 +82,9 @@ type DeleteAgendamentoParams = {
 
 type TransactionClient = Prisma.TransactionClient
 
-export class AgendamentoServiceError extends Error {
-  constructor(
-    message: string,
-    readonly status: number
-  ) {
-    super(message)
+export class AgendamentoServiceError extends ApiError {
+  constructor(message: string, status: number) {
+    super(message, status)
     this.name = 'AgendamentoServiceError'
   }
 }
@@ -177,6 +175,109 @@ async function getOrCreateHorarioInTransaction(
     }
 
     throw error
+  }
+}
+
+async function assertSlotAvailable(
+  tx: TransactionClient,
+  params: { horarioId: string; data: Date; membroId: string; excludeId: string }
+) {
+  const existente = await tx.agendamento.findFirst({
+    where: {
+      membroId: params.membroId,
+      horarioId: params.horarioId,
+      data: params.data,
+      id: { not: params.excludeId },
+    },
+  })
+  const horario = await tx.horarioDisponivel.findUnique({
+    where: { id: params.horarioId },
+  })
+  const agendamentosExistentes = await tx.agendamento.count({
+    where: {
+      horarioId: params.horarioId,
+      data: params.data,
+      id: { not: params.excludeId },
+    },
+  })
+
+  if (existente) {
+    throwAgendamentoError('Ja existe agendamento neste horario e data')
+  }
+
+  if (!horario || !horario.ativo) {
+    throwAgendamentoError('Horario nao disponivel')
+  }
+
+  if (agendamentosExistentes >= horario.vagasTotal) {
+    throwAgendamentoError('Nao ha vagas disponiveis neste horario')
+  }
+
+  return horario
+}
+
+async function reconcileHorarioFixo(
+  tx: TransactionClient,
+  params: {
+    membroId: string
+    from: { diaSemana: DiaSemana; hora: string } | null
+    to: { diaSemana: DiaSemana; hora: string }
+  }
+) {
+  const horarioFixoNovo = await tx.horarioFixo.findFirst({
+    where: {
+      membroId: params.membroId,
+      diaSemana: params.to.diaSemana,
+      hora: params.to.hora,
+    },
+    select: { id: true },
+  })
+
+  if (!params.from) {
+    throwAgendamentoError('Horario atual nao encontrado')
+  }
+
+  const horarioFixoAtual = await tx.horarioFixo.findFirst({
+    where: {
+      membroId: params.membroId,
+      diaSemana: params.from.diaSemana,
+      hora: params.from.hora,
+    },
+    select: { id: true },
+  })
+
+  if (!horarioFixoNovo && !horarioFixoAtual) {
+    const limitCheck = await validateHorarioFixoLimit({
+      membroId: params.membroId,
+      diaSemana: params.to.diaSemana,
+      hora: params.to.hora,
+    })
+
+    if (!limitCheck.ok) {
+      throwAgendamentoError(limitCheck.error)
+    }
+  }
+
+  if (horarioFixoAtual && !horarioFixoNovo) {
+    await tx.horarioFixo.update({
+      where: { id: horarioFixoAtual.id },
+      data: {
+        diaSemana: params.to.diaSemana,
+        hora: params.to.hora,
+      },
+    })
+  } else if (!horarioFixoNovo && !horarioFixoAtual) {
+    await tx.horarioFixo.create({
+      data: {
+        membroId: params.membroId,
+        diaSemana: params.to.diaSemana,
+        hora: params.to.hora,
+      },
+    })
+  } else if (horarioFixoAtual && horarioFixoNovo) {
+    await tx.horarioFixo.delete({
+      where: { id: horarioFixoAtual.id },
+    })
   }
 }
 
@@ -372,7 +473,9 @@ export async function updateAgendamento(params: UpdateAgendamentoParams) {
       updateData.observacao = observacao
     }
 
-    if (horarioId || diaSemana || horaInicio || data) {
+    const isReschedule = Boolean(horarioId || diaSemana || horaInicio || data)
+
+    if (isReschedule) {
       const newHorarioId =
         horarioId || diaSemana || horaInicio
           ? await getOrCreateHorarioInTransaction(tx, { horarioId, diaSemana, horaInicio })
@@ -381,36 +484,12 @@ export async function updateAgendamento(params: UpdateAgendamentoParams) {
 
       await lockHorarioSlot(tx, newHorarioId)
 
-      const existente = await tx.agendamento.findFirst({
-        where: {
-          membroId: agendamento.membroId,
-          horarioId: newHorarioId,
-          data: newData,
-          id: { not: id },
-        },
+      const horario = await assertSlotAvailable(tx, {
+        horarioId: newHorarioId,
+        data: newData,
+        membroId: agendamento.membroId,
+        excludeId: id,
       })
-      const horario = await tx.horarioDisponivel.findUnique({
-        where: { id: newHorarioId },
-      })
-      const agendamentosExistentes = await tx.agendamento.count({
-        where: {
-          horarioId: newHorarioId,
-          data: newData,
-          id: { not: id },
-        },
-      })
-
-      if (existente) {
-        throwAgendamentoError('Ja existe agendamento neste horario e data')
-      }
-
-      if (!horario || !horario.ativo) {
-        throwAgendamentoError('Horario nao disponivel')
-      }
-
-      if (agendamentosExistentes >= horario.vagasTotal) {
-        throwAgendamentoError('Nao ha vagas disponiveis neste horario')
-      }
 
       if (updateScope === 'future' && newHorarioId !== agendamento.horarioId) {
         const selectedOccurrenceDate = getOccurrenceDate(agendamento.data)
@@ -418,61 +497,14 @@ export async function updateAgendamento(params: UpdateAgendamentoParams) {
         const horarioAtual = await tx.horarioDisponivel.findUnique({
           where: { id: agendamento.horarioId },
         })
-        const horarioFixoNovo = await tx.horarioFixo.findFirst({
-          where: {
-            membroId: agendamento.membroId,
-            diaSemana: horario.diaSemana,
-            hora: horario.horaInicio,
-          },
-          select: { id: true },
+
+        await reconcileHorarioFixo(tx, {
+          membroId: agendamento.membroId,
+          from: horarioAtual
+            ? { diaSemana: horarioAtual.diaSemana, hora: horarioAtual.horaInicio }
+            : null,
+          to: { diaSemana: horario.diaSemana, hora: horario.horaInicio },
         })
-
-        if (!horarioAtual) {
-          throwAgendamentoError('Horario atual nao encontrado')
-        }
-
-        const horarioFixoAtual = await tx.horarioFixo.findFirst({
-          where: {
-            membroId: agendamento.membroId,
-            diaSemana: horarioAtual.diaSemana,
-            hora: horarioAtual.horaInicio,
-          },
-          select: { id: true },
-        })
-
-        if (!horarioFixoNovo && !horarioFixoAtual) {
-          const limitCheck = await validateHorarioFixoLimit({
-            membroId: agendamento.membroId,
-            diaSemana: horario.diaSemana,
-            hora: horario.horaInicio,
-          })
-
-          if (!limitCheck.ok) {
-            throwAgendamentoError(limitCheck.error)
-          }
-        }
-
-        if (horarioFixoAtual && !horarioFixoNovo) {
-          await tx.horarioFixo.update({
-            where: { id: horarioFixoAtual.id },
-            data: {
-              diaSemana: horario.diaSemana,
-              hora: horario.horaInicio,
-            },
-          })
-        } else if (!horarioFixoNovo && !horarioFixoAtual) {
-          await tx.horarioFixo.create({
-            data: {
-              membroId: agendamento.membroId,
-              diaSemana: horario.diaSemana,
-              hora: horario.horaInicio,
-            },
-          })
-        } else if (horarioFixoAtual && horarioFixoNovo) {
-          await tx.horarioFixo.delete({
-            where: { id: horarioFixoAtual.id },
-          })
-        }
 
         await tx.agendamento.deleteMany({
           where: {
@@ -484,7 +516,9 @@ export async function updateAgendamento(params: UpdateAgendamentoParams) {
         })
       }
 
-      if (horarioId) updateData.horario = { connect: { id: horarioId } }
+      if (newHorarioId !== agendamento.horarioId) {
+        updateData.horario = { connect: { id: newHorarioId } }
+      }
       if (data) updateData.data = newData
     }
 
@@ -688,17 +722,7 @@ export async function syncAgendamentosRecorrentes({
       const slot = horariosMap.get(slotKey(horarioFixo.diaSemana, horarioFixo.hora))
       if (!slot) continue
 
-      const targetDates = datesByDay.get(
-        {
-          DOMINGO: 0,
-          SEGUNDA: 1,
-          TERCA: 2,
-          QUARTA: 3,
-          QUINTA: 4,
-          SEXTA: 5,
-          SABADO: 6,
-        }[horarioFixo.diaSemana]
-      )
+      const targetDates = datesByDay.get(DiaSemanaMap[horarioFixo.diaSemana])
 
       if (!targetDates?.length) continue
 

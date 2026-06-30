@@ -60,7 +60,7 @@ export async function runCleanup(): Promise<CleanupSummary> {
 async function clearExpiredTokens(): Promise<number> {
   const now = new Date()
 
-  const [v, r, a] = await Promise.all([
+  const results = await Promise.all([
     prisma.usuario.updateMany({
       where: { tokenVerificacao: { not: null }, tokenVerificacaoExpira: { lt: now } },
       data: { tokenVerificacao: null, tokenVerificacaoExpira: null },
@@ -79,5 +79,5 @@ async function clearExpiredTokens(): Promise<number> {
     }),
   ])
 
-  return v.count + r.count + a.count
+  return results.reduce((total, result) => total + result.count, 0)
 }

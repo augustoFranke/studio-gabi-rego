@@ -12,16 +12,8 @@ import { normalizeMemberProfileInput } from "@/lib/member-profile"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
-export class OnboardingServiceError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public status: number
-  ) {
-    super(message)
-    this.name = "OnboardingServiceError"
-  }
-}
+import { ServiceError as OnboardingServiceError } from './errors'
+export { ServiceError as OnboardingServiceError } from './errors'
 
 export type SignupInput = {
   email: string
@@ -38,6 +30,7 @@ export type SignupInput = {
 export type VerificationStep =
   | "dashboard"
   | "login"
+  | "set_password"
   | "complete_profile"
   | "complete_anamnese"
 
@@ -133,11 +126,19 @@ function getVerificationOutcomePath(params: {
   isAdmin: boolean
   profileToken?: string | null
   anamneseToken?: string | null
+  passwordSetupToken?: string | null
 }) {
   if (params.isAdmin) {
     return {
       nextStep: "dashboard" as const,
       redirectUrl: `${params.baseUrl}/dashboard`,
+    }
+  }
+
+  if (params.passwordSetupToken) {
+    return {
+      nextStep: "set_password" as const,
+      redirectUrl: `${params.baseUrl}/redefinir-senha/${encodeURIComponent(params.passwordSetupToken)}`,
     }
   }
 
@@ -151,7 +152,7 @@ function getVerificationOutcomePath(params: {
   if (params.anamneseToken) {
     return {
       nextStep: "complete_anamnese" as const,
-      redirectUrl: `${params.baseUrl}/anamnese?token=${encodeURIComponent(params.anamneseToken)}`,
+      redirectUrl: `${params.baseUrl}/anamnese#token=${encodeURIComponent(params.anamneseToken)}`,
     }
   }
 
@@ -173,19 +174,16 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
     sexo: input.sexo,
   })
 
-  const [existingUser, hashedPassword] = await Promise.all([
-    prisma.usuario.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        nome: true,
-        emailVerificado: true,
-        onboardingCompleto: true,
-        membro: { select: { id: true } },
-      },
-    }),
-    hash(input.senha, 12),
-  ])
+  const existingUser = await prisma.usuario.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      nome: true,
+      emailVerificado: true,
+      onboardingCompleto: true,
+      membro: { select: { id: true } },
+    },
+  })
 
   if (existingUser?.emailVerificado) {
     return {
@@ -196,11 +194,14 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
 
   const { token: verificationToken, expiresAt: tokenExpiry } = createTimedToken()
   const verificationTokenHash = await hashTimedToken(verificationToken)
+  const inertPasswordHash = await hash(`${verificationToken}:pending-password`, 12)
 
   if (existingUser) {
     await prisma.usuario.update({
       where: { id: existingUser.id },
       data: {
+        senha: inertPasswordHash,
+        senhaDefinida: false,
         tokenVerificacao: verificationTokenHash,
         tokenVerificacaoExpira: tokenExpiry,
       },
@@ -211,8 +212,8 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
         data: {
           email: normalizedEmail,
           nome: fullNome,
-          senha: hashedPassword,
-          senhaDefinida: true,
+          senha: inertPasswordHash,
+          senhaDefinida: false,
           role: "MEMBRO",
           tokenVerificacao: verificationTokenHash,
           tokenVerificacaoExpira: tokenExpiry,
@@ -244,8 +245,8 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
     await prisma.usuario.create({
       data: {
         email: normalizedEmail,
-        senha: hashedPassword,
-        senhaDefinida: true,
+        senha: inertPasswordHash,
+        senhaDefinida: false,
         role: "MEMBRO",
         tokenVerificacao: verificationTokenHash,
         tokenVerificacaoExpira: tokenExpiry,
@@ -300,6 +301,7 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
   const shouldSendWelcome = !usuario.onboardingCompleto
   let profileToken: string | null = null
   let anamneseToken: string | null = null
+  let passwordSetupToken: string | null = null
 
   if (usuario.role === "ADMIN") {
     await prisma.usuario.update({
@@ -310,6 +312,20 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
         tokenVerificacaoExpira: null,
         etapaOnboarding: 4,
         onboardingCompleto: true,
+      },
+    })
+  } else if (!usuario.senhaDefinida) {
+    const passwordSetup = createTimedToken()
+    passwordSetupToken = passwordSetup.token
+
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerificado: new Date(),
+        tokenVerificacao: null,
+        tokenVerificacaoExpira: null,
+        tokenReset: await hashTimedToken(passwordSetup.token),
+        tokenResetExpira: passwordSetup.expiresAt,
       },
     })
   } else if (!usuario.membro) {
@@ -367,6 +383,7 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
     isAdmin: usuario.role === "ADMIN",
     profileToken,
     anamneseToken,
+    passwordSetupToken,
   })
 
   return {
@@ -531,6 +548,19 @@ async function saveAnamneseForMembro(params: {
 
 export async function saveAnamneseByToken(token: string, payload: unknown) {
   const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const sanitized = sanitizeAnamnesePayload(payload, {
+    ignoreUnknownFields: true,
+    fillMissingFields: true,
+  })
+
+  if ("error" in sanitized) {
+    throw new OnboardingServiceError("Dados inválidos enviados", "INVALID_ANAMNESE_PAYLOAD", 400)
+  }
+
+  if (sanitized.ignoredKeys.length > 0) {
+    console.warn("[anamnese_sanitize] Campos ignorados:", sanitized.ignoredKeys)
+  }
+
   const membro = await prisma.membro.findFirst({
     where: {
       anamneseToken: { in: [hashedToken, rawToken] },
@@ -545,15 +575,51 @@ export async function saveAnamneseByToken(token: string, payload: unknown) {
     throw new OnboardingServiceError(TOKEN_EXPIRY_ERROR, "INVALID_ANAMNESE_TOKEN", 404)
   }
 
-  return saveAnamneseForMembro({
-    membroId: membro.id,
-    usuarioId: membro.usuarioId,
-    nome: membro.usuario.nome,
-    email: membro.usuario.email,
-    onboardingCompleto: membro.usuario.onboardingCompleto,
-    payload,
-    clearToken: true,
+  const shouldSendWelcome = !membro.usuario.onboardingCompleto
+
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.membro.updateMany({
+      where: {
+        id: membro.id,
+        anamneseToken: { in: [hashedToken, rawToken] },
+        anamneseTokenExpira: { gt: new Date() },
+      },
+      data: {
+        anamneseToken: null,
+        anamneseTokenExpira: null,
+      },
+    })
+
+    if (consumed.count !== 1) {
+      throw new OnboardingServiceError(TOKEN_EXPIRY_ERROR, "INVALID_ANAMNESE_TOKEN", 404)
+    }
+
+    await tx.anamnese.upsert({
+      where: { membroId: membro.id },
+      create: {
+        membroId: membro.id,
+        ...sanitized.data,
+      },
+      update: sanitized.data,
+    })
+
+    await tx.usuario.update({
+      where: { id: membro.usuarioId },
+      data: {
+        etapaOnboarding: 4,
+        onboardingCompleto: true,
+      },
+    })
   })
+
+  if (shouldSendWelcome) {
+    queueWelcomeEmail(membro.usuario.nome, membro.usuario.email)
+  }
+
+  return {
+    success: true,
+    message: "Anamnese salva com sucesso!",
+  }
 }
 
 export async function getMinhaAnamnese(userId: string) {

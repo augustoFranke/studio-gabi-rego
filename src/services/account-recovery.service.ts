@@ -4,16 +4,8 @@ import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
 import { createTimedToken, getAppBaseUrl, getTimedTokenLookup, hashTimedToken } from "@/lib/auth-flow"
 
-export class AccountRecoveryServiceError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public status: number
-  ) {
-    super(message)
-    this.name = "AccountRecoveryServiceError"
-  }
-}
+import { ServiceError as AccountRecoveryServiceError } from './errors'
+export { ServiceError as AccountRecoveryServiceError } from './errors'
 
 function validatePasswordOrThrow(password: string) {
   if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
@@ -159,8 +151,12 @@ export async function resetPasswordWithToken(token: string, senha: string) {
 
   const senhaHash = await hash(senha, 12)
 
-  await prisma.usuario.update({
-    where: { id: usuario.id },
+  const result = await prisma.usuario.updateMany({
+    where: {
+      id: usuario.id,
+      tokenReset: { in: [hashedToken, rawToken] },
+      tokenResetExpira: { gt: new Date() },
+    },
     data: {
       senha: senhaHash,
       senhaDefinida: true,
@@ -168,6 +164,14 @@ export async function resetPasswordWithToken(token: string, senha: string) {
       tokenResetExpira: null,
     },
   })
+
+  if (result.count !== 1) {
+    throw new AccountRecoveryServiceError(
+      "Token inválido ou expirado",
+      "INVALID_RESET_TOKEN",
+      400
+    )
+  }
 
   return {
     success: true,

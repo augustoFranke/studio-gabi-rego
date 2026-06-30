@@ -1,17 +1,9 @@
 import { prisma } from '@/lib/prisma'
-import { MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
+import { buildScheduleEndTime, isSchedulableHourString, MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
 import { DiaSemana, Prisma } from '@prisma/client'
 
-export class HorarioServiceError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public status: number
-  ) {
-    super(message)
-    this.name = 'HorarioServiceError'
-  }
-}
+import { ServiceError as HorarioServiceError } from './errors'
+export { ServiceError as HorarioServiceError } from './errors'
 
 type ListHorariosParams = {
   diaSemana?: DiaSemana | null
@@ -36,8 +28,13 @@ function normalizeHoraInicio(horaInicio: string) {
 }
 
 function buildHoraFim(horaInicio: string) {
-  const hora = parseInt(horaInicio.split(':')[0], 10)
-  return `${(hora + 1).toString().padStart(2, '0')}:00`
+  return buildScheduleEndTime(horaInicio)
+}
+
+function assertSchedulableHour(horaInicio: string) {
+  if (!isSchedulableHourString(horaInicio)) {
+    throw new HorarioServiceError('Horario fora da grade permitida', 'INVALID_HORARIO', 400)
+  }
 }
 
 export async function listHorarios(params: ListHorariosParams) {
@@ -58,10 +55,18 @@ export async function listHorarios(params: ListHorariosParams) {
 }
 
 export async function createHorario(input: CreateHorarioInput) {
+  const horaInicio = normalizeHoraInicio(input.horaInicio)
+  assertSchedulableHour(horaInicio)
+  const horaFim = buildHoraFim(horaInicio)
+
+  if (input.horaFim !== horaFim) {
+    throw new HorarioServiceError('Hora final deve ser exatamente uma hora apos o inicio', 'INVALID_HORARIO', 400)
+  }
+
   const existente = await prisma.horarioDisponivel.findFirst({
     where: {
       diaSemana: input.diaSemana,
-      horaInicio: input.horaInicio,
+      horaInicio,
       ativo: true,
     },
   })
@@ -72,7 +77,11 @@ export async function createHorario(input: CreateHorarioInput) {
 
   try {
     return await prisma.horarioDisponivel.create({
-      data: input,
+      data: {
+        ...input,
+        horaInicio,
+        horaFim,
+      },
     })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -84,6 +93,7 @@ export async function createHorario(input: CreateHorarioInput) {
 
 export async function getOrCreateHorario(input: GetOrCreateHorarioInput) {
   const horaInicio = normalizeHoraInicio(input.horaInicio)
+  assertSchedulableHour(horaInicio)
   const horaFim = buildHoraFim(horaInicio)
 
   let horario = await prisma.horarioDisponivel.findFirst({

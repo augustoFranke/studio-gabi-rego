@@ -14,6 +14,8 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 describe('Auth API - GET /api/auth/validar-token-reset', () => {
+  const validToken = 'a'.repeat(64)
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -43,7 +45,7 @@ describe('Auth API - GET /api/auth/validar-token-reset', () => {
     })
 
     const res = await GET(
-      new Request('http://localhost:3000/api/auth/validar-token-reset?token=expired')
+      new Request(`http://localhost:3000/api/auth/validar-token-reset?token=${validToken}`)
     )
     const json = await res.json()
 
@@ -57,7 +59,7 @@ describe('Auth API - GET /api/auth/validar-token-reset', () => {
     })
 
     const res = await GET(
-      new Request('http://localhost:3000/api/auth/validar-token-reset?token=ok')
+      new Request(`http://localhost:3000/api/auth/validar-token-reset?token=${validToken}`)
     )
     const json = await res.json()
 

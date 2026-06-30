@@ -4,11 +4,8 @@ import { z } from 'zod'
 import {
   deletePlanoById,
   getPlanoById,
-  PlanoServiceError,
   updatePlanoById,
 } from '@/services/plano.service'
-import { logError, safeErrorData } from '@/lib/observability/logger'
-import { PLANO_DELETE_FAILED, PLANO_UPDATE_FAILED } from '@/lib/observability/events'
 
 const planoUpdateSchema = z.object({
   nome: z.string().min(1).optional(),
@@ -42,28 +39,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    try {
-      const { id } = await params
-      const validation = await validateRequest(request, planoUpdateSchema)
+    const { id } = await params
+    const validation = await validateRequest(request, planoUpdateSchema)
 
-      if ('error' in validation) {
-        return validation.error
-      }
-
-      const plano = await updatePlanoById(id, validation.data)
-
-      return NextResponse.json(plano)
-    } catch (error) {
-      if (error instanceof PlanoServiceError) {
-        return NextResponse.json({ error: error.message }, { status: error.status })
-      }
-
-      logError(PLANO_UPDATE_FAILED, {
-        message: 'Erro ao atualizar plano:',
-        ...safeErrorData(error),
-      })
-      return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    if ('error' in validation) {
+      return validation.error
     }
+
+    const plano = await updatePlanoById(id, validation.data)
+
+    return NextResponse.json(plano)
   }, { requiredRole: 'ADMIN' })
 }
 
@@ -72,28 +57,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withApiAuth(async () => {
-    try {
-      const { id } = await params
-      const result = await deletePlanoById(id)
+    const { id } = await params
+    const result = await deletePlanoById(id)
 
-      if (result.action === 'deactivated' && result.plano) {
-        return NextResponse.json({
-          ...result.plano,
-          message: `Plano desativado. ${result.membrosAtivos} membro(s) ativo(s) ainda usam este plano.`
-        })
-      }
-
-      return NextResponse.json({ message: 'Plano removido com sucesso' })
-    } catch (error) {
-      if (error instanceof PlanoServiceError) {
-        return NextResponse.json({ error: error.message }, { status: error.status })
-      }
-
-      logError(PLANO_DELETE_FAILED, {
-        message: 'Erro ao remover plano:',
-        ...safeErrorData(error),
+    if (result.action === 'deactivated' && result.plano) {
+      return NextResponse.json({
+        ...result.plano,
+        message: `Plano desativado. ${result.membrosAtivos} membro(s) ativo(s) ainda usam este plano.`
       })
-      return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
     }
+
+    return NextResponse.json({ message: 'Plano removido com sucesso' })
   }, { requiredRole: 'ADMIN' })
 }

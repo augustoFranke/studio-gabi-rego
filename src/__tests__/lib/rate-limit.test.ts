@@ -68,7 +68,8 @@ describe("rate-limit Redis backend", () => {
     }
   })
 
-  it("fails open to the in-memory limiter when the Redis call throws", async () => {
+  it("fails closed in production when the Redis call throws", async () => {
+    process.env.NODE_ENV = "production"
     const limit = vi.fn().mockRejectedValue(new Error("network error"))
 
     vi.doMock("@/lib/runtime-config", async () => {
@@ -98,13 +99,13 @@ describe("rate-limit Redis backend", () => {
       "auth:test"
     )
 
-    expect(response).toEqual({ success: true })
+    expect(response).toEqual({ success: false, retryAfter: 60 })
   })
 })
 
 describe("rateLimitByIp", () => {
   it("allows requests below the configured bucket limit", async () => {
-    process.env.NODE_ENV = "production"
+    process.env.NODE_ENV = "development"
 
     const { rateLimitByIp } = await import("@/lib/rate-limit")
     const response = await rateLimitByIp(
@@ -114,6 +115,21 @@ describe("rateLimitByIp", () => {
     )
 
     expect(response).toEqual({ success: true })
+  })
+
+  it("fails closed in production when Redis is not configured", async () => {
+    process.env.NODE_ENV = "production"
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+
+    const { rateLimitByIp } = await import("@/lib/rate-limit")
+    const response = await rateLimitByIp(
+      new Request("http://localhost", { headers: { "x-vercel-forwarded-for": "192.0.2.10" } }),
+      "auth:test",
+      { maxRequests: 2 }
+    )
+
+    expect(response).toEqual({ success: false, retryAfter: 60 })
   })
 
   it("blocks requests over the configured bucket limit", async () => {

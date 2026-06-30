@@ -17,7 +17,7 @@ type VerifyEmailResponse = {
   error?: string
   message?: string
   redirectUrl: string
-  nextStep: "dashboard" | "login" | "complete_profile" | "complete_anamnese"
+  nextStep: "dashboard" | "login" | "set_password" | "complete_profile" | "complete_anamnese"
 }
 
 type VerificationState = {
@@ -147,6 +147,7 @@ export default function VerificarTokenPage({
             <CardDescription className="text-muted-foreground mt-2">
               {nextStep === "dashboard" && "Você foi adicionado como administrador."}
               {nextStep === "login" && "Seu cadastro está completo! Faça login para acessar."}
+              {nextStep === "set_password" && "Agora defina sua senha para acessar."}
               {nextStep === "complete_profile" && "Agora complete seu perfil para continuar."}
               {nextStep === "complete_anamnese" && "Agora finalize sua anamnese para concluir o acesso."}
             </CardDescription>
@@ -168,6 +169,7 @@ export default function VerificarTokenPage({
               <span className="flex items-center gap-2">
                 {nextStep === "dashboard" && "Acessar painel admin"}
                 {nextStep === "login" && "Fazer login"}
+                {nextStep === "set_password" && "Definir senha"}
                 {nextStep === "complete_profile" && "Completar perfil"}
                 {nextStep === "complete_anamnese" && "Abrir anamnese"}
                 <ArrowRight className="size-4" />

@@ -73,6 +73,7 @@ vi.mock('@/lib/resend', () => resendMock)
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimitByIp: rateLimitMock,
+  rateLimitByKey: rateLimitMock,
 }))
 
 vi.mock('bcryptjs', () => bcryptMock)
@@ -154,7 +155,8 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(prismaMock.usuario.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         email: 'aluno@example.com',
-        senha: 'hashed_Senha123',
+        senha: expect.stringContaining(':pending-password'),
+        senhaDefinida: false,
         tokenVerificacao: expect.any(String),
         tokenVerificacaoExpira: expect.any(Date),
       }),
@@ -171,7 +173,7 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(prismaMock.usuario.create).toHaveBeenCalled()
   })
 
-  it('refreshes verification for an unverified existing user without overwriting credentials', async () => {
+  it('refreshes verification for an unverified existing user with an inert pending password', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
       nome: 'Aluno',
@@ -186,13 +188,13 @@ describe('Auth API - POST /api/auth/cadastro', () => {
     expect(res.status).toBe(200)
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
       where: { id: 'u-1' },
-      data: {
+      data: expect.objectContaining({
+        senha: expect.stringContaining(':pending-password'),
+        senhaDefinida: false,
         tokenVerificacao: expect.any(String),
         tokenVerificacaoExpira: expect.any(Date),
-      },
+      }),
     })
-    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty('senha')
-    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty('senhaDefinida')
     expect(json.success).toBe(true)
   })
 

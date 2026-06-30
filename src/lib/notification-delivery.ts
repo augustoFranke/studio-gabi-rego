@@ -56,11 +56,17 @@ export async function createOrRefreshNotification({
   data,
 }: CreateOrRefreshNotificationParams) {
   if (existing) {
+    if (existing.statusEntrega === StatusEntregaNotificacao.PROCESSANDO) {
+      return existing
+    }
+
     return prisma.notificacao.update({
       where: { id: existing.id },
       data: {
         ...data,
         chaveDedupe: dedupeKey,
+        enviada: false,
+        statusEntrega: StatusEntregaNotificacao.PENDENTE,
         ultimoErro: null,
       },
       select: deliverySelect,
@@ -76,6 +82,32 @@ export async function createOrRefreshNotification({
   })
 }
 
+export async function claimNotificationForDelivery(notification: DeliveryNotificationRecord) {
+  const claimed = await prisma.notificacao.updateMany({
+    where: {
+      id: notification.id,
+      enviada: false,
+      statusEntrega: {
+        in: [StatusEntregaNotificacao.PENDENTE, StatusEntregaNotificacao.FALHA],
+      },
+    },
+    data: {
+      statusEntrega: StatusEntregaNotificacao.PROCESSANDO,
+      ultimaTentativaEm: new Date(),
+      ultimoErro: null,
+    },
+  })
+
+  if (claimed.count !== 1) {
+    return null
+  }
+
+  return {
+    ...notification,
+    statusEntrega: StatusEntregaNotificacao.PROCESSANDO,
+  }
+}
+
 export async function markNotificationDelivered(notification: DeliveryNotificationRecord) {
   return prisma.notificacao.update({
     where: { id: notification.id },
@@ -83,7 +115,7 @@ export async function markNotificationDelivered(notification: DeliveryNotificati
       enviada: true,
       enviadaEm: new Date(),
       statusEntrega: StatusEntregaNotificacao.ENVIADA,
-      tentativasEntrega: notification.tentativasEntrega + 1,
+      tentativasEntrega: { increment: 1 },
       ultimaTentativaEm: new Date(),
       ultimoErro: null,
     },
@@ -100,7 +132,7 @@ export async function markNotificationFailed(
     data: {
       enviada: false,
       statusEntrega: StatusEntregaNotificacao.FALHA,
-      tentativasEntrega: notification.tentativasEntrega + 1,
+      tentativasEntrega: { increment: 1 },
       ultimaTentativaEm: new Date(),
       ultimoErro: getErrorMessage(error),
     },

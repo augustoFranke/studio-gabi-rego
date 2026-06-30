@@ -38,6 +38,7 @@ vi.mock('@/lib/resend', () => resendMock)
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimitByIp: rateLimitMock,
+  rateLimitByKey: rateLimitMock,
 }))
 
 vi.mock('@/lib/validators', () => validatorsMock)

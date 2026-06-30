@@ -61,5 +61,5 @@ export async function POST(request: NextRequest) {
 
       throw error
     }
-  })
+  }, { requiredRole: 'ADMIN' })
 }

@@ -16,7 +16,7 @@ export const exercicioSchema = z.object({
   series: z.union([z.string().max(40), z.number()]).transform((val) => String(val)).optional(),
   repeticoes: z.string().max(80).optional(),
   descanso: z.string().max(80).optional(),
-  observacoes: z.string().optional(),
+  observacoes: z.string().max(1000).optional(),
 })
 
 export const fichaCreateSchema = z.object({
@@ -57,7 +57,7 @@ export const trainingPdfSchema = z.object({
             name: z.string().max(120),
             sets: z.union([z.string().max(40), z.number()]),
             reps: z.union([z.string().max(80), z.number()]),
-            observacoes: z.string().optional(),
+            observacoes: z.string().max(1000).optional(),
           })
         ).max(40),
       })

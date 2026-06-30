@@ -67,12 +67,13 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
     expect(res.status).toBe(400)
   })
 
-  it('marks email as verified, sets onboarding complete, and sends welcome email', async () => {
+  it('marks email as verified and sends completed users to password setup when no password is defined', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: 'u-1',
       role: 'MEMBRO',
       email: 'aluno@example.com',
       nome: 'Aluno',
+      senhaDefinida: false,
       onboardingCompleto: false,
       tokenVerificacaoExpira: new Date(Date.now() + 60_000),
       membro: { id: 'm-1', anamnese: { id: 'a-1' } },
@@ -88,13 +89,13 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
         emailVerificado: expect.any(Date),
         tokenVerificacao: null,
         tokenVerificacaoExpira: null,
-        etapaOnboarding: 4,
-        onboardingCompleto: true,
+        tokenReset: expect.any(String),
+        tokenResetExpira: expect.any(Date),
       }),
     })
     expect(json.success).toBe(true)
-    expect(json.nextStep).toBe('login')
-    expect(json.redirectUrl).toContain('/login')
+    expect(json.nextStep).toBe('set_password')
+    expect(json.redirectUrl).toContain('/redefinir-senha/')
     expect(json.isAdmin).toBe(false)
 
     expect(resendMock.enviarEmail).toHaveBeenCalledWith(
@@ -111,6 +112,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
       role: 'MEMBRO',
       email: 'aluno@example.com',
       nome: 'Aluno',
+      senhaDefinida: true,
       onboardingCompleto: false,
       tokenVerificacaoExpira: new Date(Date.now() + 60_000),
       membro: null,

@@ -16,6 +16,13 @@ import {
 import { ptBR } from 'date-fns/locale'
 import type { DiaSemana } from '@/types/schedule'
 
+export {
+  DiaSemanaMap,
+  DiaSemanaLabel,
+  DiaSemanaAbrev,
+  getDiaSemanaFromDay,
+} from '@/lib/dias-semana'
+
 export const SCHEDULE_START_HOUR = 5
 export const SCHEDULE_END_HOUR = 20
 export const MAX_CAPACITY_PER_SLOT = 10
@@ -24,49 +31,6 @@ export const HOURS = Array.from(
   { length: SCHEDULE_END_HOUR - SCHEDULE_START_HOUR },
   (_, i) => SCHEDULE_START_HOUR + i
 )
-
-export const DiaSemanaMap: Record<DiaSemana, number> = {
-  DOMINGO: 0,
-  SEGUNDA: 1,
-  TERCA: 2,
-  QUARTA: 3,
-  QUINTA: 4,
-  SEXTA: 5,
-  SABADO: 6,
-}
-
-export const DiaSemanaLabel: Record<DiaSemana, string> = {
-  DOMINGO: 'Domingo',
-  SEGUNDA: 'Segunda',
-  TERCA: 'Terça',
-  QUARTA: 'Quarta',
-  QUINTA: 'Quinta',
-  SEXTA: 'Sexta',
-  SABADO: 'Sábado',
-}
-
-export const DiaSemanaAbrev: Record<DiaSemana, string> = {
-  DOMINGO: 'Dom',
-  SEGUNDA: 'Seg',
-  TERCA: 'Ter',
-  QUARTA: 'Qua',
-  QUINTA: 'Qui',
-  SEXTA: 'Sex',
-  SABADO: 'Sáb',
-}
-
-export function getDiaSemanaFromDay(dayNumber: number): DiaSemana {
-  const map: Record<number, DiaSemana> = {
-    0: 'DOMINGO',
-    1: 'SEGUNDA',
-    2: 'TERCA',
-    3: 'QUARTA',
-    4: 'QUINTA',
-    5: 'SEXTA',
-    6: 'SABADO',
-  }
-  return map[dayNumber]
-}
 
 export interface TimeSlot {
   hour: number
@@ -93,6 +57,19 @@ export interface DaySchedule {
 
 export function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
+}
+
+export function isSchedulableHour(hour: number): boolean {
+  return Number.isInteger(hour) && hour >= SCHEDULE_START_HOUR && hour < SCHEDULE_END_HOUR
+}
+
+export function isSchedulableHourString(timeString: string): boolean {
+  return /^\d{2}:00$/.test(timeString) && isSchedulableHour(parseHourFromString(timeString))
+}
+
+export function buildScheduleEndTime(horaInicio: string): string {
+  const hour = parseHourFromString(horaInicio)
+  return formatHour(hour + 1)
 }
 
 export function parseHourFromString(timeString: string): number {

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { getAppTimezone, getYmdInTimeZone } from '@/lib/dates'
 import { syncAgendamentosRecorrentes } from '@/services/agendamento.service'
 import {
+  claimNotificationForDelivery,
   createOrRefreshNotification,
   findExistingNotification,
   isNotificationDelivered,
@@ -63,14 +64,19 @@ async function processNotifications<T>({
       dedupeKey: dedupeKey(item),
       data: buildNotification(item),
     })
+    const claimedNotificacao = await claimNotificationForDelivery(notificacao)
+
+    if (!claimedNotificacao) {
+      return { sent: 0, skipped: 1, failed: 0 }
+    }
 
     try {
       if (sendEmail) await sendEmail(item)
       if (sendWhatsapp) await sendWhatsapp(item)
-      await markNotificationDelivered(notificacao)
+      await markNotificationDelivered(claimedNotificacao)
       return { sent: 1, skipped: 0, failed: 0 }
     } catch (error) {
-      await markNotificationFailed(notificacao, error)
+      await markNotificationFailed(claimedNotificacao, error)
       return { sent: 0, skipped: 0, failed: 1 }
     }
   }))

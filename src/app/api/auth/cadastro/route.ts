@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { validarEmail } from "@/lib/validators"
-import { rateLimitByIp } from "@/lib/rate-limit"
+import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
 import { sanitizeAnamnesePayload } from "@/lib/anamnese"
 import { PASSWORD_POLICY_MESSAGE } from "@/schemas/password-policy.schema"
@@ -93,6 +93,17 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim()
+    const emailRateLimit = await rateLimitByKey(request, "auth:signup:email", normalizedEmail, {
+      maxRequests: 3,
+      windowMs: 10 * 60_000,
+    })
+    if (!emailRateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
     const hasFullPayload = Boolean(nome && anamnese)
     const sanitized = hasFullPayload
       ? sanitizeAnamnesePayload(anamnese, {

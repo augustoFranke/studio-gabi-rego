@@ -202,6 +202,11 @@ export default function AgendaPage() {
 
       {/* Agendamento modal */}
       <AgendamentoModal
+        key={
+          modalMode === 'create'
+            ? `create-${selectedDate?.toISOString() ?? 'no-date'}-${selectedHour ?? 'no-hour'}`
+            : `${modalMode}-${selectedAgendamento?.id ?? 'none'}`
+        }
         open={modalOpen}
         onOpenChange={setModalOpen}
         agendamento={selectedAgendamento}

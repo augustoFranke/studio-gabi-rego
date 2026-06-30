@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import type { ExercicioInput } from '@/schemas/treino.schema'
+import { ServiceError } from './errors'
 
 const fichaInclude = {
   membro: {
@@ -54,6 +55,55 @@ const mapExerciseToPrisma = (ex: ExercicioInput, index: number) => ({
   ordem: index,
 })
 
+function buildFichaCreateData(data: {
+  membroId: string
+  nome?: string
+  data?: string
+  objetivo?: string
+  observacoes?: string
+  exercicios?: ExercicioInput[]
+}): Prisma.FichaTreinoUncheckedCreateInput {
+  const { membroId, nome, data: dataTreino, objetivo, observacoes, exercicios } = data
+
+  return {
+    membroId,
+    nome: nome || 'Treino',
+    data: dataTreino,
+    objetivo,
+    observacoes,
+    exercicios: exercicios
+      ? {
+          create: exercicios.map(mapExerciseToPrisma),
+        }
+      : undefined,
+  }
+}
+
+type PrismaExercicioClient = Pick<typeof prisma.exercicio, 'deleteMany' | 'createMany'>
+
+function isUniqueConstraintError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+}
+
+async function writeExercicios(
+  client: PrismaExercicioClient,
+  fichaId: string,
+  exercicios: ExercicioInput[]
+) {
+  await client.deleteMany({
+    where: { fichaId },
+  })
+
+  if (exercicios.length > 0) {
+    await client.createMany({
+      data: exercicios.map((ex, index) => ({
+        fichaId,
+        ...mapExerciseToPrisma(ex, index),
+      })),
+    })
+  }
+}
+
 export async function listFichasTreino(where: Prisma.FichaTreinoWhereInput) {
   return prisma.fichaTreino.findMany({
     where,
@@ -70,21 +120,8 @@ export async function createFichaTreino(data: {
   observacoes?: string
   exercicios?: ExercicioInput[]
 }) {
-  const { membroId, nome, data: dataTreino, objetivo, observacoes, exercicios } = data
-
   return prisma.fichaTreino.create({
-    data: {
-      membroId,
-      nome: nome || 'Treino',
-      data: dataTreino,
-      objetivo,
-      observacoes,
-      exercicios: exercicios
-        ? {
-            create: exercicios.map(mapExerciseToPrisma),
-          }
-        : undefined,
-    },
+    data: buildFichaCreateData(data),
     include: fichaInclude,
   })
 }
@@ -97,30 +134,39 @@ export async function createActiveFichaTreino(data: {
   observacoes?: string
   exercicios?: ExercicioInput[]
 }) {
-  const { membroId, nome, data: dataTreino, objetivo, observacoes, exercicios } = data
-
-  return prisma.$transaction(async (tx) => {
+  const createActiveFicha = () => prisma.$transaction(async (tx) => {
     await tx.fichaTreino.updateMany({
-      where: { membroId, ativo: true },
+      where: { membroId: data.membroId, ativo: true },
       data: { ativo: false },
     })
 
     return tx.fichaTreino.create({
-      data: {
-        membroId,
-        nome: nome || 'Treino',
-        data: dataTreino,
-        objetivo,
-        observacoes,
-        exercicios: exercicios
-          ? {
-              create: exercicios.map(mapExerciseToPrisma),
-            }
-          : undefined,
-      },
+      data: buildFichaCreateData(data),
       include: fichaInclude,
     })
   })
+
+  try {
+    return await createActiveFicha()
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) {
+      throw error
+    }
+  }
+
+  try {
+    return await createActiveFicha()
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new ServiceError(
+        'Não foi possível ativar o treino porque outro treino foi ativado ao mesmo tempo. Tente novamente.',
+        'ACTIVE_TRAINING_CONFLICT',
+        409
+      )
+    }
+
+    throw error
+  }
 }
 
 export async function deactivateActiveFichas(membroId: string) {
@@ -159,18 +205,7 @@ export async function updateFichaTreinoWithExercises(
 ) {
   return prisma.$transaction(async (tx) => {
     if (exercicios !== undefined) {
-      await tx.exercicio.deleteMany({
-        where: { fichaId: id },
-      })
-
-      if (exercicios.length > 0) {
-        await tx.exercicio.createMany({
-          data: exercicios.map((ex, index) => ({
-            fichaId: id,
-            ...mapExerciseToPrisma(ex, index),
-          })),
-        })
-      }
+      await writeExercicios(tx.exercicio, id, exercicios)
     }
 
     return tx.fichaTreino.update({
@@ -185,23 +220,7 @@ export async function replaceFichaExercicios(
   fichaId: string,
   exercicios: ExercicioInput[]
 ) {
-  if (exercicios.length === 0) {
-    await prisma.exercicio.deleteMany({
-      where: { fichaId },
-    })
-    return
-  }
-
-  await prisma.exercicio.deleteMany({
-    where: { fichaId },
-  })
-
-  await prisma.exercicio.createMany({
-    data: exercicios.map((ex, index) => ({
-      fichaId,
-      ...mapExerciseToPrisma(ex, index),
-    })),
-  })
+  await writeExercicios(prisma.exercicio, fichaId, exercicios)
 }
 
 export async function deleteFichaTreino(id: string) {

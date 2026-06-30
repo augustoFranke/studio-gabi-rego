@@ -29,13 +29,44 @@ import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
+type AlunosSearchParams = {
+  search?: string | string[]
+  status?: string | string[]
+  plano?: string | string[]
+  page?: string | string[]
+  order?: string | string[]
+}
+
+const allowedOrders = new Set(['recent_desc', 'nome_asc'])
+const allowedStatuses = new Set(Object.values(StatusMembro))
+
+function getFirstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function parseAlunosSearchParams(params: AlunosSearchParams) {
+  const search = getFirstParam(params.search)?.trim().slice(0, 100) || undefined
+  const statusParam = getFirstParam(params.status)
+  const planoParam = getFirstParam(params.plano)
+  const orderParam = getFirstParam(params.order)
+  const rawPage = Number.parseInt(getFirstParam(params.page) ?? '1', 10)
+
+  return {
+    search,
+    status: statusParam && allowedStatuses.has(statusParam as StatusMembro) ? statusParam : 'todos',
+    plano: planoParam && /^[a-zA-Z0-9_-]{1,64}$/.test(planoParam) ? planoParam : 'todos',
+    page: Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1,
+    order: orderParam && allowedOrders.has(orderParam) ? orderParam : 'recent_desc',
+  }
+}
+
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string; plano?: string; page?: string; order?: string }>
+  searchParams: Promise<AlunosSearchParams>
 }) {
-  const { search, status, plano, page, order } = await searchParams
-  const currentPage = Number(page) || 1
+  const { search, status, plano, page, order } = parseAlunosSearchParams(await searchParams)
+  const currentPage = page
   const itemsPerPage = 10
   const skip = (currentPage - 1) * itemsPerPage
 
@@ -49,11 +80,11 @@ export default async function MembrosPage({
     ]
   }
 
-  if (status && status !== 'todos') {
+  if (status !== 'todos') {
     where.status = status as StatusMembro
   }
 
-  if (plano && plano !== 'todos') {
+  if (plano !== 'todos') {
     where.planoId = plano
   }
 

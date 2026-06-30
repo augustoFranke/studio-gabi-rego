@@ -1,6 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
-import { getRateLimitRedisConfig, isTestRuntime } from "@/lib/runtime-config"
+import { getRateLimitRedisConfig, isProductionRuntime, isTestRuntime } from "@/lib/runtime-config"
 import { logWarn } from "@/lib/observability/logger"
 import { RATE_LIMIT_BACKEND_ERROR } from "@/lib/observability/events"
 
@@ -24,8 +24,9 @@ const buckets = new Map<string, RateLimitBucket>()
 
 function getClientIp(request: Request) {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("cf-connecting-ip")?.trim() ||
+    request.headers.get("fly-client-ip")?.trim() ||
     "unknown"
   )
 }
@@ -68,6 +69,14 @@ function rateLimitInMemory(
   }
 
   return { success: true }
+}
+
+function rateLimitUnavailable(): RateLimitResult {
+  return { success: false, retryAfter: 60 }
+}
+
+function shouldFailClosed() {
+  return isProductionRuntime() && !isTestRuntime()
 }
 
 // ---------------------------------------------------------------------------
@@ -156,7 +165,17 @@ export async function rateLimitByKey(
         keyPrefix,
         errorMessage: error instanceof Error ? error.message : String(error),
       })
+
+      if (shouldFailClosed()) {
+        return rateLimitUnavailable()
+      }
     }
+  } else if (shouldFailClosed()) {
+    logWarn(RATE_LIMIT_BACKEND_ERROR, {
+      keyPrefix,
+      errorMessage: "Redis rate limit backend is not configured",
+    })
+    return rateLimitUnavailable()
   }
 
   return rateLimitInMemory(bucketKey, maxRequests, windowMs)

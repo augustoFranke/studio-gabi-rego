@@ -21,7 +21,8 @@ type CsvValue = string | number | boolean | Date | Prisma.Decimal | null | undef
 
 function formatCsvValue(value: CsvValue): string {
   if (value === null || value === undefined) return ''
-  const str = value instanceof Date ? value.toISOString() : String(value)
+  const raw = value instanceof Date ? value.toISOString() : String(value)
+  const str = /^[\s]*[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`
   }
@@ -48,8 +49,8 @@ function paymentsToCsv(payments: ArchivedPayment[]): string {
 }
 
 /**
- * Archives old payments (PAGO or CANCELADO, older than cutoffDays)
- * to a CSV file, then deletes them from the database.
+ * Exports old payments (PAGO or CANCELADO, older than cutoffDays) to a CSV file.
+ * Rows are intentionally retained; local files are not durable enough to justify deletion.
  */
 export async function archiveOldPayments(cutoffDays = 30): Promise<PaymentArchiveSummary> {
   const cutoff = new Date()
@@ -69,7 +70,7 @@ export async function archiveOldPayments(cutoffDays = 30): Promise<PaymentArchiv
   }
 
   const csv = paymentsToCsv(payments)
-  const dateStr = new Date().toISOString().split('T')[0]
+  const dateStr = new Date().toISOString().replace(/[:.]/g, '-')
 
   // Write to /tmp for Vercel compatibility, or backups/ for local
   const isVercel = process.env.VERCEL === '1'
@@ -82,14 +83,7 @@ export async function archiveOldPayments(cutoffDays = 30): Promise<PaymentArchiv
   const csvPath = join(baseDir, `pagamentos-archive-${dateStr}.csv`)
   await writeFile(csvPath, csv, 'utf-8')
 
-  // Delete archived payments
-  await prisma.pagamento.deleteMany({
-    where: {
-      id: { in: payments.map(p => p.id) },
-    },
-  })
-
-  console.log(`Archived ${payments.length} payments to ${csvPath}`)
+  console.log(`Exported ${payments.length} archive-eligible payments to ${csvPath}`)
 
   return { count: payments.length, csvPath }
 }

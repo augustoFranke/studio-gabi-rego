@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateRequest, withApiAuth } from '@/lib/api'
 import { DiaSemana } from '@prisma/client'
 import { z } from 'zod'
-import { MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
-import { createHorario, HorarioServiceError, listHorarios } from '@/services/horario.service'
-import { logError, safeErrorData } from '@/lib/observability/logger'
-import { HORARIO_CREATE_FAILED } from '@/lib/observability/events'
+import { buildScheduleEndTime, isSchedulableHourString, MAX_CAPACITY_PER_SLOT } from '@/lib/schedule'
+import { createHorario, listHorarios } from '@/services/horario.service'
 
-const hourSchema = z.string().regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
+const hourSchema = z.string().refine(isSchedulableHourString, 'Informe uma hora cheia dentro da grade')
 
 const horarioSchema = z.object({
   diaSemana: z.nativeEnum(DiaSemana),
   horaInicio: hourSchema,
   horaFim: hourSchema,
   vagasTotal: z.number().int().min(1, 'Informe a quantidade de vagas').max(MAX_CAPACITY_PER_SLOT),
+}).refine((value) => value.horaFim === buildScheduleEndTime(value.horaInicio), {
+  message: 'Hora final deve ser exatamente uma hora após o início',
+  path: ['horaFim'],
 })
 
 const horariosQuerySchema = z.object({
@@ -43,27 +44,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withApiAuth(async () => {
-    try {
-      const validation = await validateRequest(request, horarioSchema, {
-        errorMessage: () => 'Campos obrigatorios: diaSemana, horaInicio, horaFim, vagasTotal',
-      })
+    const validation = await validateRequest(request, horarioSchema, {
+      errorMessage: () => 'Campos obrigatorios: diaSemana, horaInicio, horaFim, vagasTotal',
+    })
 
-      if ('error' in validation) {
-        return validation.error
-      }
-
-      const horario = await createHorario(validation.data)
-      return NextResponse.json(horario, { status: 201 })
-    } catch (error) {
-      if (error instanceof HorarioServiceError) {
-        return NextResponse.json({ error: error.message }, { status: error.status })
-      }
-
-      logError(HORARIO_CREATE_FAILED, {
-        message: 'Erro ao criar horario:',
-        ...safeErrorData(error),
-      })
-      return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    if ('error' in validation) {
+      return validation.error
     }
+
+    const horario = await createHorario(validation.data)
+    return NextResponse.json(horario, { status: 201 })
   }, { requiredRole: 'ADMIN' })
 }

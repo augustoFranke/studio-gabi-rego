@@ -48,6 +48,7 @@ enum TipoNotificacao {
 
 enum StatusEntregaNotificacao {
   PENDENTE
+  PROCESSANDO
   ENVIADA
   FALHA
 }

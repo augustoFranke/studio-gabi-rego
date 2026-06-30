@@ -1,16 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-export class PlanoServiceError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public status: number
-  ) {
-    super(message)
-    this.name = 'PlanoServiceError'
-  }
-}
+import { ServiceError as PlanoServiceError } from './errors'
+export { ServiceError as PlanoServiceError } from './errors'
 
 export type PlanoListParams = {
   includeInactive?: boolean
@@ -93,8 +85,11 @@ export async function deletePlanoById(id: string) {
   const membrosAtivos = await prisma.membro.count({
     where: { planoId: id, status: 'ATIVO' },
   })
+  const pagamentos = await prisma.pagamento.count({
+    where: { planoId: id },
+  })
 
-  if (membrosAtivos > 0) {
+  if (membrosAtivos > 0 || pagamentos > 0) {
     const planoAtualizado = await prisma.plano.update({
       where: { id },
       data: { ativo: false },
@@ -104,6 +99,7 @@ export async function deletePlanoById(id: string) {
       action: 'deactivated' as const,
       plano: planoAtualizado,
       membrosAtivos,
+      pagamentos,
     }
   }
 
@@ -112,5 +108,6 @@ export async function deletePlanoById(id: string) {
     action: 'deleted' as const,
     plano: null,
     membrosAtivos: 0,
+    pagamentos: 0,
   }
 }

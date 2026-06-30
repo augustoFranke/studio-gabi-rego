@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -26,8 +26,6 @@ function AnamneseContent() {
 
 function useAnamneseContent() {
   const { status } = useSession()
-  const searchParams = useSearchParams()
-  const tokenFromUrl = searchParams.get("token")
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
@@ -45,7 +43,6 @@ function useAnamneseContent() {
 
   useEffect(() => {
     let nextToken: string | null = null
-    let shouldReplaceUrl = false
 
     if (status === "authenticated") {
       nextToken = null
@@ -61,22 +58,16 @@ function useAnamneseContent() {
       }
     }
 
-    if (!nextToken && tokenFromUrl) {
-      nextToken = tokenFromUrl
-      shouldReplaceUrl = true
-    }
-
     // Token is resolved from window.location.hash and history side-effects, which
     // are not derivable during render, so it must be synced into state here.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setToken(nextToken)
-    if (shouldReplaceUrl) {
-      replace("/anamnese")
+    if (nextToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setToken(nextToken)
     }
-    if (status === "unauthenticated" && !nextToken) {
+    if (status === "unauthenticated" && !nextToken && !token) {
       push("/login")
     }
-  }, [status, tokenFromUrl, replace, push])
+  }, [status, token, push])
 
   // Load user data on mount
   useEffect(() => {

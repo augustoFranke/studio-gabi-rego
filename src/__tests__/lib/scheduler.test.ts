@@ -9,7 +9,7 @@ const {
 } = vi.hoisted(() => {
   const { createPrismaMock } = globalThis.__testUtils
   const prismaBaseMock = createPrismaMock({
-    notificacao: ['findFirst', 'create', 'update'],
+    notificacao: ['findFirst', 'create', 'update', 'updateMany'],
     membro: ['findMany'],
   })
 
@@ -61,6 +61,7 @@ describe('processarAniversarios', () => {
       statusEntrega: StatusEntregaNotificacao.ENVIADA,
       tentativasEntrega: 1,
     })
+    prismaMock.notificacao.updateMany.mockResolvedValue({ count: 1 })
   })
 
   afterEach(() => {
@@ -109,6 +110,7 @@ describe('processarAniversarios', () => {
     })
     expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.create).toHaveBeenCalledTimes(1)
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(1)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(1)
     expect(prismaMock.notificacao.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -161,6 +163,7 @@ describe('processarAniversarios', () => {
     )
     expect(formatWhatsappNumberMock).toHaveBeenCalledWith('')
     expect(sendWhatsappTextMock).not.toHaveBeenCalled()
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(1)
     expect(summary).toEqual({
       targetDate: expectedTargetDate,
       candidates: 1,
@@ -199,6 +202,7 @@ describe('processarAniversarios', () => {
     const summary = await processarAniversarios()
 
     expect(prismaMock.notificacao.create).not.toHaveBeenCalled()
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(1)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(2)
     expect(sendWhatsappTextMock).toHaveBeenCalledTimes(1)
     expect(summary).toEqual({

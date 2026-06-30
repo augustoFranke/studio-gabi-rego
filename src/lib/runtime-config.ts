@@ -124,7 +124,7 @@ export function validateRuntimeConfig(): ConfigValidationResult {
 
   if (!config.UPSTASH_REDIS_REST_URL || !config.UPSTASH_REDIS_REST_TOKEN) {
     warnings.push(
-      'UPSTASH_REDIS_REST_URL/TOKEN not set — rate limiting falls back to per-instance memory (ineffective on serverless)',
+      'UPSTASH_REDIS_REST_URL/TOKEN not set — production rate-limited routes fail closed; development uses per-instance memory',
     )
   }
 

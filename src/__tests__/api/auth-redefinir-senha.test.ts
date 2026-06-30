@@ -6,6 +6,7 @@ const { prismaMock, bcryptMock } = vi.hoisted(() => ({
     usuario: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
   bcryptMock: {
@@ -22,6 +23,7 @@ vi.mock('bcryptjs', () => bcryptMock)
 describe('Auth API - POST /api/auth/redefinir-senha', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    prismaMock.usuario.updateMany.mockResolvedValue({ count: 1 })
   })
 
   const post = (body: Record<string, unknown>) =>
@@ -80,8 +82,12 @@ describe('Auth API - POST /api/auth/redefinir-senha', () => {
 
     expect(res.status).toBe(200)
     expect(bcryptMock.hash).toHaveBeenCalledWith('Senha123', 12)
-    expect(prismaMock.usuario.update).toHaveBeenCalledWith({
-      where: { id: 'u-1' },
+    expect(prismaMock.usuario.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: 'u-1',
+        tokenReset: expect.any(Object),
+        tokenResetExpira: expect.any(Object),
+      }),
       data: {
         senha: 'hashed_Senha123',
         senhaDefinida: true,

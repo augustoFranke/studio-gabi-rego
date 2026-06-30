@@ -68,7 +68,7 @@ describe('Agendamentos API', () => {
     expect(json.error).toContain('Membro ID não identificado')
   })
 
-  it('POST uses session membroId when role is MEMBRO', async () => {
+  it('POST rejects member sessions', async () => {
     sessionRef.current = { user: { role: 'MEMBRO', membroId: 'm-session' } }
     prismaMock.horarioDisponivel.findUnique.mockResolvedValue({
       id: 'h-1',
@@ -102,12 +102,8 @@ describe('Agendamentos API', () => {
       createRequest({ membroId: 'm-other', horarioId: 'h-1', data: '2025-01-20' })
     )
 
-    expect(res.status).toBe(201)
-    expect(prismaMock.agendamento.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ membroId: 'm-session', horarioId: 'h-1' }),
-      })
-    )
+    expect(res.status).toBe(403)
+    expect(prismaMock.agendamento.create).not.toHaveBeenCalled()
   })
 
   it('POST returns 400 when horario is not available', async () => {

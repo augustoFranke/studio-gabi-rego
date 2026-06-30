@@ -8,7 +8,7 @@ const { prismaMock } = vi.hoisted(() => {
   return {
     prismaMock: createPrismaMock({
       pagamento: ['findMany'],
-      notificacao: ['findFirst', 'create', 'update'],
+      notificacao: ['findFirst', 'create', 'update', 'updateMany'],
     }),
   }
 })
@@ -31,6 +31,7 @@ describe('Cron cobrancas WhatsApp', () => {
     process.env.EVOLUTION_API_KEY = 'evo-key'
     process.env.EVOLUTION_INSTANCE = 'studio'
     process.env.WHATSAPP_COUNTRY_CODE = '55'
+    prismaMock.notificacao.updateMany.mockResolvedValue({ count: 1 })
   })
 
   afterEach(() => {
@@ -135,6 +136,7 @@ describe('Cron cobrancas WhatsApp', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.create).toHaveBeenCalledTimes(2)
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(2)
   })
 
@@ -197,6 +199,7 @@ describe('Cron cobrancas WhatsApp', () => {
 
     expect(res.status).toBe(500)
     expect(json.failed).toBe(1)
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(2)
   })
 })

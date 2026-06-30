@@ -4,10 +4,16 @@ import { GET, POST } from '@/app/api/anamnese-token/route'
 
 const { prismaMock, resendMock } = vi.hoisted(() => ({
   prismaMock: {
-    $transaction: vi.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
+    $transaction: vi.fn((callbackOrOperations: unknown) => {
+      if (typeof callbackOrOperations === 'function') {
+        return (callbackOrOperations as (tx: typeof prismaMock) => Promise<unknown>)(prismaMock)
+      }
+      return Promise.all(callbackOrOperations as Promise<unknown>[])
+    }),
     membro: {
       findFirst: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     anamnese: {
       upsert: vi.fn(),
@@ -37,10 +43,17 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     vi.clearAllMocks()
     resendMock.isResendConfigured.mockReturnValue(true)
     resendMock.enviarEmail.mockResolvedValue({ success: true })
+    prismaMock.membro.updateMany.mockResolvedValue({ count: 1 })
   })
 
   const reqWithToken = (token: string, init?: RequestInit) =>
-    new NextRequest(`http://localhost:3000/api/anamnese-token?token=${token}`, init)
+    new NextRequest('http://localhost:3000/api/anamnese-token', {
+      ...init,
+      headers: {
+        'X-Anamnese-Token': token,
+        ...init?.headers,
+      },
+    })
 
   it('GET returns 400 when token is missing', async () => {
     const res = await GET(new NextRequest('http://localhost:3000/api/anamnese-token'))
@@ -144,10 +157,12 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       where: { id: 'u-1' },
       data: { etapaOnboarding: 4, onboardingCompleto: true },
     })
-    expect(prismaMock.membro.update).toHaveBeenCalledWith({
-      where: { id: 'm-1' },
-      data: { anamneseToken: null, anamneseTokenExpira: null },
-    })
+    expect(prismaMock.membro.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'm-1' }),
+        data: { anamneseToken: null, anamneseTokenExpira: null },
+      })
+    )
     expect(resendMock.enviarEmail).toHaveBeenCalledTimes(1)
     expect(json.success).toBe(true)
   })

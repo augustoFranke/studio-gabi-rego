@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { passwordPolicySchema } from '@/schemas/password-policy.schema'
+import { isSchedulableHourString } from '@/lib/schedule'
 
 const diaSemanaSchema = z.enum([
   'SEGUNDA',
@@ -13,7 +14,7 @@ const diaSemanaSchema = z.enum([
 
 const horarioFixoSchema = z.object({
   diaSemana: diaSemanaSchema,
-  hora: z.string().regex(/^\d{2}:\d{2}$/, 'Horário inválido'),
+  hora: z.string().refine(isSchedulableHourString, 'Horário inválido'),
 })
 
 const sexoSchema = z

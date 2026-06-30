@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { validarEmail } from "@/lib/validators"
-import { rateLimitByIp } from "@/lib/rate-limit"
+import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import {
   OnboardingServiceError,
   resendVerificationEmail,
@@ -25,6 +25,19 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Email inválido" },
         { status: 400 }
+      )
+    }
+
+    const emailRateLimit = await rateLimitByKey(
+      request,
+      "auth:resend-verification:email",
+      email.toLowerCase().trim(),
+      { maxRequests: 3, windowMs: 10 * 60_000 }
+    )
+    if (!emailRateLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
       )
     }
 

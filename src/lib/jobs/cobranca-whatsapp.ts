@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { addDaysYmd, formatBrFromYmd, getAppTimezone, getYmdInTimeZone } from '@/lib/dates'
 import {
+  claimNotificationForDelivery,
   createOrRefreshNotification,
   findExistingNotification,
   isNotificationDelivered,
@@ -166,13 +167,18 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
         agendadaPara: targetDate,
       },
     })
+    const claimedNotificacao = await claimNotificationForDelivery(notificacao)
+
+    if (!claimedNotificacao) {
+      return { sent: 0, skipped: 1, failed: 0 }
+    }
 
     try {
       await sendWhatsappText({ to: numero, text: mensagem })
-      await markNotificationDelivered(notificacao)
+      await markNotificationDelivered(claimedNotificacao)
       return { sent: 1, skipped: 0, failed: 0 }
     } catch (error) {
-      await markNotificationFailed(notificacao, error)
+      await markNotificationFailed(claimedNotificacao, error)
       return { sent: 0, skipped: 0, failed: 1 }
     }
   }))
