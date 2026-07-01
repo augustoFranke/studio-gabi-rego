@@ -44,7 +44,19 @@ export function mockWithApiAuth(sessionRef: SessionRef) {
         if (options?.requiredRole && sessionRef.current.user.role !== options.requiredRole) {
           return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
         }
-        return handler(sessionRef.current)
+        try {
+          return await handler(sessionRef.current)
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            'status' in error &&
+            typeof error.status === 'number'
+          ) {
+            return NextResponse.json({ error: error.message }, { status: error.status })
+          }
+
+          throw error
+        }
       }
     ),
   }

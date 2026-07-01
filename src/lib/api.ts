@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import type { ZodError, ZodSchema } from 'zod'
+import { ApiError } from '@/lib/api-error'
 import { type AppSession, isAppSession, type UserRole } from '@/lib/auth-session'
 import { API_UNHANDLED_ERROR, AUTH_SESSION_ERROR } from '@/lib/observability/events'
 import { logError, safeErrorData } from '@/lib/observability/logger'
@@ -54,6 +55,10 @@ export async function withApiAuth(
 
     return await authHandler(session)
   } catch (error) {
+    if (error instanceof ApiError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     logError(API_UNHANDLED_ERROR, {
       message: 'API Error:',
       ...safeErrorData(error),
