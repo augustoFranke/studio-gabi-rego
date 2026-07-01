@@ -28,6 +28,10 @@ function getErrorMessage(error: unknown) {
   return message.replace(/[\r\n\t]+/g, ' ').slice(0, 240)
 }
 
+function isUniqueConstraintError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+}
+
 export async function findExistingNotification({
   dedupeKey,
   legacyWhere,
@@ -73,13 +77,30 @@ export async function createOrRefreshNotification({
     })
   }
 
-  return prisma.notificacao.create({
-    data: {
-      ...data,
-      chaveDedupe: dedupeKey,
-    },
-    select: deliverySelect,
-  })
+  try {
+    return await prisma.notificacao.create({
+      data: {
+        ...data,
+        chaveDedupe: dedupeKey,
+      },
+      select: deliverySelect,
+    })
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) {
+      throw error
+    }
+
+    const concurrent = await prisma.notificacao.findFirst({
+      where: { chaveDedupe: dedupeKey },
+      select: deliverySelect,
+    })
+
+    if (!concurrent) {
+      throw error
+    }
+
+    return concurrent
+  }
 }
 
 export async function claimNotificationForDelivery(notification: DeliveryNotificationRecord) {

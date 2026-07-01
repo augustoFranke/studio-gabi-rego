@@ -18,6 +18,10 @@ export function createTimedToken(ttlMs = DEFAULT_TOKEN_EXPIRY_MS): TimedToken {
   }
 }
 
+export function isTimedTokenFormat(token: string) {
+  return /^[a-f0-9]{64}$/i.test(token.trim())
+}
+
 function getTokenSecret() {
   return getAuthSecretConfig() || 'development-token-secret'
 }

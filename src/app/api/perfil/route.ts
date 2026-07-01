@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { withApiAuth, validateRequest } from "@/lib/api"
+import { isTimedTokenFormat } from "@/lib/auth-flow"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
-import { rateLimitByKey } from "@/lib/rate-limit"
+import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import { validarCPF } from "@/lib/validators"
 import { z } from "zod"
 import {
@@ -101,6 +102,24 @@ export async function POST(request: Request) {
 
     const { token, nome, cpf, rg, telefone, dataNascimento, sexo } = validation.data
     if (token) {
+      const ipLimit = await rateLimitByIp(request, "onboarding:complete-profile:ip", {
+        maxRequests: 30,
+        windowMs: 60_000,
+      })
+      if (!ipLimit.success) {
+        return NextResponse.json(
+          { error: "Muitas tentativas. Tente novamente em instantes." },
+          { status: 429 }
+        )
+      }
+
+      if (!isTimedTokenFormat(token)) {
+        return NextResponse.json(
+          { error: "Token inválido ou expirado" },
+          { status: 401 }
+        )
+      }
+
       const rateLimit = await rateLimitByKey(request, "onboarding:complete-profile", token)
       if (!rateLimit.success) {
         return NextResponse.json(

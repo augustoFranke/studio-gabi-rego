@@ -64,7 +64,6 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
   const todayYmd = getYmdInTimeZone(new Date(), getAppTimezone())
   const targetYmd = addDaysYmd(todayYmd, 1)
   const targetDate = new Date(`${targetYmd}T12:00:00.000Z`)
-  const legacyCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
   const whatsappEnabled = isEvolutionConfigured()
 
   const pagamentos = await prisma.pagamento.findMany({
@@ -140,14 +139,7 @@ export async function runCobrancaWhatsappT1(): Promise<NotificationJobSummary> {
         membroId,
         tipo: TipoNotificacao.COBRANCA,
         canalEmail: false,
-        OR: [
-          { agendadaPara: targetDate },
-          {
-            criadoEm: {
-              gte: legacyCutoff,
-            },
-          },
-        ],
+        agendadaPara: targetDate,
       },
     })
 

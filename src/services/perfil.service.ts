@@ -14,6 +14,10 @@ type PerfilBaseInput = {
 type PerfilSaveParams = PerfilBaseInput & {
   userId: string
   issueAnamneseToken?: boolean
+  profileTokenClaim?: {
+    rawToken: string
+    hashedToken: string
+  }
   hasCpf?: boolean
   hasRg?: boolean
   hasTelefone?: boolean
@@ -100,6 +104,7 @@ export async function savePerfilForUser({
   dataNascimento,
   sexo,
   issueAnamneseToken = false,
+  profileTokenClaim,
   hasCpf = true,
   hasRg = true,
   hasTelefone = true,
@@ -134,6 +139,26 @@ export async function savePerfilForUser({
   const anamneseTokenHash = anamneseToken ? await hashTimedToken(anamneseToken) : null
 
   await prisma.$transaction(async (tx) => {
+    if (profileTokenClaim) {
+      const claimed = await tx.usuario.updateMany({
+        where: {
+          id: userId,
+          tokenPerfil: {
+            in: [profileTokenClaim.hashedToken, profileTokenClaim.rawToken],
+          },
+          tokenPerfilExpira: { gt: new Date() },
+        },
+        data: {
+          tokenPerfil: null,
+          tokenPerfilExpira: null,
+        },
+      })
+
+      if (claimed.count !== 1) {
+        throw new Error("PROFILE_TOKEN_NOT_CLAIMED")
+      }
+    }
+
     if (existingMembro) {
       await tx.membro.update({
         where: { usuarioId: userId },
@@ -273,11 +298,24 @@ export async function completePerfilFromToken({
     }
   }
 
-  return savePerfilForUser({
-    userId: usuario.id,
-    issueAnamneseToken: true,
-    ...data,
-  })
+  try {
+    return await savePerfilForUser({
+      userId: usuario.id,
+      issueAnamneseToken: true,
+      profileTokenClaim: { rawToken, hashedToken },
+      ...data,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.message === "PROFILE_TOKEN_NOT_CLAIMED") {
+      return {
+        ok: false,
+        status: 401,
+        error: "Token inválido ou expirado",
+      }
+    }
+
+    throw error
+  }
 }
 
 export async function createPerfilTokenForMembro(membroId: string) {

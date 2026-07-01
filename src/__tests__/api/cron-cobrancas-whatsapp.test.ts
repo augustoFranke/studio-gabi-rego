@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/cron/cobrancas-whatsapp/route'
-import { StatusEntregaNotificacao } from '@prisma/client'
+import { Prisma, StatusEntregaNotificacao } from '@prisma/client'
 
 const { prismaMock } = vi.hoisted(() => {
   const { createPrismaMock } = globalThis.__testUtils
@@ -135,9 +135,79 @@ describe('Cron cobrancas WhatsApp', () => {
     expect(json.sent).toBe(2)
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
+    expect(prismaMock.notificacao.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ chaveDedupe: 'cobranca:m1:2026-02-05:whatsapp' }),
+            expect.objectContaining({
+              membroId: 'm1',
+              agendadaPara: new Date('2026-02-05T12:00:00.000Z'),
+            }),
+          ]),
+        }),
+      })
+    )
+    expect(
+      JSON.stringify(prismaMock.notificacao.findFirst.mock.calls[0][0].where)
+    ).not.toContain('criadoEm')
     expect(prismaMock.notificacao.create).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.updateMany).toHaveBeenCalledTimes(2)
     expect(prismaMock.notificacao.update).toHaveBeenCalledTimes(2)
+  })
+
+  it('recovers when another worker creates the dedupe notification concurrently', async () => {
+    prismaMock.pagamento.findMany.mockResolvedValueOnce([
+      {
+        id: 'p1',
+        valor: 100,
+        dataVencimento: new Date('2026-02-05T12:00:00.000Z'),
+        membroId: 'm1',
+        membro: {
+          id: 'm1',
+          status: 'ATIVO',
+          telefone: '11999999999',
+          usuario: { nome: 'Ana' },
+        },
+      },
+    ])
+    prismaMock.notificacao.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'n-race',
+        enviada: false,
+        statusEntrega: StatusEntregaNotificacao.PENDENTE,
+        tentativasEntrega: 0,
+      })
+    prismaMock.notificacao.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      })
+    )
+    prismaMock.notificacao.update.mockResolvedValue({
+      id: 'n-race',
+      enviada: true,
+      statusEntrega: StatusEntregaNotificacao.ENVIADA,
+      tentativasEntrega: 1,
+    })
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({}),
+    })
+    global.fetch = fetchMock as unknown as typeof fetch
+
+    const res = await POST(createRequest('test-secret'))
+    const json = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(json.sent).toBe(1)
+    expect(prismaMock.notificacao.findFirst).toHaveBeenCalledTimes(2)
+    expect(prismaMock.notificacao.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: 'n-race' }) })
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('returns 500 when any send fails', async () => {

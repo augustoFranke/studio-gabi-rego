@@ -8,6 +8,7 @@ const { prismaMock, authMock, validarCpfMock, randomBytesMock } = vi.hoisted(() 
     usuario: {
       findUnique: ReturnType<typeof vi.fn>
       update: ReturnType<typeof vi.fn>
+      updateMany: ReturnType<typeof vi.fn>
     }
     membro: {
       findUnique: ReturnType<typeof vi.fn>
@@ -25,6 +26,7 @@ const { prismaMock, authMock, validarCpfMock, randomBytesMock } = vi.hoisted(() 
   prismaMock.usuario = {
     findUnique: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   }
   prismaMock.membro = {
     findUnique: vi.fn(),
@@ -57,8 +59,11 @@ vi.mock('crypto', () => ({
 }))
 
 describe('Perfil API', () => {
+  const validToken = 'a'.repeat(64)
+
   beforeEach(() => {
     vi.clearAllMocks()
+    prismaMock.usuario.updateMany.mockResolvedValue({ count: 1 })
   })
 
   const createRequest = (body: Record<string, unknown>) =>
@@ -88,7 +93,7 @@ describe('Perfil API', () => {
   it('returns 401 for invalid token flow', async () => {
     prismaMock.usuario.findUnique.mockResolvedValueOnce(null)
 
-    const res = await POST(createRequest({ token: 'bad', nome: 'Aluno' }))
+    const res = await POST(createRequest({ token: validToken, nome: 'Aluno' }))
     const json = await res.json()
 
     expect(res.status).toBe(401)
@@ -109,7 +114,7 @@ describe('Perfil API', () => {
   it('creates new member and sets anamnese cookie for token flow', async () => {
     prismaMock.usuario.findUnique.mockResolvedValueOnce({
       id: 'u-1',
-      tokenPerfil: 'token',
+      tokenPerfil: validToken,
       tokenPerfilExpira: new Date(Date.now() + 60 * 60 * 1000),
     })
     prismaMock.membro.findUnique
@@ -119,12 +124,25 @@ describe('Perfil API', () => {
     randomBytesMock.mockReturnValueOnce(Buffer.from('token'))
 
     const res = await POST(
-      createRequest({ token: 'token', nome: 'Aluno', cpf: '123.456.789-00', telefone: '11999999999' })
+      createRequest({ token: validToken, nome: 'Aluno', cpf: '123.456.789-00', telefone: '11999999999' })
     )
     expect(res.status).toBe(200)
     expect(prismaMock.usuario.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { tokenPerfil: 'token' },
+        where: { tokenPerfil: validToken },
+      })
+    )
+    expect(prismaMock.usuario.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'u-1',
+          tokenPerfil: expect.any(Object),
+          tokenPerfilExpira: expect.any(Object),
+        }),
+        data: {
+          tokenPerfil: null,
+          tokenPerfilExpira: null,
+        },
       })
     )
     expect(prismaMock.membro.create).toHaveBeenCalledWith(

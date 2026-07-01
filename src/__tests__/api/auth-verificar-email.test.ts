@@ -1,24 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/auth/verificar-email/route'
 
-const { prismaMock, resendMock } = vi.hoisted(() => ({
-  prismaMock: {
+const { prismaMock, resendMock } = vi.hoisted(() => {
+  const prismaMock = {
+    $transaction: vi.fn(),
     usuario: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     membro: {
       update: vi.fn(),
     },
-  },
-  resendMock: {
+  }
+
+  prismaMock.$transaction.mockImplementation((callback: (tx: typeof prismaMock) => Promise<unknown>) =>
+    callback(prismaMock)
+  )
+
+  return {
+    prismaMock,
+    resendMock: {
     enviarEmail: vi.fn(async () => ({ success: true, id: 'email-1' })),
     isResendConfigured: vi.fn(() => true),
     emailTemplates: {
       boasVindas: vi.fn((nome: string) => `boas-vindas:${nome}`),
     },
-  },
-}))
+    },
+  }
+})
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
@@ -27,10 +37,15 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/resend', () => resendMock)
 
 describe('Auth API - POST /api/auth/verificar-email', () => {
+  const validToken = 'a'.repeat(64)
+  const expiredToken = 'b'.repeat(64)
+  const profileToken = 'c'.repeat(64)
+
   beforeEach(() => {
     vi.clearAllMocks()
     resendMock.isResendConfigured.mockReturnValue(true)
     resendMock.enviarEmail.mockResolvedValue({ success: true, id: 'email-1' })
+    prismaMock.usuario.updateMany.mockResolvedValue({ count: 1 })
   })
 
   const post = (body: Record<string, unknown>) =>
@@ -49,7 +64,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
   it('returns 400 when token is invalid', async () => {
     prismaMock.usuario.findUnique.mockResolvedValue(null)
 
-    const res = await post({ token: 'invalid' })
+    const res = await post({ token: validToken })
     expect(res.status).toBe(400)
   })
 
@@ -63,7 +78,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
       membro: null,
     })
 
-    const res = await post({ token: 'expired' })
+    const res = await post({ token: expiredToken })
     expect(res.status).toBe(400)
   })
 
@@ -79,16 +94,27 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
       membro: { id: 'm-1', anamnese: { id: 'a-1' } },
     })
 
-    const res = await post({ token: 'ok' })
+    const res = await post({ token: validToken })
     const json = await res.json()
 
     expect(res.status).toBe(200)
+    expect(prismaMock.usuario.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'u-1',
+          tokenVerificacao: expect.any(Object),
+          tokenVerificacaoExpira: expect.any(Object),
+        }),
+        data: {
+          tokenVerificacao: null,
+          tokenVerificacaoExpira: null,
+        },
+      })
+    )
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
       where: { id: 'u-1' },
       data: expect.objectContaining({
         emailVerificado: expect.any(Date),
-        tokenVerificacao: null,
-        tokenVerificacaoExpira: null,
         tokenReset: expect.any(String),
         tokenResetExpira: expect.any(Date),
       }),
@@ -118,7 +144,7 @@ describe('Auth API - POST /api/auth/verificar-email', () => {
       membro: null,
     })
 
-    const res = await post({ token: 'ok' })
+    const res = await post({ token: profileToken })
     const json = await res.json()
 
     expect(json.profileToken).toBeUndefined()

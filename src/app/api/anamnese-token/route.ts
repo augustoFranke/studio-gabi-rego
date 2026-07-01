@@ -4,6 +4,7 @@ import {
   OnboardingServiceError,
   saveAnamneseByToken,
 } from "@/services/onboarding.service"
+import { isTimedTokenFormat } from "@/lib/auth-flow"
 import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import { logError, safeErrorData } from "@/lib/observability/logger"
 import { ANAMNESE_TOKEN_FETCH_FAILED, ANAMNESE_TOKEN_SAVE_FAILED } from "@/lib/observability/events"
@@ -23,6 +24,10 @@ export async function GET(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json({ error: "Token não fornecido" }, { status: 400 })
+    }
+
+    if (!isTimedTokenFormat(token)) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 400 })
     }
 
     const ipLimit = await rateLimitByIp(request, "onboarding:anamnese-token:ip", {
@@ -71,6 +76,10 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json({ error: "Token não fornecido" }, { status: 400 })
+    }
+
+    if (!isTimedTokenFormat(token)) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 400 })
     }
 
     const ipLimit = await rateLimitByIp(request, "onboarding:anamnese-token:ip", {

@@ -91,21 +91,6 @@ async function sendVerificationEmail(params: {
   }
 }
 
-async function issueProfileTokenForUser(userId: string) {
-  const { token, expiresAt } = createTimedToken()
-  const tokenHash = await hashTimedToken(token)
-
-  await prisma.usuario.update({
-    where: { id: userId },
-    data: {
-      tokenPerfil: tokenHash,
-      tokenPerfilExpira: expiresAt,
-    },
-  })
-
-  return { token, expiresAt }
-}
-
 async function issueAnamneseTokenForMembro(membroId: string) {
   const { token, expiresAt } = createTimedToken()
   const tokenHash = await hashTimedToken(token)
@@ -271,8 +256,10 @@ export async function registerUser(input: SignupInput, origin?: string): Promise
 
 export async function verifyEmailToken(token: string, origin?: string): Promise<VerifyEmailResult> {
   const { rawToken, hashedToken } = await getTimedTokenLookup(token)
+  const tokenMatches = [hashedToken, rawToken]
+  const now = new Date()
   const usuarioQuery = {
-    where: { tokenVerificacao: { in: [hashedToken, rawToken] } },
+    where: { tokenVerificacao: { in: tokenMatches } },
     include: {
       membro: {
         select: {
@@ -293,7 +280,7 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
     throw new OnboardingServiceError("Token inválido", "INVALID_TOKEN", 400)
   }
 
-  if (usuario.tokenVerificacaoExpira && usuario.tokenVerificacaoExpira < new Date()) {
+  if (!usuario.tokenVerificacaoExpira || usuario.tokenVerificacaoExpira <= now) {
     throw new OnboardingServiceError("Token expirado", "EXPIRED_TOKEN", 400)
   }
 
@@ -302,74 +289,93 @@ export async function verifyEmailToken(token: string, origin?: string): Promise<
   let profileToken: string | null = null
   let anamneseToken: string | null = null
   let passwordSetupToken: string | null = null
+  let userUpdateData: Parameters<typeof prisma.usuario.update>[0]["data"]
+  let memberUpdate:
+    | { membroId: string; tokenHash: string; expiresAt: Date }
+    | null = null
 
   if (usuario.role === "ADMIN") {
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        emailVerificado: new Date(),
-        tokenVerificacao: null,
-        tokenVerificacaoExpira: null,
-        etapaOnboarding: 4,
-        onboardingCompleto: true,
-      },
-    })
+    userUpdateData = {
+      emailVerificado: now,
+      etapaOnboarding: 4,
+      onboardingCompleto: true,
+    }
   } else if (!usuario.senhaDefinida) {
     const passwordSetup = createTimedToken()
     passwordSetupToken = passwordSetup.token
 
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        emailVerificado: new Date(),
-        tokenVerificacao: null,
-        tokenVerificacaoExpira: null,
-        tokenReset: await hashTimedToken(passwordSetup.token),
-        tokenResetExpira: passwordSetup.expiresAt,
-      },
-    })
+    userUpdateData = {
+      emailVerificado: now,
+      tokenReset: await hashTimedToken(passwordSetup.token),
+      tokenResetExpira: passwordSetup.expiresAt,
+    }
   } else if (!usuario.membro) {
-    const profile = await issueProfileTokenForUser(usuario.id)
+    const profile = createTimedToken()
     profileToken = profile.token
 
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        emailVerificado: new Date(),
-        tokenVerificacao: null,
-        tokenVerificacaoExpira: null,
-        etapaOnboarding: 2,
-        onboardingCompleto: false,
-      },
-    })
+    userUpdateData = {
+      emailVerificado: now,
+      tokenPerfil: await hashTimedToken(profile.token),
+      tokenPerfilExpira: profile.expiresAt,
+      etapaOnboarding: 2,
+      onboardingCompleto: false,
+    }
   } else if (!usuario.membro.anamnese) {
-    const anamnese = await issueAnamneseTokenForMembro(usuario.membro.id)
+    const anamnese = createTimedToken()
     anamneseToken = anamnese.token
+    memberUpdate = {
+      membroId: usuario.membro.id,
+      tokenHash: await hashTimedToken(anamnese.token),
+      expiresAt: anamnese.expiresAt,
+    }
 
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        emailVerificado: new Date(),
-        tokenVerificacao: null,
-        tokenVerificacaoExpira: null,
-        etapaOnboarding: 3,
-        onboardingCompleto: false,
-      },
-    })
+    userUpdateData = {
+      emailVerificado: now,
+      etapaOnboarding: 3,
+      onboardingCompleto: false,
+    }
   } else {
-    await prisma.usuario.update({
-      where: { id: usuario.id },
+    userUpdateData = {
+      emailVerificado: now,
+      tokenPerfil: null,
+      tokenPerfilExpira: null,
+      etapaOnboarding: 4,
+      onboardingCompleto: true,
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.usuario.updateMany({
+      where: {
+        id: usuario.id,
+        tokenVerificacao: { in: tokenMatches },
+        tokenVerificacaoExpira: { gt: now },
+      },
       data: {
-        emailVerificado: new Date(),
         tokenVerificacao: null,
         tokenVerificacaoExpira: null,
-        tokenPerfil: null,
-        tokenPerfilExpira: null,
-        etapaOnboarding: 4,
-        onboardingCompleto: true,
       },
     })
-  }
+
+    if (claimed.count !== 1) {
+      throw new OnboardingServiceError("Token inválido", "INVALID_TOKEN", 400)
+    }
+
+    await tx.usuario.update({
+      where: { id: usuario.id },
+      data: userUpdateData,
+    })
+
+    if (memberUpdate) {
+      await tx.membro.update({
+        where: { id: memberUpdate.membroId },
+        data: {
+          anamneseToken: memberUpdate.tokenHash,
+          anamneseTokenExpira: memberUpdate.expiresAt,
+        },
+      })
+    }
+  })
 
   if (
     shouldSendWelcome &&
@@ -452,9 +458,8 @@ export async function getAnamneseByToken(token: string) {
       anamneseToken: { in: [hashedToken, rawToken] },
       anamneseTokenExpira: { gt: new Date() },
     },
-    include: {
-      usuario: { select: { nome: true, email: true, onboardingCompleto: true } },
-      anamnese: true,
+    select: {
+      sexo: true,
     },
   })
 
@@ -462,24 +467,9 @@ export async function getAnamneseByToken(token: string) {
     throw new OnboardingServiceError(TOKEN_EXPIRY_ERROR, "INVALID_ANAMNESE_TOKEN", 404)
   }
 
-  const normalized = normalizeAnamneseRecord(
-    extractCanonicalAnamneseData(membro.anamnese)
-  )
-
-  if ("error" in normalized) {
-    throw new OnboardingServiceError("Dados de anamnese inválidos", "INVALID_ANAMNESE", 500)
-  }
-
-  if (membro.anamnese && normalized.changed) {
-    await prisma.anamnese.update({
-      where: { membroId: membro.id },
-      data: normalized.data,
-    })
-  }
-
   return {
     sexo: membro.sexo ?? null,
-    anamnese: membro.anamnese ? normalized.data : null,
+    anamnese: null,
   }
 }
 

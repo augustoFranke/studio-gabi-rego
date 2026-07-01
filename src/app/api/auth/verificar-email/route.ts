@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { rateLimitByKey } from "@/lib/rate-limit"
+import { isTimedTokenFormat } from "@/lib/auth-flow"
+import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import {
   OnboardingServiceError,
   verifyEmailToken,
@@ -18,6 +19,24 @@ export async function POST(request: Request) {
     if (!validation.success) {
       return NextResponse.json(
         { error: "Token não fornecido" },
+        { status: 400 }
+      )
+    }
+
+    const ipLimit = await rateLimitByIp(request, "auth:verify-email:ip", {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      )
+    }
+
+    if (!isTimedTokenFormat(validation.data.token)) {
+      return NextResponse.json(
+        { error: "Token inválido" },
         { status: 400 }
       )
     }

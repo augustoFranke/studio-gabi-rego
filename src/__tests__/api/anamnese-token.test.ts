@@ -39,6 +39,8 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/resend', () => resendMock)
 
 describe('Anamnese Token API - /api/anamnese-token', () => {
+  const validToken = 'a'.repeat(64)
+
   beforeEach(() => {
     vi.clearAllMocks()
     resendMock.isResendConfigured.mockReturnValue(true)
@@ -64,7 +66,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
   it('GET returns 404 when token is invalid or expired', async () => {
     prismaMock.membro.findFirst.mockResolvedValue(null)
 
-    const res = await GET(reqWithToken('bad-token'))
+    const res = await GET(reqWithToken(validToken))
 
     expect(res.status).toBe(404)
   })
@@ -78,7 +80,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       anamnese: null,
     })
 
-    const res = await GET(reqWithToken('t-1'))
+    const res = await GET(reqWithToken(validToken))
     const json = await res.json()
 
     expect(res.status).toBe(200)
@@ -86,7 +88,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     expect(json.anamnese).toBeNull()
   })
 
-  it('GET normalizes anamnese and persists self-heal updates', async () => {
+  it('GET does not disclose existing anamnese answers to bearer token holders', async () => {
     prismaMock.membro.findFirst.mockResolvedValue({
       id: 'm-1',
       usuarioId: 'u-1',
@@ -95,17 +97,13 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
       anamnese: { id: 'a-1', objetivo: '  Força  ', parq1: 'Sim' },
     })
 
-    const res = await GET(reqWithToken('t-1'))
+    const res = await GET(reqWithToken(validToken))
     const json = await res.json()
 
     expect(res.status).toBe(200)
-    expect(json.anamnese.objetivo).toBe('Força')
-    expect(prismaMock.anamnese.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { membroId: 'm-1' },
-        data: expect.objectContaining({ objetivo: 'Força' }),
-      })
-    )
+    expect(json.sexo).toBe('FEMININO')
+    expect(json.anamnese).toBeNull()
+    expect(prismaMock.anamnese.update).not.toHaveBeenCalled()
   })
 
   it('POST returns 400 when JSON body is invalid', async () => {
@@ -118,7 +116,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     })
 
     const res = await POST(
-      reqWithToken('t-1', {
+      reqWithToken(validToken, {
         method: 'POST',
         // Invalid JSON string will throw during request.json()
         body: '{',
@@ -138,7 +136,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     })
 
     const res = await POST(
-      reqWithToken('t-1', {
+      reqWithToken(validToken, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ altura: '165', pesoAtual: '60', objetivo: 'Força', role: 'MEMBRO' }),
@@ -178,7 +176,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     })
 
     const res = await POST(
-      reqWithToken('t-1', {
+      reqWithToken(validToken, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ altura: '165' }),
@@ -199,7 +197,7 @@ describe('Anamnese Token API - /api/anamnese-token', () => {
     })
 
     const res = await POST(
-      reqWithToken('t-1', {
+      reqWithToken(validToken, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pesoAtual: '61' }),
