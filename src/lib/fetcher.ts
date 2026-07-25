@@ -6,9 +6,9 @@
 import { fetchWithTimeout } from '@/lib/http'
 
 export type JsonPrimitive = string | number | boolean | null
-export type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[]
+type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[]
 
-export class FetchError extends Error {
+class FetchError extends Error {
   status: number
   info: string | JsonValue | undefined
 
