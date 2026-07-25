@@ -1,6 +1,6 @@
-export type PlanoCategoryKey = 'gabi' | 'estagiarios' | 'outros'
+type PlanoCategoryKey = 'gabi' | 'estagiarios' | 'outros'
 
-export type PlanoGroupKey = 'planosGabi' | 'planosEstagiarios' | 'planosOutros'
+type PlanoGroupKey = 'planosGabi' | 'planosEstagiarios' | 'planosOutros'
 
 export type PlanoTheme = {
   key: PlanoCategoryKey
