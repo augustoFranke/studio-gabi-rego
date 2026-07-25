@@ -135,7 +135,7 @@ export default function AgendaPage() {
               <Calendar className="size-5 text-primary" />
             </div>
             <div>
-              <CardTitle>Calendario de Aulas</CardTitle>
+              <CardTitle>Calendário de Aulas</CardTitle>
               <CardDescription>
                 Arraste membros para reorganizar ou clique para editar
               </CardDescription>
@@ -298,10 +298,10 @@ export default function AgendaPage() {
 function AgendaStats({ stats, isLoading }: AgendaStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      <AgendaStatCard title="Total de Aulas" value={stats.totalAgendamentos} description="no periodo selecionado" isLoading={isLoading} icon={<Calendar className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Total de Aulas" value={stats.totalAgendamentos} description="no período selecionado" isLoading={isLoading} icon={<Calendar className="size-4 text-muted-foreground" />} />
       <AgendaStatCard title="Membros Ativos" value={stats.uniqueMembros} description="com aulas agendadas" isLoading={isLoading} icon={<Users className="size-4 text-muted-foreground" />} />
-      <AgendaStatCard title="Horarios" value={stats.totalHours} description="diferentes utilizados" isLoading={isLoading} icon={<Clock className="size-4 text-muted-foreground" />} />
-      <AgendaStatCard title="Media por Dia" value={stats.avgPerDay} description="aulas por dia" isLoading={isLoading} icon={<TrendingUp className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Horários" value={stats.totalHours} description="diferentes utilizados" isLoading={isLoading} icon={<Clock className="size-4 text-muted-foreground" />} />
+      <AgendaStatCard title="Média por Dia" value={stats.avgPerDay} description="aulas por dia" isLoading={isLoading} icon={<TrendingUp className="size-4 text-muted-foreground" />} />
     </div>
   )
 }
