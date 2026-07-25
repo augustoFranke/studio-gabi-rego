@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronDownIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -174,7 +174,7 @@ export function SearchableSelect({
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+          <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
