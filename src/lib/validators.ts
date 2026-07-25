@@ -87,11 +87,6 @@ const moedaFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 })
-const dataFormatter = new Intl.DateTimeFormat('pt-BR')
-const dataHoraFormatter = new Intl.DateTimeFormat('pt-BR', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-})
 
 /**
  * Formata um valor monetário para o padrão brasileiro
@@ -100,24 +95,4 @@ const dataHoraFormatter = new Intl.DateTimeFormat('pt-BR', {
  */
 export function formatarMoeda(valor: number): string {
   return moedaFormatter.format(valor)
-}
-
-/**
- * Formata uma data para o padrão brasileiro
- * @param data - Data a ser formatada
- * @returns Data formatada (ex: 01/01/2024)
- */
-export function formatarData(data: Date | string): string {
-  const d = typeof data === 'string' ? new Date(data) : data
-  return dataFormatter.format(d)
-}
-
-/**
- * Formata uma data e hora para o padrão brasileiro
- * @param data - Data a ser formatada
- * @returns Data e hora formatadas (ex: 01/01/2024 às 14:30)
- */
-export function formatarDataHora(data: Date | string): string {
-  const d = typeof data === 'string' ? new Date(data) : data
-  return dataHoraFormatter.format(d)
 }
