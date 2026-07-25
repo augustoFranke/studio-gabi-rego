@@ -66,7 +66,7 @@ export type TrainingPDFExercise = {
   observacoes?: string
 }
 
-export type TrainingPDFSession = {
+type TrainingPDFSession = {
   name: string
   exercises: TrainingPDFExercise[]
 }
