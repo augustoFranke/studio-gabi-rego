@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatarCPF, formatarTelefone } from "@/lib/validators"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -42,18 +43,6 @@ interface MembroPageProps {
   }>
 }
 
-
-function formatCPF(cpf: string): string {
-  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
-}
-
-function formatPhone(phone: string): string {
-  const cleaned = phone.replace(/\D/g, "")
-  if (cleaned.length === 11) {
-    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
-  }
-  return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
-}
 
 function getStatusBadge(status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADO") {
   const variants: Record<typeof status, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
@@ -246,7 +235,7 @@ async function renderMembroPage({ params }: MembroPageProps) {
                 <p className="text-sm font-medium text-muted-foreground">CPF</p>
                 <p className="text-sm">
                   {membro.cpf ? (
-                    formatCPF(membro.cpf)
+                    formatarCPF(membro.cpf)
                   ) : (
                     <span className="text-muted-foreground">Não informado</span>
                   )}
@@ -291,7 +280,7 @@ async function renderMembroPage({ params }: MembroPageProps) {
               </p>
               <p className="text-sm">
                 {membro.telefone ? (
-                  formatPhone(membro.telefone)
+                  formatarTelefone(membro.telefone)
                 ) : (
                   <span className="text-muted-foreground">Não informado</span>
                 )}
