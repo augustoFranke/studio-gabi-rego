@@ -197,10 +197,6 @@ export function isProductionRuntime(): boolean {
   return process.env.NODE_ENV === 'production'
 }
 
-export function isDevelopmentRuntime(): boolean {
-  return process.env.NODE_ENV === 'development'
-}
-
 export function getAppBaseUrlConfig(origin?: string): string {
   const configuredUrl =
     normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL) ||
