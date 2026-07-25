@@ -4,7 +4,7 @@ import { DiaSemana, Prisma, StatusMembro } from '@prisma/client'
 import { DiaSemanaMap, MAX_CAPACITY_PER_SLOT, parseLocalDate } from '@/lib/schedule'
 import { ApiError } from '@/lib/api-error'
 
-export const agendamentoSelect = {
+const agendamentoSelect = {
   id: true,
   membroId: true,
   horarioId: true,
@@ -281,7 +281,7 @@ async function reconcileHorarioFixo(
   }
 }
 
-export async function validateHorarioFixoLimit(params: LimitCheckParams): Promise<LimitCheckResult> {
+async function validateHorarioFixoLimit(params: LimitCheckParams): Promise<LimitCheckResult> {
   const membro = await prisma.membro.findUnique({
     where: { id: params.membroId },
     select: {
