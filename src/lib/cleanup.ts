@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import type { PaymentArchiveSummary } from '@/lib/payment-export'
 
 export type CleanupSummary = {
   notificacoesDeleted: number
@@ -7,7 +6,6 @@ export type CleanupSummary = {
   importDryRunsDeleted: number
   agendamentosDeleted: number
   tokensCleared: number
-  pagamentosArchived: PaymentArchiveSummary
 }
 
 export async function runCleanup(): Promise<CleanupSummary> {
@@ -53,7 +51,6 @@ export async function runCleanup(): Promise<CleanupSummary> {
     importDryRunsDeleted,
     agendamentosDeleted,
     tokensCleared,
-    pagamentosArchived: { count: 0, csvPath: null },
   }
 }
 
