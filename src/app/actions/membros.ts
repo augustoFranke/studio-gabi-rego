@@ -3,6 +3,11 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { logError, safeErrorData } from '@/lib/observability/logger'
+import {
+  MEMBRO_DEACTIVATE_FAILED,
+  MEMBRO_STATUS_TOGGLE_FAILED,
+} from '@/lib/observability/events'
 
 export async function toggleMembroStatus(id: string, currentStatus: string) {
   try {
@@ -21,7 +26,7 @@ export async function toggleMembroStatus(id: string, currentStatus: string) {
     revalidatePath('/alunos')
     return { success: true, message: 'Status alterado com sucesso' }
   } catch (error) {
-    console.error('Erro ao alterar status do membro:', error)
+    logError(MEMBRO_STATUS_TOGGLE_FAILED, { membroId: id, ...safeErrorData(error) })
     return { success: false, message: 'Falha ao alterar status' }
   }
 }
@@ -41,7 +46,7 @@ export async function deleteMembro(id: string) {
     revalidatePath('/alunos')
     return { success: true, message: 'Aluno inativado com sucesso' }
   } catch (error) {
-    console.error('Erro ao inativar membro:', error)
+    logError(MEMBRO_DEACTIVATE_FAILED, { membroId: id, action: 'deleteMembro', ...safeErrorData(error) })
     return { success: false, message: 'Falha ao inativar aluno' }
   }
 }
@@ -61,7 +66,7 @@ export async function deactivateMembro(id: string) {
     revalidatePath('/alunos')
     return { success: true, message: 'Aluno inativado com sucesso' }
   } catch (error) {
-    console.error('Erro ao desativar membro:', error)
+    logError(MEMBRO_DEACTIVATE_FAILED, { membroId: id, action: 'deactivateMembro', ...safeErrorData(error) })
     return { success: false, message: 'Falha ao desativar membro' }
   }
 }
