@@ -24,6 +24,3 @@ export const redefinirSenhaSchema = z.object({
   senha: passwordPolicySchema,
 })
 
-export const validarTokenResetSchema = z.object({
-  token: z.string().min(1),
-})
