@@ -22,8 +22,8 @@ export {
   getDiaSemanaFromDay,
 } from '@/lib/dias-semana'
 
-export const SCHEDULE_START_HOUR = 5
-export const SCHEDULE_END_HOUR = 20
+const SCHEDULE_START_HOUR = 5
+const SCHEDULE_END_HOUR = 20
 export const MAX_CAPACITY_PER_SLOT = 10
 
 export const HOURS = Array.from(
@@ -47,7 +47,7 @@ export function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
 }
 
-export function isSchedulableHour(hour: number): boolean {
+function isSchedulableHour(hour: number): boolean {
   return Number.isInteger(hour) && hour >= SCHEDULE_START_HOUR && hour < SCHEDULE_END_HOUR
 }
 
@@ -88,7 +88,7 @@ export function getWeekDays(date: Date): Date[] {
   })
 }
 
-export function getCalendarDays(date: Date): Date[] {
+function getCalendarDays(date: Date): Date[] {
   const monthStart = startOfMonth(date)
   const monthEnd = endOfMonth(date)
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -175,7 +175,7 @@ export function navigateMonth(date: Date, direction: 'prev' | 'next'): Date {
   return direction === 'next' ? addMonths(date, 1) : subMonths(date, 1)
 }
 
-export function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
+function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
   return groupByMap(events, (event) => parseHourFromString(event.horaInicio))
 }
 
