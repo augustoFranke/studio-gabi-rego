@@ -35,7 +35,7 @@ type MemberProfileInput = {
   sexo?: 'MASCULINO' | 'FEMININO' | '' | null
 }
 
-export type NormalizedMemberProfileInput = {
+type NormalizedMemberProfileInput = {
   cpf: string | null
   rg: string | null | undefined
   telefone: string | null
