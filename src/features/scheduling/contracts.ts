@@ -1,7 +1,7 @@
 import { DiaSemana } from '@prisma/client'
 import { z } from 'zod'
 
-export const fullHourSchema = z
+const fullHourSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
 
