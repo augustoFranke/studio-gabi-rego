@@ -27,9 +27,9 @@ import type { OperationalEvent } from './events'
 // Types
 // ---------------------------------------------------------------------------
 
-export type LogLevel = 'info' | 'warn' | 'error'
+type LogLevel = 'info' | 'warn' | 'error'
 
-export interface LogPayload {
+interface LogPayload {
   timestamp: string
   level: LogLevel
   event: string
@@ -120,7 +120,7 @@ function isTestRuntime(): boolean {
  * @param event  - A stable event name from `observability/events` (or any string during migration)
  * @param data   - Free-form metadata attached to the log line. Sensitive keys are redacted automatically.
  */
-export function logEvent(
+function logEvent(
   level: LogLevel,
   event: OperationalEvent | string,
   data: Record<string, unknown> = {},
