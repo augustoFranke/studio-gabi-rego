@@ -49,6 +49,4 @@ export const agendamentosQuerySchema = z.object({
   return end.getTime() - start.getTime() <= 1000 * 60 * 60 * 24 * 45
 }, 'Intervalo de datas inválido')
 
-export type AgendamentoCreateInput = z.infer<typeof agendamentoCreateSchema>
 export type AgendamentoUpdateInput = z.infer<typeof agendamentoUpdateSchema>
-export type AgendamentosQueryInput = z.infer<typeof agendamentosQuerySchema>
