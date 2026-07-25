@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import { logWarn } from '@/lib/observability/logger'
 import { CRON_AUTH_FAILED } from '@/lib/observability/events'
 
-export type CronAuthFailureReason =
+type CronAuthFailureReason =
   | 'missing_secret'
   | 'missing_authorization_header'
   | 'malformed_authorization_header'
