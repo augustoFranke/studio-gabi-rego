@@ -22,4 +22,3 @@ export const pagamentosQuerySchema = z.object({
 })
 
 export type PagamentoCreateInput = z.infer<typeof pagamentoCreateSchema>
-export type PagamentosQueryInput = z.infer<typeof pagamentosQuerySchema>
