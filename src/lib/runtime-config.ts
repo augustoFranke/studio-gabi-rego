@@ -71,7 +71,7 @@ const optionalSchema = z.object({
 
 const runtimeConfigSchema = criticalSchema.merge(optionalSchema)
 
-export type RuntimeConfig = z.infer<typeof runtimeConfigSchema>
+type RuntimeConfig = z.infer<typeof runtimeConfigSchema>
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -142,8 +142,8 @@ export interface ReadinessSummary {
   email: boolean
 }
 
-export const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
-export const DEFAULT_APP_BASE_URL = 'https://studiogabirego.com'
+const DEFAULT_APP_TIMEZONE = 'America/Sao_Paulo'
+const DEFAULT_APP_BASE_URL = 'https://studiogabirego.com'
 
 function normalizeBaseUrl(value?: string | null) {
   if (!value) return null
