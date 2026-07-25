@@ -166,7 +166,7 @@ export async function processarAniversarios() {
   })
 }
 
-export async function atualizarPagamentosAtrasados() {
+async function atualizarPagamentosAtrasados() {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
@@ -185,7 +185,7 @@ export async function atualizarPagamentosAtrasados() {
   return pagamentosAtrasados.count
 }
 
-export async function sincronizarAgendamentosRecorrentes() {
+async function sincronizarAgendamentosRecorrentes() {
   const today = new Date()
   const startDate = subDays(today, 30)
   const endDate = addDays(today, 90)
