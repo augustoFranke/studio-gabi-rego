@@ -124,7 +124,7 @@ function AlunosFiltersContent({ search, status, plano, order, planos }: AlunosFi
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative w-full md:w-64">
+      <div className="relative w-full md:w-auto md:flex-1 md:min-w-48">
         <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
         <Input
           name="search"
@@ -198,14 +198,6 @@ function AlunosFiltersContent({ search, status, plano, order, planos }: AlunosFi
         </SelectContent>
       </Select>
 
-      <Button
-        type="button"
-        variant="secondary"
-        className="hover:bg-primary/10 hover:text-primary"
-        onClick={() => applyFilters({ search: searchValue, status: statusValue, plano: planoValue, order: orderValue })}
-      >
-        Filtrar
-      </Button>
       <Button
         type="button"
         variant="ghost"
