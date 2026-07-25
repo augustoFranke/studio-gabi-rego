@@ -9,6 +9,12 @@ import {
 import { enviarEmail, emailTemplates, isResendConfigured } from "@/lib/resend"
 import { createTimedToken, getAppBaseUrl, getTimedTokenLookup, hashTimedToken } from "@/lib/auth-flow"
 import { normalizeMemberProfileInput } from "@/lib/member-profile"
+import { logError, logWarn, safeErrorData } from "@/lib/observability/logger"
+import {
+  ANAMNESE_FIELDS_IGNORED,
+  PROVIDER_NOT_CONFIGURED,
+  WELCOME_EMAIL_FAILED,
+} from "@/lib/observability/events"
 
 const TOKEN_EXPIRY_ERROR = "Link inválido ou expirado. Solicite um novo link."
 
@@ -27,7 +33,7 @@ export type SignupInput = {
   anamnese?: Partial<CanonicalAnamneseData>
 }
 
-export type VerificationStep =
+type VerificationStep =
   | "dashboard"
   | "login"
   | "set_password"
@@ -57,7 +63,7 @@ function queueWelcomeEmail(nome: string | null | undefined, email: string | null
     assunto: "Bem-vindo(a) ao Studio Gabi Rego",
     html: emailTemplates.boasVindas(nome || "Aluno(a)"),
   }).catch((error) => {
-    console.error("Failed to send welcome email:", error)
+    logError(WELCOME_EMAIL_FAILED, safeErrorData(error))
   })
 }
 
@@ -442,7 +448,7 @@ export async function resendVerificationEmail(email: string, origin?: string): P
       ),
     })
   } else {
-    console.warn("Resend não configurado - envio de email ignorado.")
+    logWarn(PROVIDER_NOT_CONFIGURED, { provider: "resend", skipped: "verification_email" })
   }
 
   return {
@@ -492,7 +498,7 @@ async function saveAnamneseForMembro(params: {
   }
 
   if (sanitized.ignoredKeys.length > 0) {
-    console.warn("[anamnese_sanitize] Campos ignorados:", sanitized.ignoredKeys)
+    logWarn(ANAMNESE_FIELDS_IGNORED, { ignoredKeys: sanitized.ignoredKeys })
   }
 
   const shouldSendWelcome = !params.onboardingCompleto
@@ -548,7 +554,7 @@ export async function saveAnamneseByToken(token: string, payload: unknown) {
   }
 
   if (sanitized.ignoredKeys.length > 0) {
-    console.warn("[anamnese_sanitize] Campos ignorados:", sanitized.ignoredKeys)
+    logWarn(ANAMNESE_FIELDS_IGNORED, { ignoredKeys: sanitized.ignoredKeys })
   }
 
   const membro = await prisma.membro.findFirst({
