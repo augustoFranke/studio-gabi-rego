@@ -39,8 +39,11 @@ jobs:
       # remedy is downgrading to 14.2.35 (off the App Router). Leaving the gate
       # at `high` makes it unsatisfiable and blocks every PR from merging.
       # Restore `--audit-level=high` once Next.js ships a patched release.
+      # Kept as a literal command rather than `npm run audit:prod` so the
+      # enforced level lives in this workflow. A package.json script is edited
+      # by routine dependency PRs, where a weakened gate would be easy to miss.
       - name: Audit production dependencies
-        run: npm run audit:prod
+        run: npm audit --omit=dev --audit-level=critical
 
       - name: Prisma generate
         run: npx prisma generate
