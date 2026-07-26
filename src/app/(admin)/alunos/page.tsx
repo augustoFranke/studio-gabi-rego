@@ -25,6 +25,7 @@ import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
 import { normalizeEmail } from "@/lib/email"
 import { formatarCPF } from "@/lib/validators"
+import { MembroStatusBadge } from "@/components/ui/status-badge"
 import { unstable_cache } from "next/cache"
 import { Suspense } from "react"
 
@@ -227,15 +228,7 @@ export default async function MembrosPage({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            membro.status === 'ATIVO' ? "default" :
-                              membro.status === 'INATIVO' ? "destructive" : "secondary"
-                          }
-                          className={membro.status === 'ATIVO' ? "bg-primary" : ""}
-                        >
-                          {membro.status}
-                        </Badge>
+                        <MembroStatusBadge status={membro.status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
