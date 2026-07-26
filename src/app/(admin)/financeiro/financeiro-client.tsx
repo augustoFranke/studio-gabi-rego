@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useEffectEvent, useMemo, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { type SearchableSelectOption } from "@/components/ui/searchable-select"
 import {
@@ -574,50 +574,33 @@ export function FinanceiroClient({
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
-            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <CreditCard className="size-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPlanos}</div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Clock className="size-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pagamentosPendentes}</div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md hover:shadow-destructive/5 transition-shadow border-destructive/10">
-          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atrasados</CardTitle>
-            <div className="size-9 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-colors">
-              <AlertCircle className="size-4 text-destructive" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.pagamentosAtrasados}</div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Wallet className="size-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{formatCurrency(stats.receitaMes)}</div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Planos Ativos"
+          value={stats.totalPlanos}
+          description="Planos disponíveis"
+          icon={CreditCard}
+        />
+        <StatCard
+          title="Pendentes"
+          value={stats.pagamentosPendentes}
+          description="Aguardando pagamento"
+          icon={Clock}
+          tone={stats.pagamentosPendentes > 0 ? "warning" : "default"}
+        />
+        <StatCard
+          title="Atrasados"
+          value={stats.pagamentosAtrasados}
+          description="Vencidos e não pagos"
+          icon={AlertCircle}
+          tone={stats.pagamentosAtrasados > 0 ? "destructive" : "default"}
+        />
+        <StatCard
+          title="Receita do Mês"
+          value={formatCurrency(stats.receitaMes)}
+          description="Total recebido este mês"
+          icon={Wallet}
+          tone={Number(stats.receitaMes) > 0 ? "success" : "default"}
+        />
       </div>
 
       <Tabs defaultValue="pagamentos" className="space-y-4">
