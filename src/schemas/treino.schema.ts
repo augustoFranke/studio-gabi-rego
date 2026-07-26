@@ -67,7 +67,3 @@ export const trainingPdfSchema = z.object({
 })
 
 export type ExercicioInput = z.infer<typeof exercicioSchema>
-export type FichaCreateInput = z.infer<typeof fichaCreateSchema>
-export type FichaUpdateInput = z.infer<typeof fichaUpdateSchema>
-export type TreinoTemplateInput = z.infer<typeof treinoTemplateSchema>
-export type TrainingPdfInput = z.infer<typeof trainingPdfSchema>

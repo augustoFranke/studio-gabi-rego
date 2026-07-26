@@ -90,6 +90,10 @@ export const HORARIO_GET_OR_CREATE_FAILED = 'horario_get_or_create_failed' as co
 export const MEMBRO_UPDATE_FAILED = 'membro_update_failed' as const
 export const MEMBRO_PROFILE_LINK_FAILED = 'membro_profile_link_failed' as const
 export const MEMBRO_ANAMNESE_LINK_FAILED = 'membro_anamnese_link_failed' as const
+export const MEMBRO_STATUS_TOGGLE_FAILED = 'membro_status_toggle_failed' as const
+export const MEMBRO_DEACTIVATE_FAILED = 'membro_deactivate_failed' as const
+export const WELCOME_EMAIL_FAILED = 'welcome_email_failed' as const
+export const ANAMNESE_FIELDS_IGNORED = 'anamnese_fields_ignored' as const
 export const API_UNHANDLED_ERROR = 'api_unhandled_error' as const
 
 // ---------------------------------------------------------------------------
@@ -138,4 +142,8 @@ export type OperationalEvent =
   | typeof MEMBRO_UPDATE_FAILED
   | typeof MEMBRO_PROFILE_LINK_FAILED
   | typeof MEMBRO_ANAMNESE_LINK_FAILED
+  | typeof MEMBRO_STATUS_TOGGLE_FAILED
+  | typeof MEMBRO_DEACTIVATE_FAILED
+  | typeof WELCOME_EMAIL_FAILED
+  | typeof ANAMNESE_FIELDS_IGNORED
   | typeof API_UNHANDLED_ERROR

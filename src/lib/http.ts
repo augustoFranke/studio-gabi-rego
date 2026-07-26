@@ -12,7 +12,7 @@ export type FetchWithTimeoutInit = RequestInit & {
   timeoutMs?: number
 }
 
-export type FetchJsonInit = FetchWithTimeoutInit & {
+type FetchJsonInit = FetchWithTimeoutInit & {
   json?: unknown
 }
 

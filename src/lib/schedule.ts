@@ -14,7 +14,6 @@ import {
   subMonths,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { DiaSemana } from '@/types/schedule'
 
 export {
   DiaSemanaMap,
@@ -23,19 +22,14 @@ export {
   getDiaSemanaFromDay,
 } from '@/lib/dias-semana'
 
-export const SCHEDULE_START_HOUR = 5
-export const SCHEDULE_END_HOUR = 20
+const SCHEDULE_START_HOUR = 5
+const SCHEDULE_END_HOUR = 20
 export const MAX_CAPACITY_PER_SLOT = 10
 
 export const HOURS = Array.from(
   { length: SCHEDULE_END_HOUR - SCHEDULE_START_HOUR },
   (_, i) => SCHEDULE_START_HOUR + i
 )
-
-export interface TimeSlot {
-  hour: number
-  label: string
-}
 
 export interface ScheduleEvent {
   id: string
@@ -49,17 +43,11 @@ export interface ScheduleEvent {
   observacao: string | null
 }
 
-export interface DaySchedule {
-  date: Date
-  diaSemana: DiaSemana
-  slots: Map<number, ScheduleEvent[]>
-}
-
 export function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
 }
 
-export function isSchedulableHour(hour: number): boolean {
+function isSchedulableHour(hour: number): boolean {
   return Number.isInteger(hour) && hour >= SCHEDULE_START_HOUR && hour < SCHEDULE_END_HOUR
 }
 
@@ -92,13 +80,6 @@ function groupByMap<T, K>(items: T[], getKey: (item: T) => K): Map<K, T[]> {
   return grouped
 }
 
-export function getTimeSlots(): TimeSlot[] {
-  return HOURS.map((hour) => ({
-    hour,
-    label: formatHour(hour),
-  }))
-}
-
 export function getWeekDays(date: Date): Date[] {
   const start = startOfWeek(date, { weekStartsOn: 1 })
   return eachDayOfInterval({
@@ -107,14 +88,7 @@ export function getWeekDays(date: Date): Date[] {
   })
 }
 
-export function getMonthDays(date: Date): Date[] {
-  return eachDayOfInterval({
-    start: startOfMonth(date),
-    end: endOfMonth(date),
-  })
-}
-
-export function getCalendarDays(date: Date): Date[] {
+function getCalendarDays(date: Date): Date[] {
   const monthStart = startOfMonth(date)
   const monthEnd = endOfMonth(date)
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -201,7 +175,7 @@ export function navigateMonth(date: Date, direction: 'prev' | 'next'): Date {
   return direction === 'next' ? addMonths(date, 1) : subMonths(date, 1)
 }
 
-export function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
+function groupEventsByHour(events: ScheduleEvent[]): Map<number, ScheduleEvent[]> {
   return groupByMap(events, (event) => parseHourFromString(event.horaInicio))
 }
 
@@ -216,21 +190,6 @@ export function groupEventsByDateAndHour(
   }
 
   return grouped
-}
-
-export function countEventsByDate(events: ScheduleEvent[]): Map<string, number> {
-  const groupedByDate = groupByMap(events, (event) => formatDateISO(event.data))
-  const counts = new Map<string, number>()
-
-  for (const [dateKey, dateEvents] of groupedByDate) {
-    counts.set(dateKey, dateEvents.length)
-  }
-
-  return counts
-}
-
-export function hasCapacity(currentCount: number): boolean {
-  return currentCount < MAX_CAPACITY_PER_SLOT
 }
 
 export function getSlotCapacityInfo(currentCount: number): {

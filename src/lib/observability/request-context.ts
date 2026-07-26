@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto'
 // Types
 // ---------------------------------------------------------------------------
 
-export type ExecutionSource = 'request' | 'cron' | 'server_action'
+type ExecutionSource = 'request' | 'cron' | 'server_action'
 
 export interface ExecutionContext {
   /** App-owned correlation identifier (UUID v4). */

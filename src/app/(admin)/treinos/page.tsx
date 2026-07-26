@@ -88,7 +88,21 @@ export default async function TreinosPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-md border border-border/50 bg-card">
+        <Card className="border-primary/10">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Dumbbell className="size-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Fichas de Treino</CardTitle>
+                <CardDescription>
+                  Todas as fichas de treino cadastradas
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -151,7 +165,8 @@ export default async function TreinosPage() {
               })}
             </TableBody>
           </Table>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

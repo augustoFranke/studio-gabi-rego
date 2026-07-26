@@ -78,7 +78,7 @@ function normalizeValue(value: unknown): { value: string | null } | { error: tru
   return { error: true }
 }
 
-export type SanitizedAnamnesePayload =
+type SanitizedAnamnesePayload =
   | { data: Partial<CanonicalAnamneseData>; ignoredKeys: string[] }
   | { error: typeof INVALID_ANAMNESE_ERROR }
 

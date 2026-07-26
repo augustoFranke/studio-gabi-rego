@@ -1,10 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { ReactNode } from "react"
 import { Users, Calendar, DollarSign, TrendingUp, AlertCircle, Clock, type LucideIcon } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import { StatCard } from "@/components/ui/stat-card"
+import { PagamentoStatusBadge, type PagamentoStatus } from "@/components/ui/status-badge"
 import { unstable_cache } from "next/cache"
 import { DiaSemana } from "@prisma/client"
 import {
@@ -29,14 +30,6 @@ const dayMap: DiaSemana[] = [
   DiaSemana.SABADO,
 ]
 
-interface MetricCardProps {
-  title: string
-  value: ReactNode
-  description?: string
-  icon: LucideIcon
-  progress?: number
-}
-
 interface NextAppointment {
   id: string
   presente: boolean | null
@@ -46,7 +39,7 @@ interface NextAppointment {
 
 interface PendingPayment {
   id: string
-  status: string
+  status: PagamentoStatus
   valor: unknown
   dataVencimento: Date
   payerNome: string | null
@@ -238,35 +231,17 @@ function DashboardMetrics({
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <MetricCard title="Alunos Ativos" value={membrosAtivos} description="Total de alunos ativos" icon={Users} />
-      <MetricCard title="Aulas Hoje" value={agendamentosHoje} description="Agendamentos para hoje" icon={Calendar} />
-      <MetricCard title="Receita do Mês" value={formatCurrency(receitaMes)} description="Total recebido este mês" icon={DollarSign} />
-      <MetricCard title="Taxa de Ocupação" value={`${ocupacaoHoje}%`} icon={TrendingUp} progress={ocupacaoHoje} />
+      <StatCard title="Alunos Ativos" value={membrosAtivos} description="Total de alunos ativos" icon={Users} />
+      <StatCard title="Aulas Hoje" value={agendamentosHoje} description="Agendamentos para hoje" icon={Calendar} />
+      <StatCard
+        title="Receita do Mês"
+        value={formatCurrency(receitaMes)}
+        description="Total recebido este mês"
+        icon={DollarSign}
+        tone={receitaMes > 0 ? "success" : "default"}
+      />
+      <StatCard title="Taxa de Ocupação" value={`${ocupacaoHoje}%`} description="Da capacidade de hoje" icon={TrendingUp} progress={ocupacaoHoje} />
     </div>
-  )
-}
-
-function MetricCard({ title, value, description, icon: Icon, progress }: MetricCardProps) {
-  return (
-    <Card className="group hover:shadow-md hover:shadow-primary/5 transition-shadow border-primary/10">
-      <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-          <Icon className="size-4 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
-        {typeof progress === "number" ? (
-          <div className="flex items-center pt-1">
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-[width] duration-500" style={{ width: `${Math.min(progress, 100)}%` }} />
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
   )
 }
 
@@ -336,14 +311,12 @@ function PendingPayments({ payments }: { payments: PendingPayment[] }) {
           {payments.length > 0 ? payments.map((pagamento) => (
             <div key={pagamento.id} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 last:pb-0">
               <div className="flex flex-col">
-                <span className="font-medium text-sm">{pagamento.membro?.usuario?.nome || pagamento.payerNome || 'Pagador nao vinculado'}</span>
+                <span className="font-medium text-sm">{pagamento.membro?.usuario?.nome || pagamento.payerNome || 'Pagador não vinculado'}</span>
                 <span className="text-xs text-muted-foreground">Vence em {format(new Date(pagamento.dataVencimento), "dd/MM/yyyy")}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="font-bold text-sm">{formatCurrency(Number(pagamento.valor))}</span>
-                <Badge variant={pagamento.status === 'ATRASADO' ? "destructive" : "secondary"} className="text-[10px] h-5">
-                  {pagamento.status}
-                </Badge>
+                <PagamentoStatusBadge status={pagamento.status} className="text-[10px] h-5" />
               </div>
             </div>
           )) : <EmptyDashboardList icon={DollarSign} message="Nenhum pagamento pendente encontrado." />}

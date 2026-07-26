@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo } from 'react'
-import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatCard } from '@/components/ui/stat-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
@@ -135,7 +135,7 @@ export default function AgendaPage() {
               <Calendar className="size-5 text-primary" />
             </div>
             <div>
-              <CardTitle>Calendario de Aulas</CardTitle>
+              <CardTitle>Calendário de Aulas</CardTitle>
               <CardDescription>
                 Arraste membros para reorganizar ou clique para editar
               </CardDescription>
@@ -298,39 +298,11 @@ export default function AgendaPage() {
 function AgendaStats({ stats, isLoading }: AgendaStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      <AgendaStatCard title="Total de Aulas" value={stats.totalAgendamentos} description="no periodo selecionado" isLoading={isLoading} icon={<Calendar className="size-4 text-muted-foreground" />} />
-      <AgendaStatCard title="Membros Ativos" value={stats.uniqueMembros} description="com aulas agendadas" isLoading={isLoading} icon={<Users className="size-4 text-muted-foreground" />} />
-      <AgendaStatCard title="Horarios" value={stats.totalHours} description="diferentes utilizados" isLoading={isLoading} icon={<Clock className="size-4 text-muted-foreground" />} />
-      <AgendaStatCard title="Media por Dia" value={stats.avgPerDay} description="aulas por dia" isLoading={isLoading} icon={<TrendingUp className="size-4 text-muted-foreground" />} />
+      <StatCard title="Total de Aulas" value={stats.totalAgendamentos} description="no período selecionado" isLoading={isLoading} icon={Calendar} />
+      <StatCard title="Membros Ativos" value={stats.uniqueMembros} description="com aulas agendadas" isLoading={isLoading} icon={Users} />
+      <StatCard title="Horários" value={stats.totalHours} description="diferentes utilizados" isLoading={isLoading} icon={Clock} />
+      <StatCard title="Média por Dia" value={stats.avgPerDay} description="aulas por dia" isLoading={isLoading} icon={TrendingUp} />
     </div>
   )
 }
 
-function AgendaStatCard({
-  title,
-  value,
-  description,
-  isLoading,
-  icon,
-}: {
-  title: string
-  value: number
-  description: string
-  isLoading: boolean
-  icon: ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {isLoading ? <Skeleton className="h-8 w-16" /> : value}
-        </div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}

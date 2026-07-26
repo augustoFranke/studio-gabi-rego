@@ -1,4 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatarCPF, formatarTelefone } from "@/lib/validators"
+import {
+  MembroStatusBadge,
+  PagamentoStatusBadge,
+  type MembroStatus,
+  type PagamentoStatus,
+} from "@/components/ui/status-badge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -17,10 +24,7 @@ import {
   Calendar,
   CreditCard,
   FileText,
-  Check,
   Clock,
-  AlertCircle,
-  XCircle,
   Pencil,
   ClipboardList
 } from "lucide-react"
@@ -43,41 +47,12 @@ interface MembroPageProps {
 }
 
 
-function formatCPF(cpf: string): string {
-  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+function getStatusBadge(status: PagamentoStatus) {
+  return <PagamentoStatusBadge status={status} />
 }
 
-function formatPhone(phone: string): string {
-  const cleaned = phone.replace(/\D/g, "")
-  if (cleaned.length === 11) {
-    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
-  }
-  return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
-}
-
-function getStatusBadge(status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADO") {
-  const variants: Record<typeof status, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
-    PAGO: { variant: "default", icon: <Check className="size-3" />, label: "Pago" },
-    PENDENTE: { variant: "secondary", icon: <Clock className="size-3" />, label: "Pendente" },
-    ATRASADO: { variant: "destructive", icon: <AlertCircle className="size-3" />, label: "Atrasado" },
-    CANCELADO: { variant: "outline", icon: <XCircle className="size-3" />, label: "Cancelado" },
-  }
-  const { variant, icon, label } = variants[status]
-  return (
-    <Badge variant={variant} className="gap-1">
-      {icon}
-      {label}
-    </Badge>
-  )
-}
-
-function getMemberStatusBadge(status: "ATIVO" | "INATIVO" | "PENDENTE") {
-  const variants: Record<typeof status, "default" | "destructive" | "secondary"> = {
-    ATIVO: "default",
-    INATIVO: "destructive",
-    PENDENTE: "secondary",
-  }
-  return <Badge variant={variants[status]}>{status}</Badge>
+function getMemberStatusBadge(status: MembroStatus) {
+  return <MembroStatusBadge status={status} />
 }
 
 export default async function MembroPage(props: MembroPageProps) {
@@ -246,7 +221,7 @@ async function renderMembroPage({ params }: MembroPageProps) {
                 <p className="text-sm font-medium text-muted-foreground">CPF</p>
                 <p className="text-sm">
                   {membro.cpf ? (
-                    formatCPF(membro.cpf)
+                    formatarCPF(membro.cpf)
                   ) : (
                     <span className="text-muted-foreground">Não informado</span>
                   )}
@@ -291,7 +266,7 @@ async function renderMembroPage({ params }: MembroPageProps) {
               </p>
               <p className="text-sm">
                 {membro.telefone ? (
-                  formatPhone(membro.telefone)
+                  formatarTelefone(membro.telefone)
                 ) : (
                   <span className="text-muted-foreground">Não informado</span>
                 )}

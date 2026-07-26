@@ -2,11 +2,7 @@ import { NextResponse } from "next/server"
 import { withApiAuth } from "@/lib/api"
 import { rateLimitByIp, rateLimitByKey } from "@/lib/rate-limit"
 import { issuePasswordResetLink } from "@/services/account-recovery.service"
-import { z } from "zod"
-
-const resetRequestSchema = z.object({
-  usuarioId: z.string().min(1),
-})
+import { enviarResetSenhaSchema } from "@/schemas/auth.schema"
 
 export async function POST(request: Request) {
   return withApiAuth(async () => {
@@ -21,7 +17,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const validation = resetRequestSchema.safeParse(await request.json())
+    const validation = enviarResetSenhaSchema.safeParse(await request.json())
     if (!validation.success) {
       return NextResponse.json(
         { error: "ID do usuário é obrigatório" },

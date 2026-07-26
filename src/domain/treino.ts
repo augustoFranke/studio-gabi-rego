@@ -1,14 +1,3 @@
-export type TreinoExerciseInput = {
-  id?: string
-  sessao?: string
-  nome?: string
-  grupoMuscular?: string
-  series?: string | number
-  repeticoes?: string
-  descanso?: string
-  observacoes?: string
-}
-
 export type TreinoExercise = {
   id: string
   sessao: string
@@ -77,7 +66,7 @@ export type TrainingPDFExercise = {
   observacoes?: string
 }
 
-export type TrainingPDFSession = {
+type TrainingPDFSession = {
   name: string
   exercises: TrainingPDFExercise[]
 }

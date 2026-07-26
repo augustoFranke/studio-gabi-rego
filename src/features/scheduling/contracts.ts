@@ -1,7 +1,7 @@
 import { DiaSemana } from '@prisma/client'
 import { z } from 'zod'
 
-export const fullHourSchema = z
+const fullHourSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):00$/, 'Informe uma hora cheia válida')
 
@@ -49,6 +49,4 @@ export const agendamentosQuerySchema = z.object({
   return end.getTime() - start.getTime() <= 1000 * 60 * 60 * 24 * 45
 }, 'Intervalo de datas inválido')
 
-export type AgendamentoCreateInput = z.infer<typeof agendamentoCreateSchema>
 export type AgendamentoUpdateInput = z.infer<typeof agendamentoUpdateSchema>
-export type AgendamentosQueryInput = z.infer<typeof agendamentosQuerySchema>

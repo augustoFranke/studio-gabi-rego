@@ -11,7 +11,7 @@ import type { AnamneseFormData } from "@/lib/anamnese"
 
 export type AnamneseSectionKey = "basic" | "medical" | "parq" | "experience"
 
-export type AnamneseSectionsState = Record<AnamneseSectionKey, boolean>
+type AnamneseSectionsState = Record<AnamneseSectionKey, boolean>
 
 interface AnamneseSectionProps {
   formData: AnamneseFormData

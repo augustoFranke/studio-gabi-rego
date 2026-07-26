@@ -24,12 +24,3 @@ export const redefinirSenhaSchema = z.object({
   senha: passwordPolicySchema,
 })
 
-export const validarTokenResetSchema = z.object({
-  token: z.string().min(1),
-})
-
-export type CadastroInput = z.infer<typeof cadastroSchema>
-export type ReenviarVerificacaoInput = z.infer<typeof reenviarVerificacaoSchema>
-export type EnviarResetSenhaInput = z.infer<typeof enviarResetSenhaSchema>
-export type RedefinirSenhaInput = z.infer<typeof redefinirSenhaSchema>
-export type ValidarTokenResetInput = z.infer<typeof validarTokenResetSchema>

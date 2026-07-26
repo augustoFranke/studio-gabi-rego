@@ -24,6 +24,8 @@ import { Prisma, StatusMembro } from "@prisma/client"
 import { Pagination } from "@/components/ui/pagination-custom"
 import { AlunosFilters } from "@/components/admin/alunos-filters"
 import { normalizeEmail } from "@/lib/email"
+import { formatarCPF } from "@/lib/validators"
+import { MembroStatusBadge } from "@/components/ui/status-badge"
 import { unstable_cache } from "next/cache"
 import { Suspense } from "react"
 
@@ -199,7 +201,7 @@ export default async function MembrosPage({
                         <div className="flex flex-col">
                           <span className="font-medium">{membro.usuario.nome}</span>
                           <span className="text-xs text-muted-foreground">
-                            {membro.cpf ? membro.cpf : "Não informado"}
+                            {membro.cpf ? formatarCPF(membro.cpf) : "Não informado"}
                           </span>
                         </div>
                       </TableCell>
@@ -226,15 +228,7 @@ export default async function MembrosPage({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            membro.status === 'ATIVO' ? "default" :
-                              membro.status === 'INATIVO' ? "destructive" : "secondary"
-                          }
-                          className={membro.status === 'ATIVO' ? "bg-primary" : ""}
-                        >
-                          {membro.status}
-                        </Badge>
+                        <MembroStatusBadge status={membro.status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

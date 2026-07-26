@@ -87,7 +87,7 @@ function PlanoCardComponent({ plano, theme, onEdit, onToggleAtivo, onDelete }: P
   )
 }
 
-export const PlanoCard = memo(PlanoCardComponent)
+const PlanoCard = memo(PlanoCardComponent)
 
 type PlanoSectionProps = {
   theme: PlanoTheme

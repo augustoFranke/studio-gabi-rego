@@ -4,7 +4,7 @@ export const USER_ROLES = ['ADMIN', 'MEMBRO'] as const
 
 export type UserRole = (typeof USER_ROLES)[number]
 
-export type AppSessionUser = NonNullable<Session['user']> & {
+type AppSessionUser = NonNullable<Session['user']> & {
   id: string
   role: UserRole
   membroId?: string
@@ -14,7 +14,7 @@ export type AppSession = Session & {
   user: AppSessionUser
 }
 
-export function isUserRole(value: unknown): value is UserRole {
+function isUserRole(value: unknown): value is UserRole {
   return value === 'ADMIN' || value === 'MEMBRO'
 }
 
