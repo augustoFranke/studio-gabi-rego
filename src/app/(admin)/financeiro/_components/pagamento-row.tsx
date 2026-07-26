@@ -1,8 +1,9 @@
 import { memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PagamentoStatusBadge } from "@/components/ui/status-badge"
 import { TableCell, TableRow } from "@/components/ui/table"
-import { Pencil, Trash2, CreditCard, Check, Clock, AlertCircle, XCircle } from "lucide-react"
+import { Pencil, Trash2, CreditCard, Check } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { formatDateBR, parseDateFromAPI } from "@/lib/schedule"
 import type { Pagamento } from "./types"
@@ -12,19 +13,7 @@ function formatDate(date: string): string {
 }
 
 function getStatusBadge(status: Pagamento["status"]) {
-  const variants: Record<Pagamento["status"], { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode; label: string }> = {
-    PAGO: { variant: "default", icon: <Check className="size-3" />, label: "Pago" },
-    PENDENTE: { variant: "secondary", icon: <Clock className="size-3" />, label: "Pendente" },
-    ATRASADO: { variant: "destructive", icon: <AlertCircle className="size-3" />, label: "Atrasado" },
-    CANCELADO: { variant: "outline", icon: <XCircle className="size-3" />, label: "Cancelado" },
-  }
-  const { variant, icon, label } = variants[status]
-  return (
-    <Badge variant={variant} className={`gap-1 ${variant === 'default' ? 'bg-primary' : ''}`}>
-      {icon}
-      {label}
-    </Badge>
-  )
+  return <PagamentoStatusBadge status={status} />
 }
 
 type PagamentoRowProps = {
