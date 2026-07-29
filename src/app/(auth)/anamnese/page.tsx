@@ -302,7 +302,7 @@ function AnamneseHeader() {
       />
       <div className="flex items-center justify-center gap-2 mb-4">
         <div className="size-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">4</div>
-        <span className="text-xs text-orange-500 font-medium">Anamnese</span>
+        <span className="text-xs text-primary-strong font-medium">Anamnese</span>
       </div>
       <h1 className="text-2xl font-bold text-foreground">Anamnese</h1>
       <p className="text-muted-foreground text-sm mt-1">
