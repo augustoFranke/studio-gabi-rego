@@ -27,6 +27,7 @@ export interface SearchableSelectOption {
 }
 
 interface SearchableSelectProps {
+  id?: string
   value?: string
   options: SearchableSelectOption[]
   onValueChange: (value: string) => void
@@ -37,6 +38,8 @@ interface SearchableSelectProps {
   className?: string
   contentClassName?: string
   renderOption?: (option: SearchableSelectOption) => ReactNode
+  "aria-invalid"?: boolean
+  "aria-describedby"?: string
 }
 
 function normalizeSearchText(value: string) {
@@ -48,9 +51,12 @@ function normalizeSearchText(value: string) {
 }
 
 export function SearchableSelect({
+  id,
   value,
   options,
   onValueChange,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
   placeholder = "Selecione...",
   searchPlaceholder = "Buscar...",
   emptyMessage = "Nenhuma opção encontrada.",
@@ -161,11 +167,14 @@ export function SearchableSelect({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedby}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
         >

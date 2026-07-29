@@ -29,7 +29,7 @@ const TimeSlotBase = function TimeSlot({
   date,
   hour,
   agendamentos,
-  isEditable = false,
+  isEditable: isEditableProp,
   onSlotClick,
   onMemberClick,
   onDrop,
@@ -39,13 +39,18 @@ const TimeSlotBase = function TimeSlot({
   draggingId,
   onDragStart,
   onDragEnd,
-  compact = false,
+  compact: compactProp,
 }: TimeSlotProps) {
+  // Hoisted out of the parameter list: React Compiler bails on destructuring
+  // defaults, which would leave this component unmemoized.
+  const isEditable = isEditableProp ?? false
+  const compact = compactProp ?? false
+
   const capacity = getSlotCapacityInfo(agendamentos.length)
   const hourLabel = `${hour.toString().padStart(2, '0')}:00`
   const capacityBackground = capacity.isFull
-    ? 'bg-red-50/40 dark:bg-red-950/20'
-    : 'bg-emerald-50/40 dark:bg-emerald-950/15'
+    ? 'bg-destructive/5'
+    : 'bg-success/5'
 
   const handleDragStart = useCallback((agendamento: Agendamento) => (e: React.DragEvent) => {
     e.dataTransfer.setData('agendamentoId', agendamento.id)
@@ -131,6 +136,7 @@ const TimeSlotBase = function TimeSlot({
             <button
               type="button"
               onClick={handleSlotClick}
+              aria-label="Adicionar agendamento"
               className="w-full h-full min-h-[32px] flex items-center justify-center text-muted-foreground hover:bg-accent rounded transition-colors"
             >
               <Plus className="size-3" />
@@ -197,7 +203,7 @@ const TimeSlotBase = function TimeSlot({
             <span className="text-sm">Adicionar</span>
           </button>
         ) : (
-          <div className="w-full h-full min-h-[44px] flex items-center justify-center text-muted-foreground/50 text-sm">
+          <div className="w-full h-full min-h-[44px] flex items-center justify-center text-muted-foreground text-sm">
             Sem agendamentos
           </div>
         )}
@@ -219,8 +225,9 @@ const TimeSlotBase = function TimeSlot({
         >
           <span
             className={cn(
-              capacity.isFull && 'text-red-600 font-medium',
-              capacity.percentage >= 70 && !capacity.isFull && 'text-yellow-600'
+              'tabular-nums',
+              capacity.isFull && 'text-destructive font-medium',
+              capacity.percentage >= 70 && !capacity.isFull && 'text-warning-strong'
             )}
           >
             {agendamentos.length}/{capacity.total}

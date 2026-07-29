@@ -170,7 +170,7 @@ export default async function TreinoDetalhesPage({ params }: PageProps) {
           // Extract just the letter from session name (e.g., "A - Costas" → "A")
           const sessionLetter = sessao.charAt(0)
           return (
-          <Card key={sessao} className="relative overflow-hidden shadow-[inset_4px_0_0_hsl(var(--primary))]">
+          <Card key={sessao} className="relative overflow-hidden shadow-[inset_4px_0_0_var(--primary)]">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-sm">

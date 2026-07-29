@@ -19,6 +19,7 @@ import { formatCurrency } from "@/lib/currency"
 import type { FinanceiroStats, Plano, Pagamento, Membro } from "./_components/types"
 import { PagamentosTab } from "./_components/pagamentos-tab"
 import { PlanosTab } from "./_components/planos-tab"
+import { DeletePlanoDialog } from "./_components/delete-plano-dialog"
 
 // Helper functions
 
@@ -68,6 +69,9 @@ export function FinanceiroClient({
   const [showDeletePagamentoDialog, setShowDeletePagamentoDialog] = useState(false)
   const [pagamentoToDelete, setPagamentoToDelete] = useState<Pagamento | null>(null)
   const [deletingPagamento, setDeletingPagamento] = useState(false)
+  const [showDeletePlanoDialog, setShowDeletePlanoDialog] = useState(false)
+  const [planoToDelete, setPlanoToDelete] = useState<Plano | null>(null)
+  const [deletingPlano, setDeletingPlano] = useState(false)
 
   // Form states for Plano
   const [planoForm, setPlanoForm] = useState({
@@ -273,8 +277,30 @@ export function FinanceiroClient({
     return () => clearTimeout(timer)
   }, [filterStatus, searchPagamento, sortPagamento])
 
+  // Mirrors the committed list query so refresh handlers stay referentially
+  // stable and do not invalidate the memoized rows on every keystroke.
+  const listQueryRef = useRef({
+    page: currentPage,
+    search: searchPagamento,
+    status: filterStatus,
+    sort: sortPagamento,
+  })
+  useEffect(() => {
+    listQueryRef.current = {
+      page: currentPage,
+      search: searchPagamento,
+      status: filterStatus,
+      sort: sortPagamento,
+    }
+  }, [currentPage, searchPagamento, filterStatus, sortPagamento])
+
+  const refreshPagamentos = useCallback(() => {
+    const { page, search, status, sort } = listQueryRef.current
+    fetchPagamentos(page, search, status, sort)
+  }, [fetchPagamentos])
+
   // Plano handlers
-  const handleOpenPlanoDialog = (plano?: Plano) => {
+  const handleOpenPlanoDialog = useCallback((plano?: Plano) => {
     if (plano) {
       setEditingPlano(plano)
       setPlanoForm({
@@ -296,7 +322,7 @@ export function FinanceiroClient({
     }
     setPlanoErrors({})
     setPlanoDialogOpen(true)
-  }
+  }, [])
 
   const validatePlanoForm = (): boolean => {
     const errors: Record<string, string> = {}
@@ -363,28 +389,36 @@ export function FinanceiroClient({
     }
   }
 
-  const handleDeletePlano = async (plano: Plano) => {
-    if (!confirm(`Deseja realmente ${plano.ativo ? "desativar" : "remover"} o plano "${plano.nome}"?`)) {
-      return
-    }
+  const handleDeletePlano = useCallback((plano: Plano) => {
+    setPlanoToDelete(plano)
+    setShowDeletePlanoDialog(true)
+  }, [])
 
+  const handleConfirmDeletePlano = useCallback(async () => {
+    if (!planoToDelete) return
+
+    setDeletingPlano(true)
     try {
-      const res = await fetchWithTimeout(`/api/planos/${plano.id}`, { method: "DELETE" })
+      const res = await fetchWithTimeout(`/api/planos/${planoToDelete.id}`, { method: "DELETE" })
       const data = await res.json()
 
       if (res.ok) {
         toast.success(data.message || "Plano removido!")
         void fetchBootstrapData()
         void fetchStats()
+        setShowDeletePlanoDialog(false)
+        setPlanoToDelete(null)
       } else {
         toast.error(data.error || "Erro ao remover plano")
       }
     } catch {
       toast.error("Erro ao remover plano")
+    } finally {
+      setDeletingPlano(false)
     }
-  }
+  }, [planoToDelete, fetchBootstrapData, fetchStats])
 
-  const handleTogglePlanoAtivo = async (plano: Plano) => {
+  const handleTogglePlanoAtivo = useCallback(async (plano: Plano) => {
     try {
       const res = await fetchWithTimeout(`/api/planos/${plano.id}`, {
         method: "PUT",
@@ -403,7 +437,7 @@ export function FinanceiroClient({
     } catch {
       toast.error("Erro ao atualizar plano")
     }
-  }
+  }, [fetchBootstrapData, fetchStats])
 
   // Pagamento handlers
   const handleOpenPagamentoDialog = useCallback((pagamento?: Pagamento) => {
@@ -498,7 +532,7 @@ export function FinanceiroClient({
       if (res.ok) {
         toast.success(editingPagamento ? "Pagamento atualizado!" : "Pagamento criado!")
         setPagamentoDialogOpen(false)
-        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
+        refreshPagamentos()
         fetchStats()
       } else {
         const data = await res.json()
@@ -521,7 +555,7 @@ export function FinanceiroClient({
 
       if (res.ok) {
         toast.success("Status atualizado!")
-        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
+        refreshPagamentos()
         fetchStats()
       } else {
         const data = await res.json()
@@ -530,7 +564,7 @@ export function FinanceiroClient({
     } catch {
       toast.error("Erro ao atualizar status")
     }
-  }, [currentPage, searchPagamento, filterStatus, sortPagamento, fetchPagamentos, fetchStats])
+  }, [refreshPagamentos, fetchStats])
 
   const handleDeletePagamento = useCallback((pagamento: Pagamento) => {
     setPagamentoToDelete(pagamento)
@@ -547,7 +581,7 @@ export function FinanceiroClient({
 
       if (res.ok) {
         toast.success(data.message || "Pagamento removido!")
-        fetchPagamentos(currentPage, searchPagamento, filterStatus, sortPagamento)
+        refreshPagamentos()
         fetchStats()
         setShowDeletePagamentoDialog(false)
         setPagamentoToDelete(null)
@@ -674,6 +708,18 @@ export function FinanceiroClient({
           onSavePlano={handleSavePlano}
         />
       </Tabs>
+
+      <DeletePlanoDialog
+        open={showDeletePlanoDialog}
+        onOpenChange={setShowDeletePlanoDialog}
+        planoToDelete={planoToDelete}
+        deletingPlano={deletingPlano}
+        onCancel={() => {
+          setShowDeletePlanoDialog(false)
+          setPlanoToDelete(null)
+        }}
+        onConfirm={handleConfirmDeletePlano}
+      />
     </div>
   )
 }

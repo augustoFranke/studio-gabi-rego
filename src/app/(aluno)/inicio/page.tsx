@@ -148,7 +148,7 @@ export default async function MemberDashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Next Class Card */}
-        <Card className="col-span-full md:col-span-1 lg:col-span-2 shadow-[inset_4px_0_0_hsl(var(--primary))]">
+        <Card className="col-span-full md:col-span-1 lg:col-span-2 shadow-[inset_4px_0_0_var(--primary)]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="size-5 text-primary" />

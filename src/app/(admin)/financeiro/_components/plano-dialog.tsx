@@ -82,6 +82,8 @@ export function PlanoDialog({
               id="nome"
               placeholder="Ex: Mensal 3x/semana"
               value={planoForm.nome}
+              aria-invalid={planoErrors.nome ? true : undefined}
+              aria-describedby={planoErrors.nome ? "nome-error" : undefined}
               onChange={(e) => {
                 setPlanoForm({ ...planoForm, nome: e.target.value })
                 if (planoErrors.nome) {
@@ -91,7 +93,7 @@ export function PlanoDialog({
               className={planoErrors.nome ? "border-destructive" : "border-input/50"}
             />
             {planoErrors.nome && (
-              <p className="text-xs text-destructive">{planoErrors.nome}</p>
+              <p id="nome-error" className="text-xs text-destructive">{planoErrors.nome}</p>
             )}
           </div>
           <div className="grid gap-2">
@@ -113,8 +115,10 @@ export function PlanoDialog({
                 id="valor"
                 type="number"
                 step="0.01"
-                placeholder="0,00"
+                placeholder="0.00"
                 value={planoForm.valor}
+                aria-invalid={planoErrors.valor ? true : undefined}
+                aria-describedby={planoErrors.valor ? "valor-error" : undefined}
                 onChange={(e) => {
                   setPlanoForm({ ...planoForm, valor: e.target.value })
                   if (planoErrors.valor) {
@@ -124,7 +128,7 @@ export function PlanoDialog({
                 className={planoErrors.valor ? "border-destructive" : "border-input/50"}
               />
               {planoErrors.valor && (
-                <p className="text-xs text-destructive">{planoErrors.valor}</p>
+                <p id="valor-error" className="text-xs text-destructive">{planoErrors.valor}</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -140,7 +144,12 @@ export function PlanoDialog({
                   }
                 }}
               >
-                <SelectTrigger className={planoErrors.duracaoDias ? "border-destructive" : "border-input/50"}>
+                <SelectTrigger
+                  id="duracaoDias"
+                  aria-invalid={planoErrors.duracaoDias ? true : undefined}
+                  aria-describedby={planoErrors.duracaoDias ? "duracaoDias-error" : undefined}
+                  className={planoErrors.duracaoDias ? "border-destructive" : "border-input/50"}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -151,7 +160,9 @@ export function PlanoDialog({
                 </SelectContent>
               </Select>
               {planoErrors.duracaoDias && (
-                <p className="text-xs text-destructive">{planoErrors.duracaoDias}</p>
+                <p id="duracaoDias-error" className="text-xs text-destructive">
+                  {planoErrors.duracaoDias}
+                </p>
               )}
             </div>
           </div>
@@ -168,7 +179,12 @@ export function PlanoDialog({
                 }
               }}
             >
-              <SelectTrigger className={planoErrors.aulasSemanais ? "border-destructive" : "border-input/50"}>
+              <SelectTrigger
+                id="aulasSemanais"
+                aria-invalid={planoErrors.aulasSemanais ? true : undefined}
+                aria-describedby={planoErrors.aulasSemanais ? "aulasSemanais-error" : undefined}
+                className={planoErrors.aulasSemanais ? "border-destructive" : "border-input/50"}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -182,7 +198,9 @@ export function PlanoDialog({
               </SelectContent>
             </Select>
             {planoErrors.aulasSemanais && (
-              <p className="text-xs text-destructive">{planoErrors.aulasSemanais}</p>
+              <p id="aulasSemanais-error" className="text-xs text-destructive">
+                {planoErrors.aulasSemanais}
+              </p>
             )}
           </div>
         </div>

@@ -94,6 +94,9 @@ export function PagamentoDialog({
               Aluno
             </Label>
             <SearchableSelect
+              id="membro"
+              aria-invalid={pagamentoErrors.membroId ? true : undefined}
+              aria-describedby={pagamentoErrors.membroId ? "membroId-error" : undefined}
               value={pagamentoForm.membroId}
               onValueChange={(value) => {
                 const defaults = getMemberPlanDefaults(value)
@@ -130,7 +133,7 @@ export function PagamentoDialog({
               className={pagamentoErrors.membroId ? "border-destructive" : "border-input/50"}
             />
             {pagamentoErrors.membroId && (
-              <p className="text-xs text-destructive">{pagamentoErrors.membroId}</p>
+              <p id="membroId-error" className="text-xs text-destructive">{pagamentoErrors.membroId}</p>
             )}
           </div>
           <div className="grid gap-2">
@@ -138,6 +141,9 @@ export function PagamentoDialog({
               Plano
             </Label>
             <SearchableSelect
+              id="plano"
+              aria-invalid={pagamentoErrors.planoId ? true : undefined}
+              aria-describedby={pagamentoErrors.planoId ? "planoId-error" : undefined}
               value={pagamentoForm.planoId}
               onValueChange={(value) => {
                 const plano = planos.find((p) => p.id === value)
@@ -179,7 +185,7 @@ export function PagamentoDialog({
               }}
             />
             {pagamentoErrors.planoId && (
-              <p className="text-xs text-destructive">{pagamentoErrors.planoId}</p>
+              <p id="planoId-error" className="text-xs text-destructive">{pagamentoErrors.planoId}</p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -191,8 +197,10 @@ export function PagamentoDialog({
                 id="valor"
                 type="number"
                 step="0.01"
-                placeholder="0,00"
+                placeholder="0.00"
                 value={pagamentoForm.valor}
+                aria-invalid={pagamentoErrors.valor ? true : undefined}
+                aria-describedby={pagamentoErrors.valor ? "valor-error" : undefined}
                 onChange={(e) => {
                   setPagamentoForm({ ...pagamentoForm, valor: e.target.value })
                   if (pagamentoErrors.valor) {
@@ -203,7 +211,7 @@ export function PagamentoDialog({
                 className={pagamentoErrors.valor ? "border-destructive" : "border-input/50"}
               />
               {pagamentoErrors.valor && (
-                <p className="text-xs text-destructive">{pagamentoErrors.valor}</p>
+                <p id="valor-error" className="text-xs text-destructive">{pagamentoErrors.valor}</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -214,6 +222,10 @@ export function PagamentoDialog({
                 id="dataVencimento"
                 type="date"
                 value={pagamentoForm.dataVencimento}
+                aria-invalid={pagamentoErrors.dataVencimento ? true : undefined}
+                aria-describedby={
+                  pagamentoErrors.dataVencimento ? "dataVencimento-error" : undefined
+                }
                 onChange={(e) => {
                   setPagamentoForm({ ...pagamentoForm, dataVencimento: e.target.value })
                   if (pagamentoErrors.dataVencimento) {
@@ -224,7 +236,7 @@ export function PagamentoDialog({
                 className={pagamentoErrors.dataVencimento ? "border-destructive" : "border-input/50"}
               />
               {pagamentoErrors.dataVencimento && (
-                <p className="text-xs text-destructive">{pagamentoErrors.dataVencimento}</p>
+                <p id="dataVencimento-error" className="text-xs text-destructive">{pagamentoErrors.dataVencimento}</p>
               )}
             </div>
           </div>
@@ -244,7 +256,14 @@ export function PagamentoDialog({
                 }
               }}
             >
-              <SelectTrigger className={pagamentoErrors.formaPagamento ? "border-destructive" : "border-input/50"}>
+              <SelectTrigger
+                id="formaPagamento"
+                aria-invalid={pagamentoErrors.formaPagamento ? true : undefined}
+                aria-describedby={
+                  pagamentoErrors.formaPagamento ? "formaPagamento-error" : undefined
+                }
+                className={pagamentoErrors.formaPagamento ? "border-destructive" : "border-input/50"}
+              >
                 <SelectValue placeholder="Selecione a forma de pagamento" />
               </SelectTrigger>
               <SelectContent>
@@ -256,7 +275,9 @@ export function PagamentoDialog({
               </SelectContent>
             </Select>
             {pagamentoErrors.formaPagamento && (
-              <p className="text-xs text-destructive">{pagamentoErrors.formaPagamento}</p>
+              <p id="formaPagamento-error" className="text-xs text-destructive">
+                {pagamentoErrors.formaPagamento}
+              </p>
             )}
           </div>
           <div className="grid gap-2">
