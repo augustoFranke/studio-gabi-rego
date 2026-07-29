@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Trash2, Printer, Dumbbell, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText, Bookmark } from 'lucide-react';
+import { Plus, Printer, Calendar, User, Loader2, Save, Check, ChevronsUpDown, FileText, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
@@ -46,6 +46,9 @@ import type {
 } from '@/domain/treino';
 import { fetchWithTimeout, LONG_RUNNING_FETCH_TIMEOUT_MS, readResponseErrorMessage } from '@/lib/http';
 import { fetcher } from '@/lib/fetcher';
+import { SessionCard } from '@/components/treino/session-card';
+
+const EXERCISE_HISTORY_LIST_ID = 'exercises-list';
 
 type Member = {
     id: string;
@@ -106,40 +109,39 @@ function useTrainingPlanGeneratorPage() {
         fetcher,
         { revalidateOnFocus: false }
     );
-    const memberOptions = sortByTextPtBr(
-        Array.isArray(membersData) ? membersData : membersData?.membros || [],
-        (member) => member.usuario.nome
+    const memberOptions = useMemo(
+        () =>
+            sortByTextPtBr(
+                Array.isArray(membersData) ? membersData : membersData?.membros || [],
+                (member) => member.usuario.nome
+            ),
+        [membersData]
     );
-    const templateOptions = sortByTextPtBr(templatesData, (template) => template.nome);
+    const templateOptions = useMemo(
+        () => sortByTextPtBr(templatesData, (template) => template.nome),
+        [templatesData]
+    );
 
     const selectedMember = memberOptions.find(m => m.id === selectedMemberId);
     const selectedTemplate = templateOptions.find(t => t.id === selectedTemplateId);
 
-    const addSession = () => {
-        const nextLetter = String.fromCharCode(65 + sessions.length); // A, B, C...
-        setSessions([
-            ...sessions,
-            addSessionEditor(nextLetter),
+    const addSession = useCallback(() => {
+        setSessions((prev) => [
+            ...prev,
+            addSessionEditor(String.fromCharCode(65 + prev.length)), // A, B, C...
         ]);
-    };
+    }, []);
 
-    const removeSession = (sessionId: string) => {
-        const newSessions = sessions.filter((s) => s.id !== sessionId);
+    const removeSession = useCallback((sessionId: string) => {
         // Re-index names (keep descriptions)
-        const reindexed = reindexSessionsEditor(newSessions);
-        setSessions(reindexed);
-    };
+        setSessions((prev) => reindexSessionsEditor(prev.filter((s) => s.id !== sessionId)));
+    }, []);
 
-    const updateSessionDescription = (sessionId: string, description: string) => {
-        setSessions(
-            sessions.map((s) => {
-                if (s.id === sessionId) {
-                    return { ...s, description };
-                }
-                return s;
-            })
+    const updateSessionDescription = useCallback((sessionId: string, description: string) => {
+        setSessions((prev) =>
+            prev.map((s) => (s.id === sessionId ? { ...s, description } : s))
         );
-    };
+    }, []);
 
     const applyTemplate = (template: TreinoTemplate) => {
         setSessions(createEditorSessionsFromExercises(template.exercicios, () => crypto.randomUUID()));
@@ -148,60 +150,45 @@ function useTrainingPlanGeneratorPage() {
         toast.success('Template aplicado!');
     };
 
-    const addExercise = (sessionId: string) => {
-        setSessions(
-            sessions.map((s) => {
-                if (s.id === sessionId) {
-                    return {
-                        ...s,
-                        exercises: [
-                            ...s.exercises,
-                            addExerciseEditor(),
-                        ],
-                    };
-                }
-                return s;
-            })
+    const addExercise = useCallback((sessionId: string) => {
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === sessionId
+                    ? { ...s, exercises: [...s.exercises, addExerciseEditor()] }
+                    : s
+            )
         );
-    };
+    }, []);
 
-    const updateExercise = (
+    const updateExercise = useCallback((
         sessionId: string,
         exerciseId: string,
         field: ExerciseField,
         value: string
     ) => {
-        setSessions(
-            sessions.map((s) => {
-                if (s.id === sessionId) {
-                    return {
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === sessionId
+                    ? {
                         ...s,
-                        exercises: s.exercises.map((e) => {
-                            if (e.id === exerciseId) {
-                                return updateExerciseEditor(e, field, value);
-                            }
-                            return e;
-                        }),
-                    };
-                }
-                return s;
-            })
+                        exercises: s.exercises.map((e) =>
+                            e.id === exerciseId ? updateExerciseEditor(e, field, value) : e
+                        ),
+                    }
+                    : s
+            )
         );
-    };
+    }, []);
 
-    const removeExercise = (sessionId: string, exerciseId: string) => {
-        setSessions(
-            sessions.map((s) => {
-                if (s.id === sessionId) {
-                    return {
-                        ...s,
-                        exercises: removeExerciseEditor(s.exercises, exerciseId),
-                    };
-                }
-                return s;
-            })
+    const removeExercise = useCallback((sessionId: string, exerciseId: string) => {
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === sessionId
+                    ? { ...s, exercises: removeExerciseEditor(s.exercises, exerciseId) }
+                    : s
+            )
         );
-    };
+    }, []);
 
     // Helper to save all current exercise names to history
     const saveAllToHistory = () => {
@@ -582,121 +569,16 @@ function useTrainingPlanGeneratorPage() {
 
             <div className="grid grid-cols-1 gap-6">
                 {sessions.map((session) => (
-                    <Card key={session.id} className="relative overflow-hidden shadow-[inset_4px_0_0_hsl(var(--primary))]">
-                        <div className="absolute top-0 right-0 p-4">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                onClick={() => removeSession(session.id)}
-                                title="Remover Treino"
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
-                        </div>
-
-                        <CardHeader className="bg-muted/30 pb-4">
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                    {session.name}
-                                </div>
-                                <span className="whitespace-nowrap">Treino {session.name}</span>
-                                <span className="text-muted-foreground font-normal">-</span>
-                                <Input
-                                    placeholder="Ex: Costas e Bíceps"
-                                    value={session.description}
-                                    onChange={(e) => updateSessionDescription(session.id, e.target.value)}
-                                    className="flex-1 h-8 text-base font-normal bg-background max-w-xs"
-                                />
-                            </CardTitle>
-                        </CardHeader>
-
-                        <CardContent className="pt-6 space-y-4">
-                            {session.exercises.length === 0 ? (
-                                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                                    <Dumbbell className="mx-auto size-8 mb-2 opacity-50" />
-                                    <p>Nenhum exercício adicionado ainda.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {/* Headers for larger screens */}
-                                    <div className="hidden md:grid grid-cols-12 gap-4 px-1 text-sm font-medium text-muted-foreground">
-                                        <div className="col-span-6">Exercício</div>
-                                        <div className="col-span-2 text-center">Séries</div>
-                                        <div className="col-span-2 text-center">Repetições</div>
-                                        <div className="col-span-2"></div>
-                                    </div>
-
-                                    {session.exercises.map((exercise) => (
-                                        <div key={exercise.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end md:items-center bg-card md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 shadow-sm md:shadow-none">
-
-                                            <div className="col-span-1 md:col-span-6 w-full">
-                                                <Label className="md:hidden mb-1.5 block text-xs">Exercício</Label>
-                                                <Input
-                                                    placeholder="Nome do exercício..."
-                                                    value={exercise.name}
-                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'name', e.target.value)}
-                                                    list="exercises-list"
-                                                    autoComplete="off"
-                                                />
-                                            </div>
-
-                                            <div className="col-span-1 md:col-span-2 flex md:block flex-col">
-                                                <Label className="md:hidden mb-1.5 block text-xs">Séries</Label>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="3"
-                                                    className="text-center"
-                                                    value={exercise.sets}
-                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'sets', e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="col-span-1 md:col-span-2 flex md:block flex-col">
-                                                <Label className="md:hidden mb-1.5 block text-xs">Repetições</Label>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="10"
-                                                    className="text-center"
-                                                    value={exercise.reps}
-                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'reps', e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="col-span-1 md:col-span-2 flex justify-end md:justify-center">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-muted-foreground hover:text-destructive size-9"
-                                                    onClick={() => removeExercise(session.id, exercise.id)}
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                </Button>
-                                            </div>
-
-                                            <div className="col-span-1 md:col-span-12 w-full">
-                                                <Label className="mb-1.5 block text-xs text-muted-foreground">Observações</Label>
-                                                <Input
-                                                    placeholder="Observações específicas deste exercício..."
-                                                    value={exercise.notes}
-                                                    onChange={(e) => updateExercise(session.id, exercise.id, 'notes', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            <Button
-                                variant="outline"
-                                className="w-full border-dashed"
-                                onClick={() => addExercise(session.id)}
-                            >
-                                <Plus className="mr-2 size-4" />
-                                Adicionar Exercício
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <SessionCard
+                        key={session.id}
+                        session={session}
+                        exerciseHistoryListId={EXERCISE_HISTORY_LIST_ID}
+                        onDescriptionChange={updateSessionDescription}
+                        onRemoveSession={removeSession}
+                        onAddExercise={addExercise}
+                        onExerciseChange={updateExercise}
+                        onRemoveExercise={removeExercise}
+                    />
                 ))}
 
                 <Button
@@ -711,7 +593,7 @@ function useTrainingPlanGeneratorPage() {
             </div>
 
             {/* Datalist for Autocomplete */}
-            <datalist id="exercises-list">
+            <datalist id={EXERCISE_HISTORY_LIST_ID}>
                 {exerciseHistory.map((name) => (
                     <option key={name} value={name}>{name}</option>
                 ))}
