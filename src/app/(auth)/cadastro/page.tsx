@@ -304,7 +304,7 @@ function useCadastroPage() {
                       {i + 1 < state.step ? <Check className="size-3.5" /> : i + 1}
                     </div>
                     <span className={`text-xs font-medium ${
-                      i + 1 === state.step ? "text-orange-500" : "text-muted-foreground"
+                      i + 1 === state.step ? "text-primary-strong" : "text-muted-foreground"
                     }`}>
                       {label}
                     </span>
@@ -407,7 +407,7 @@ function useCadastroPage() {
                       {i + 1 < state.step ? <Check className="size-4" /> : i + 1}
                     </div>
                     <span className={`text-xs font-medium ${
-                      i + 1 === state.step ? "text-orange-500" : "text-muted-foreground"
+                      i + 1 === state.step ? "text-primary-strong" : "text-muted-foreground"
                     }`}>
                       {label}
                     </span>
@@ -655,12 +655,12 @@ function useCadastroPage() {
                   <div className="text-center space-y-3">
                     <p className="text-sm text-muted-foreground">
                       Já tem uma conta?{" "}
-                      <Link href="/login" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
+                      <Link href="/login" className="text-primary-strong font-medium underline-offset-4 hover:underline">
                         Entrar
                       </Link>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      &copy; {COPYRIGHT_YEAR} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+                      &copy; {COPYRIGHT_YEAR} <span className="text-primary-strong font-medium">Gabi Studio</span>. Todos os direitos reservados.
                     </p>
                   </div>
                 </>

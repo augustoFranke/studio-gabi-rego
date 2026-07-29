@@ -87,7 +87,7 @@ function VerificarEmailContent() {
           <CardDescription className="text-muted-foreground mt-2">
             Enviamos um link de verificação para
             {email && (
-              <span className="block text-orange-500 font-medium mt-1">{email}</span>
+              <span className="block text-primary-strong font-medium mt-1">{email}</span>
             )}
           </CardDescription>
         </CardHeader>
@@ -131,7 +131,7 @@ function VerificarEmailContent() {
           <div className="text-center">
             <Link
               href="/cadastro"
-              className="text-sm text-muted-foreground hover:text-orange-500 transition-colors inline-flex items-center gap-1"
+              className="text-sm text-muted-foreground hover:text-primary-strong transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="size-3" />
               Voltar para o cadastro
