@@ -14,16 +14,22 @@ import Image from "next/image"
 
 const COPYRIGHT_YEAR = 2026
 
-function LoginContent() {
-  const [isLoading, setIsLoading] = useState(false)
+// Isolated so that reading search params does not opt the whole page out of
+// prerendering — the card (and its LCP logo) must be in the initial HTML.
+function RegistrationCompleteToast() {
   const searchParams = useSearchParams()
 
-  // Check for registration complete message
   useEffect(() => {
     if (searchParams.get("cadastro") === "completo") {
       toast.success("Cadastro concluído! Agora você pode fazer login.")
     }
   }, [searchParams])
+
+  return null
+}
+
+function LoginContent() {
+  const [isLoading, setIsLoading] = useState(false)
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -82,6 +88,7 @@ function LoginContent() {
               height={224}
               className="object-contain"
               priority
+              fetchPriority="high"
             />
           </div>
           <CardDescription className="text-muted-foreground mt-1">
@@ -146,12 +153,12 @@ function LoginContent() {
           <div className="text-center space-y-3">
             <p className="text-sm text-muted-foreground">
               Não tem uma conta?{" "}
-              <Link href="/cadastro" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
+              <Link href="/cadastro" className="text-primary-strong font-medium underline-offset-4 hover:underline">
                 Cadastre-se
               </Link>
             </p>
             <p className="text-xs text-muted-foreground">
-              © {COPYRIGHT_YEAR} <span className="text-orange-500/80 font-medium">Gabi Studio</span>. Todos os direitos reservados.
+              © {COPYRIGHT_YEAR} <span className="text-primary-strong font-medium">Gabi Studio</span>. Todos os direitos reservados.
             </p>
           </div>
         </CardContent>
@@ -162,12 +169,11 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-background to-stone-200/60">
-        <div className="animate-spin size-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-      </div>
-    }>
+    <>
+      <Suspense fallback={null}>
+        <RegistrationCompleteToast />
+      </Suspense>
       <LoginContent />
-    </Suspense>
+    </>
   )
 }
