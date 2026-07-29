@@ -2,6 +2,21 @@ import { useMemo } from 'react'
 import { formatDateISO, parseDateFromAPI, parseHourFromString } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
 
+// Shared instance so empty slots keep a stable `agendamentos` prop across renders.
+export const NO_AGENDAMENTOS: Agendamento[] = []
+
+/**
+ * Narrows the globally dragged id to the slot that owns it, so starting or
+ * ending a drag only invalidates that one slot instead of the whole grid.
+ */
+export function slotDraggingId(
+  agendamentos: Agendamento[],
+  draggingId: string | null | undefined
+): string | null {
+  if (!draggingId) return null
+  return agendamentos.some((agendamento) => agendamento.id === draggingId) ? draggingId : null
+}
+
 export function useScheduleData(agendamentos: Agendamento[]) {
   return useMemo(() => {
     const byHour = new Map<number, Agendamento[]>()
