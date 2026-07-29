@@ -352,7 +352,7 @@ export default function RedefinirSenhaPage({ params }: PageProps) {
           </div>
 
           <div className="text-center">
-            <Link href="/login" className="text-sm text-orange-500 hover:text-orange-400 font-medium transition-colors inline-flex items-center gap-1">
+            <Link href="/login" className="text-sm text-primary-strong font-medium underline-offset-4 hover:underline inline-flex items-center gap-1">
               <ArrowLeft className="size-4" />
               Voltar para o Login
             </Link>
