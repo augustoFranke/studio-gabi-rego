@@ -14,7 +14,7 @@ import {
 import type { Agendamento } from '@/types/schedule'
 import { cn } from '@/lib/utils'
 import { DayDetailModal } from './day-detail-modal'
-import { useScheduleData } from './use-schedule-data'
+import { NO_AGENDAMENTOS, slotDraggingId, useScheduleData } from './use-schedule-data'
 
 interface WeeklyViewProps {
   date: Date
@@ -31,7 +31,7 @@ interface WeeklyViewProps {
 const WeeklyViewBase = function WeeklyView({
   date,
   agendamentos,
-  isEditable = false,
+  isEditable: isEditableProp,
   onSlotClick,
   onMemberClick,
   draggingId,
@@ -39,6 +39,10 @@ const WeeklyViewBase = function WeeklyView({
   onDragEnd,
   onDrop,
 }: WeeklyViewProps) {
+  // Hoisted out of the parameter list: React Compiler bails on destructuring
+  // defaults, which would leave this whole grid unmemoized.
+  const isEditable = isEditableProp ?? false
+
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
 
@@ -126,7 +130,8 @@ const WeeklyViewBase = function WeeklyView({
 
                   {weekDays.map((day) => {
                     const dateKey = formatDateISO(day)
-                    const hourAgendamentos = agendamentosByDateAndHour.get(`${dateKey}-${hour}`) || []
+                    const hourAgendamentos =
+                      agendamentosByDateAndHour.get(`${dateKey}-${hour}`) || NO_AGENDAMENTOS
 
                     return (
                       <TimeSlot
@@ -137,7 +142,7 @@ const WeeklyViewBase = function WeeklyView({
                         isEditable={isEditable}
                         onSlotClick={onSlotClick}
                         onMemberClick={onMemberClick}
-                        draggingId={draggingId}
+                        draggingId={slotDraggingId(hourAgendamentos, draggingId)}
                         onDragStart={onDragStart}
                         onDragEnd={onDragEnd}
                         onDragOver={handleDragOver}
