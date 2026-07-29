@@ -27,9 +27,14 @@ const MemberBadgeBase = function MemberBadge({
   onClick,
   onDragStart,
   onDragEnd,
-  draggable = false,
-  compact = false,
+  draggable: draggableProp,
+  compact: compactProp,
 }: MemberBadgeProps) {
+  // Hoisted out of the parameter list: React Compiler bails on destructuring
+  // defaults, which would leave this component unmemoized.
+  const draggable = draggableProp ?? false
+  const compact = compactProp ?? false
+
   const initials = useMemo(() =>
     nome
       .split(' ')
@@ -40,8 +45,8 @@ const MemberBadgeBase = function MemberBadge({
     , [nome])
 
   const presenceColor = useMemo(() => {
-    if (presente === true) return 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800'
-    if (presente === false) return 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'
+    if (presente === true) return 'bg-success/10 border-success/30'
+    if (presente === false) return 'bg-destructive/10 border-destructive/30'
     return 'bg-background border-border'
   }, [presente])
 
@@ -49,9 +54,9 @@ const MemberBadgeBase = function MemberBadge({
   const PresenceIcon = presente === true ? Check : presente === false ? X : Clock
   const presenceIconClassName =
     presente === true
-      ? 'text-green-600'
+      ? 'text-success'
       : presente === false
-        ? 'text-red-600'
+        ? 'text-destructive'
         : 'text-muted-foreground'
 
   if (compact) {
