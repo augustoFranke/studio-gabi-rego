@@ -29,6 +29,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -36,6 +37,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
@@ -110,7 +112,10 @@
   /* Intense orange primary - vibrant and energetic */
   --primary: oklch(0.65 0.22 35);
   --primary-foreground: oklch(0.99 0 0);
-  
+  /* Brand orange as text on a light surface; --primary itself is a fill and
+     measures below 4.5:1 against card and background. */
+  --primary-strong: oklch(0.55 0.16 38);
+
   --secondary: oklch(0.96 0.015 60);
   --secondary-foreground: oklch(0.3 0.03 45);
   
@@ -128,6 +133,9 @@
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.72 0.15 75);
   --warning-foreground: oklch(0.24 0.03 60);
+  /* Warning as text on a neutral surface; --warning itself is a fill and
+     measures below 4.5:1 against light backgrounds. */
+  --warning-strong: oklch(0.54 0.11 72);
 
   --border: oklch(0.9 0.015 60);
   --input: oklch(0.92 0.01 60);
@@ -165,7 +173,8 @@
   /* Bright intense orange for dark mode */
   --primary: oklch(0.72 0.2 40);
   --primary-foreground: oklch(0.12 0.01 45);
-  
+  --primary-strong: oklch(0.72 0.2 40);
+
   --secondary: oklch(0.24 0.015 45);
   --secondary-foreground: oklch(0.92 0.01 60);
   
@@ -181,6 +190,7 @@
   --success-foreground: oklch(0.14 0.02 155);
   --warning: oklch(0.78 0.15 75);
   --warning-foreground: oklch(0.18 0.03 60);
+  --warning-strong: oklch(0.82 0.14 85);
 
   --border: oklch(0.26 0.015 45);
   --input: oklch(0.22 0.01 45);
