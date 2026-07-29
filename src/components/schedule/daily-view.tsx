@@ -11,7 +11,7 @@ import {
 } from '@/lib/schedule'
 import type { Agendamento } from '@/types/schedule'
 import { cn } from '@/lib/utils'
-import { useScheduleData } from './use-schedule-data'
+import { NO_AGENDAMENTOS, slotDraggingId, useScheduleData } from './use-schedule-data'
 
 interface DailyViewProps {
   date: Date
@@ -28,7 +28,7 @@ interface DailyViewProps {
 const DailyViewBase = function DailyView({
   date,
   agendamentos,
-  isEditable = false,
+  isEditable: isEditableProp,
   onSlotClick,
   onMemberClick,
   draggingId,
@@ -36,6 +36,10 @@ const DailyViewBase = function DailyView({
   onDragEnd,
   onDrop,
 }: DailyViewProps) {
+  // Hoisted out of the parameter list: React Compiler bails on destructuring
+  // defaults, which would leave this whole grid unmemoized.
+  const isEditable = isEditableProp ?? false
+
   const isTodayDate = isToday(date)
   const { agendamentosByHour } = useScheduleData(agendamentos)
 
@@ -67,7 +71,7 @@ const DailyViewBase = function DailyView({
       <CardContent className="p-0">
         <div className="border-t">
           {HOURS.map((hour) => {
-            const hourAgendamentos = agendamentosByHour.get(hour) || []
+            const hourAgendamentos = agendamentosByHour.get(hour) || NO_AGENDAMENTOS
 
             return (
               <TimeSlot
@@ -78,7 +82,7 @@ const DailyViewBase = function DailyView({
                 isEditable={isEditable}
                 onSlotClick={onSlotClick}
                 onMemberClick={onMemberClick}
-                draggingId={draggingId}
+                draggingId={slotDraggingId(hourAgendamentos, draggingId)}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 onDragOver={handleDragOver}
