@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   // Keep pdfkit external so its standard font data can be resolved at runtime.
   serverExternalPackages: ["pdfkit"],
 
+  // Auto-memoize components and hooks so ordinary renders stop cascading.
+  reactCompiler: true,
+
   // Enable experimental features
   experimental: {
     serverActions: {
