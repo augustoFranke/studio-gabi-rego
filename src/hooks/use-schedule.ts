@@ -8,6 +8,10 @@ import { fetchJson } from '@/lib/http'
 import type { Agendamento, Membro, ScheduleView } from '@/types/schedule'
 import { toast } from 'sonner'
 
+// Stable fallbacks so the consumers' memoized children survive loading renders.
+const NO_AGENDAMENTOS: Agendamento[] = []
+const NO_MEMBROS: Membro[] = []
+
 interface UseScheduleProps {
   initialDate?: Date
   initialView?: ScheduleView
@@ -83,7 +87,7 @@ export function useSchedule({
   // SWR for agendamentos with automatic revalidation
   const agendamentosKey = `/api/agendamentos?dataInicio=${dateRange.dataInicio}&dataFim=${dateRange.dataFim}`
   const {
-    data: agendamentos = [],
+    data: agendamentos = NO_AGENDAMENTOS,
     isLoading: isLoadingAgendamentos,
     mutate: mutateAgendamentos,
   } = useSWR<Agendamento[]>(agendamentosKey, fetcher, {
@@ -93,7 +97,7 @@ export function useSchedule({
 
   // SWR for membros with longer cache (rarely changes)
   const {
-    data: membros = [],
+    data: membros = NO_MEMBROS,
   } = useSWR<Membro[]>('/api/membros?status=ATIVO&fields=compact', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000, // 1 minute deduping - membros rarely change
