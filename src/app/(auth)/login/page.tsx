@@ -75,9 +75,9 @@ function LoginContent() {
       <div className="absolute bottom-32 left-20 hidden h-2 w-2 rounded-full bg-orange-600/50 animate-pulse delay-700 dark:block" />
       <div className="absolute bottom-20 right-32 hidden h-1.5 w-1.5 rounded-full bg-amber-500/60 animate-pulse delay-500 dark:block" />
 
-      <Card className="w-full max-w-md relative z-10 border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
+      <Card className="w-full max-w-md relative z-10 overflow-hidden border-orange-500/20 shadow-2xl shadow-orange-900/20 dark:shadow-orange-500/10 gap-0 backdrop-blur-sm bg-card/95">
         {/* Orange accent line at top of card */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 rounded-t-xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500" />
 
         <CardHeader className="text-center pb-4 pt-6">
           <div className="flex justify-center mb-4">
